@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
+import ca.phon.jsendpraat.SendPraat;
 import ca.phon.system.logger.PhonLogger;
 import ca.phon.system.plugin.IPluginEntryPoint;
 import ca.phon.system.plugin.PhonPlugin;
-import ca.phon.util.SendPraat;
+
 /**
  * Plugin entry point for sending scripts to Praat.
  * 

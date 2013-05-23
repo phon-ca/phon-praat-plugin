@@ -11,13 +11,13 @@
           </snapshots>
           <id>central</id>
           <name>libs-release</name>
-          <url>http://phon.ling.mun.ca/artifactory/libs-release</url>
+          <url>https://www.phon.ca/artifacts/libs-release</url>
         </repository>
         <repository>
           <snapshots />
           <id>snapshots</id>
           <name>libs-snapshot</name>
-          <url>http://phon.ling.mun.ca/artifactory/libs-snapshot</url>
+          <url>https://www.phon.ca/artifacts/libs-snapshot</url>
         </repository>
       </repositories>
       <pluginRepositories>
@@ -27,21 +27,41 @@
           </snapshots>
           <id>central</id>
           <name>plugins-release</name>
-          <url>http://phon.ling.mun.ca/artifactory/plugins-release</url>
+          <url>https://www.phon.ca/artifacts/plugins-release</url>
         </pluginRepository>
         <pluginRepository>
           <snapshots />
           <id>snapshots</id>
           <name>plugins-snapshot</name>
-          <url>http://phon.ling.mun.ca/artifactory/plugins-snapshot</url>
+          <url>https://www.phon.ca/artifacts/plugins-snapshot</url>
         </pluginRepository>
       </pluginRepositories>
       
   <dependencies>
+    <dependency>
+      <groupId>ca.phon</groupId>
+      <artifactId>jsendpraat</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.swinglabs</groupId>
+      <artifactId>swingx</artifactId>
+      <version>1.6.1</version>
+    </dependency>
+    <dependency>
+      <groupId>it.cnr.imaa.essi</groupId>
+      <artifactId>lablib-checkboxtree</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.velocity</groupId>
+      <artifactId>velocity</artifactId>
+      <version>1.7</version>
+    </dependency>
   	<dependency>
   		<groupId>ca.phon</groupId>
   		<artifactId>phon</artifactId>
-  		<version>1.5.2</version>
+  		<version>1.6.0</version>
   	</dependency>
   </dependencies>
   

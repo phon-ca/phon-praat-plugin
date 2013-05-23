@@ -15,10 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ca.phon.plugins.praat.textgrid;
+package ca.phon.plugins.praat;
 
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
+import ca.phon.plugins.praat.textgrid.TextGrid;
+import ca.phon.plugins.praat.textgrid.TextGridInterval;
+import ca.phon.plugins.praat.textgrid.TextGridTier;
 import ca.phon.util.Tuple;
 
 /**

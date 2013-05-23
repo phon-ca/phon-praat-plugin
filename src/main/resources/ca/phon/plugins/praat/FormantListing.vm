@@ -1,0 +1,40 @@
+## Vars
+sound$ = "$soundFile"
+
+# segment options
+start = $interval.start
+end = $interval.end
+preserveTimes$ = "yes"
+
+# formant options
+timeStep = 0.0
+maxFormants = 5
+maxFormant = 5500
+windowLength = 0.025
+preEmphasis = 50
+
+# list options
+includeFrameNum\$ = "no"
+includeTime\$ = "yes"
+timeDecimals = 6
+includeIntensity\$ = "no"
+intensityDecimals = 3
+includeNumFormants\$ = "no"
+freqDecimals = 3
+includeBandwidths\$ = "no"
+
+## Procedure
+# open long sound
+Open long sound file... 'sound\$'
+
+# extract part
+segment = Extract part... start end 'preserveTimes\$'
+
+# to formant
+formant = To Formant (burg)... timeStep maxFormants maxFormant windowLength preEmphasis
+
+# select formant
+select formant
+
+# list values
+List... 'includeFrameNum\$' 'includeTime\$' timeDecimals 'includeIntensity\$' intensityDecimals 'includeNumFormants\$' freqDecimals 'includeBandwidths\$'

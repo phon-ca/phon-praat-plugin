@@ -15,9 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ca.phon.plugins.praat.textgrid;
+package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +31,8 @@ import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
@@ -40,14 +45,22 @@ import ca.phon.application.transcript.IPhoneticRep;
 import ca.phon.application.transcript.IWord;
 import ca.phon.application.transcript.MediaUnit;
 import ca.phon.exceptions.ParserException;
+import ca.phon.gui.CommonModuleFrame;
+import ca.phon.gui.DialogHeader;
 import ca.phon.gui.action.PhonActionEvent;
 import ca.phon.gui.action.PhonUIAction;
 import ca.phon.gui.recordeditor.RecordEditorModel;
 import ca.phon.gui.recordeditor.RecordEditorView;
+import ca.phon.gui.recordeditor.SystemTierType;
+import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.phone.Phone;
+import ca.phon.plugins.praat.TextGridExporter.ExportType;
+import ca.phon.plugins.praat.textgrid.TextGrid;
+import ca.phon.plugins.praat.textgrid.TextGridInterval;
+import ca.phon.plugins.praat.textgrid.TextGridReader;
+import ca.phon.plugins.praat.textgrid.TextGridWriter;
 import ca.phon.system.logger.PhonLogger;
-import ca.phon.util.SendPraat;
 
 /**
  * Display a table representing a textgrid for a record
@@ -65,8 +78,8 @@ public class TextGridPanel extends RecordEditorView {
 
 	private JButton openTgBtn;
 	private JButton refreshBtn;
-
-
+	
+	private JButton exportSettingsBtn;
 
 	/* Actions */
 	private Action openTgAct;
@@ -92,6 +105,14 @@ public class TextGridPanel extends RecordEditorView {
 		setLayout(new BorderLayout());
 
 		toolbar = new JToolBar();
+		
+		final PhonUIAction exportSettingsAct = 
+				new PhonUIAction(this, "onExportSettings");
+		exportSettingsAct.putValue(PhonUIAction.NAME, "Settings");
+		exportSettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Setup TextGrid defaults");
+		exportSettingsBtn = new JButton(exportSettingsAct);
+		toolbar.add(exportSettingsBtn);
+		
 		openTgBtn = new JButton("Open TextGrid");
 		openTgAct = new PhonUIAction("Open TextGrid", this, "openTextGridAction");
 		openTgBtn.setAction(openTgAct);
@@ -140,7 +161,8 @@ public class TextGridPanel extends RecordEditorView {
 				new TextGridTreeTableModel(tg);
 		tgTable.setTreeTableModel(tgModel);
 		tgTable.packAll();
-		tgTable.expandAll();
+//		tgTable.expandRow(0);
+//		tgTable.expandAll();
 	}
 
 	/*
@@ -156,51 +178,15 @@ public class TextGridPanel extends RecordEditorView {
 	}
 
 	private TextGrid generateTextGrid() {
-		TextGrid retVal = new TextGrid();
+		final TextGridExporter tgExporter = new TextGridExporter();
+		final TextGrid retVal = tgExporter.createEmptyTextGrid(model.getRecord());
 
-		if(model.getRecord().getMedia() != null) {
-			IMedia media = model.getRecord().getMedia();
-
-			float startTime = media.getStartValue();
-			if(media.getUnitType() == MediaUnit.Millisecond)
-				startTime /= 1000.0f;
-			float endTime = media.getEndValue();
-			if(media.getUnitType() == MediaUnit.Millisecond)
-				endTime /= 1000.0f;
-			retVal.setMin(startTime);
-			retVal.setMax(endTime);
-
-			float duration = endTime - startTime;
-
-			List<Phone> allPhones = new ArrayList<Phone>();
-			for(IWord w:model.getRecord().getWords()) {
-				IPhoneticRep phoRep = w.getPhoneticRepresentation(Form.Actual);
-				allPhones.addAll(phoRep.getSoundPhones());
-			}
-
-			float phoneDuration =
-					duration / (float)allPhones.size();
-
-			TextGridTier ipaTier = new TextGridTier("IPA", TextGridTierType.INTERVAL);
-
-			float currentTime = startTime;
-			for(Phone p:allPhones) {
-				float startPhone = currentTime;
-				float endPhone = currentTime + phoneDuration;
-
-				TextGridInterval tgInterval =
-						new TextGridInterval(p.getPhoneString(), startPhone, endPhone);
-				ipaTier.addInterval(tgInterval);
-
-				currentTime += phoneDuration;
-			}
-
-			retVal.addTier(ipaTier);
-
-			// save text grid to file
-			saveTextGrid(retVal);
-		}
-
+		// create some default tiers
+		tgExporter.setupTextGrid(model.getProject(), model.getRecord(), retVal);
+		
+		// save text grid to file
+		saveTextGrid(retVal);
+		
 		return retVal;
 	}
 
@@ -208,81 +194,44 @@ public class TextGridPanel extends RecordEditorView {
 	 * Look for the text grid in project resources.
 	 */
 	private TextGrid readTextGrid() {
-		TextGrid retVal = null;
-
-		String tgPath = getTextGridPath();
-		try {
-			File tgFile = new File(tgPath);
-
-			if(tgFile != null && tgFile.exists()) {
-				TextGridReader tgReader =
-						new TextGridReader(tgFile, "UTF-16");
-				retVal = tgReader.readTextGrid();
-			}
-		} catch (ParserException pe) {
-			PhonLogger.severe(TextGridPanel.class, pe.toString());
-		}
-
-		return retVal;
+		final TextGridManager tgManager = new TextGridManager(model.getProject());
+		return tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
 	}
 
 	private void saveTextGrid(TextGrid tg) {
-		File tgFile = new File(getTextGridPath());
-		
-		File tgParent = tgFile.getParentFile();
-		if(!tgParent.exists()) {
-			tgParent.mkdirs();
-		}
-		
-		TextGridWriter tgWriter = new TextGridWriter(tg, tgFile, "UTF-16");
-		tgWriter.writeTextGrid();
-		tgWriter.close();
-	}
-	
-	private String getTextGridPath() {
-		String tgPath =
-				model.getProject().getProjectLocation() + File.separator +
-				"__res" + File.separator + "textgrids" + File.separator +
-				model.getSession().getCorpus().replaceAll(" ", "_") + "_" +
-				model.getSession().getID().replaceAll(" ", "_") + "_" +
-				model.getRecord().getID() + ".TextGrid";
-		return tgPath;
+		final TextGridManager tgManager = new TextGridManager(model.getProject());
+		tgManager.saveTextGrid(tg, model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
 	}
 
+	/**
+	 * Get the location of the audio file.
+	 * 
+	 */
 	public File getAudioFile() {
-//		File movFile = MediaLocator.getMediaFile(model.getProject(), model.getSession().getCorpus(),
-//				model.getSession().getMediaLocation());
-//		File audioFile = null;
-//		if(movFile != null) {
-//			if(movFile.getAbsolutePath().endsWith(".wav")) {
-//				audioFile = movFile;
-//			} else {
-//				int lastDot = movFile.getName().lastIndexOf(".");
-//				if(lastDot > 0) {
-//					String audioFileName =
-//						movFile.getName().substring(0, movFile.getName().lastIndexOf(".")) +
-//							".wav";
-//					audioFile = MediaLocator.getMediaFile(model.getProject(), model.getSession().getCorpus(),
-//							audioFileName);
-//				}
-//			}
-//		}
-		File retVal = null;
-		File movFile = MediaLocator.findMediaFile(model.getSession().getMediaLocation(), model.getProject());
-		if(movFile != null) {
-			if(movFile.getAbsolutePath().endsWith(".wav")) {
-				retVal = movFile;
-			} else {
-				int lastDot = movFile.getName().lastIndexOf(".");
-				if(lastDot > 0) {
-					String audioFileName =
-						movFile.getName().substring(0, movFile.getName().lastIndexOf(".")) +
-							".wav";
-					retVal = MediaLocator.findMediaFile(audioFileName, model.getProject());
-				}
+		if(getModel() == null) return null;
+		
+		File selectedMedia = 
+				MediaLocator.findMediaFile(getModel().getProject(), getModel().getSession());
+		if(selectedMedia == null) return null;
+		File audioFile = null;
+		
+		int lastDot = selectedMedia.getName().lastIndexOf('.');
+		String mediaName = selectedMedia.getName();
+		if(lastDot >= 0) {
+			mediaName = mediaName.substring(0, lastDot);
+		}
+		if(!selectedMedia.isAbsolute()) selectedMedia = 
+			MediaLocator.findMediaFile(getModel().getSession().getMediaLocation(), getModel().getProject(), getModel().getSession().getCorpus());
+		
+		if(selectedMedia != null) {
+			File parentFile = selectedMedia.getParentFile();
+			audioFile = new File(parentFile, mediaName + ".wav");
+			
+			if(!audioFile.exists()) {
+				audioFile = null;
 			}
 		}
-		return retVal;
+		return audioFile;
 	}
 
 	/** UI Actions */
@@ -300,7 +249,8 @@ public class TextGridPanel extends RecordEditorView {
 			(model.getRecord().getMedia().getStartValue()/1000.0f) + " " + (model.getRecord().getMedia().getEndValue()/1000.0f) + " yes\n";
 
 //		File tgFile = writeTextGridTempFile();
-		String tgPath = getTextGridPath();
+		final TextGridManager tgManager = new TextGridManager(model.getProject());
+		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
 
 		script += "tg = Read from file... " + tgPath + "\n";
 
@@ -317,6 +267,46 @@ public class TextGridPanel extends RecordEditorView {
 
 	public void refreshAction(PhonActionEvent pae) {
 		updatePanel();
+	}
+	
+	public void onExportSettings() {
+		final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame());
+		dialog.setModal(true);
+		
+		dialog.setLayout(new BorderLayout());
+		
+		final DialogHeader header = new DialogHeader("TextGrid Settings", "Setup defaults for the TextGrid plug-in");
+		dialog.add(header, BorderLayout.NORTH);
+		
+		final ExportEntryCheckboxTree checkboxTree = new ExportEntryCheckboxTree(model.getSession());
+		final TextGridExporter tgExporter = new TextGridExporter();
+		final List<TextGridExportEntry> exports = tgExporter.getExports(model.getProject());
+		checkboxTree.setChecked(exports);
+		final JScrollPane treeScroller = new JScrollPane(checkboxTree);
+		dialog.add(treeScroller, BorderLayout.CENTER);
+		
+		final JButton okBtn = new JButton("Ok");
+		okBtn.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				dialog.setVisible(false);
+			}
+		});
+		
+		final JPanel btnBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		btnBar.add(okBtn);
+		dialog.add(btnBar, BorderLayout.SOUTH);
+		
+		// show dialog...
+		dialog.pack();
+		dialog.setLocationRelativeTo(this);
+		dialog.getRootPane().setDefaultButton(okBtn);
+		dialog.setVisible(true);
+		
+		// ... get checked and save
+		final List<TextGridExportEntry> selectedExports = checkboxTree.getSelectedExports();
+		tgExporter.saveExports(selectedExports, model.getProject());
 	}
 
 	/**
@@ -341,7 +331,7 @@ public class TextGridPanel extends RecordEditorView {
 		// read formant script template
 		try {
 			BufferedReader in = new BufferedReader(
-					new InputStreamReader(new FileInputStream("data/praat/FormantListing.praatscript")));
+					new InputStreamReader(getClass().getResourceAsStream("FormantListing.praatscript")));
 			String fullScript = new String();
 			String line = null;
 			while((line = in.readLine()) != null) {
