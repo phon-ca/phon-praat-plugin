@@ -23,6 +23,8 @@ public class TextGridManager {
 	
 	private final static String TEXTGRID_ENCODING = "UTF-16";
 	
+	private final static String TEXTGRID_EXT = ".TextGrid";
+	
 	/**
 	 * Project we are managing
 	 */
@@ -149,7 +151,7 @@ public class TextGridManager {
 		sb.append(session);
 		sb.append("_");
 		sb.append(recordId);
-		sb.append(".textgrid");
+		sb.append(TEXTGRID_EXT);
 		
 		return sb.toString();
 	}

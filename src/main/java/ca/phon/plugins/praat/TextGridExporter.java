@@ -7,8 +7,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import ca.phon.application.IPhonFactory;
 import ca.phon.application.project.IPhonProject;
 import ca.phon.application.transcript.Form;
 import ca.phon.application.transcript.IDependentTier;
@@ -91,172 +93,416 @@ public class TextGridExporter {
 	 * @param textgrid
 	 * @param tgName
 	 */
-	public void addTierToTextGrid(IUtterance utt, String tier,  ExportType type,
+	public void addTierToTextGrid(IUtterance utt, String tier, ExportType type,
 			TextGrid textgrid, String tgName) {
 		// create the new textgrid tier
 		final TextGridTier tgTier = new TextGridTier(tgName, TextGridTierType.INTERVAL);
 		textgrid.addTier(tgTier);
 		
+		// check if we a processing a built-in tier
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
-		final List<String> intervals = new ArrayList<String>();
 		
-		// handle 'TIER' case here
+		// calculate some values for interval times
+		final int numHashes = utt.getWords().size() + 1;
+		final float totalTime = textgrid.getMax() - textgrid.getMin();
+		final float hashLength = MARKER_LENGTH * numHashes;
+		final float dataLength = totalTime - hashLength;
+		final float groupLength = dataLength / utt.getWords().size();
+		
+		// if the exportType is TIER, we create a 3-interval tier
+		// this takes care of all flat tiers
 		if(type == ExportType.TIER) {
-			intervals.add("#");
-			intervals.add(utt.getTierString(tier));
-			intervals.add("#");
+			setupThreeIntervalTier(textgrid, tgTier, utt.getTierString(tier));
 		} else {
-			if(systemTier != null) {
+			float currentStart = textgrid.getMin();
+			for(IWord word:utt.getWords()) {
+				final TextGridInterval marker = new TextGridInterval(MARKER_TEXT, currentStart, currentStart + MARKER_LENGTH);
+				tgTier.addInterval(marker);
+				currentStart += MARKER_LENGTH;
 				
-				if(systemTier == SystemTierType.Orthography) {
-					switch(type) {
-					case GROUP:
-						for(IWord word:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							intervals.add(word.getWord());
+				if(type == ExportType.GROUP) {
+					String data = "";
+					if(systemTier != null) {
+						if(systemTier == SystemTierType.Orthography) {
+							data = word.getWord();
+						} else if(systemTier == SystemTierType.IPATarget) {
+							data = word.getPhoneticRepresentation(Form.Target).getTranscription();
+						} else if(systemTier == SystemTierType.IPAActual) {
+							data = word.getPhoneticRepresentation(Form.Actual).getTranscription();
 						}
-						intervals.add(MARKER_TEXT);
-						break;
-						
-					default:
-						for(IWord group:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							final String[] split = group.getWord().split("\\p{Space}");
-							int widx = 0;
-							for(String word:split) {
-								if(widx++ > 0) intervals.add(SPACER_TEXT);
-								intervals.add(word);
-							}
-						}
-						intervals.add(MARKER_TEXT);
-						break;
+					} else {
+						data = word.getDependentTier(tier).getTierValue();
 					}
-				} else if(systemTier == SystemTierType.IPATarget || systemTier == SystemTierType.IPAActual) {
-					switch(type) {
-					case GROUP:
-						for(IWord word:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-							intervals.add(phoRep.getTranscription());
+					
+					addGroup(tgTier, data, currentStart, currentStart + groupLength);
+					currentStart += groupLength;
+				} else if(type == ExportType.WORD) {
+					String data = "";
+					if(systemTier != null) {
+						if(systemTier == SystemTierType.Orthography) {
+							data = word.getWord();
+						} else if(systemTier == SystemTierType.IPATarget) {
+							data = word.getPhoneticRepresentation(Form.Target).getTranscription();
+						} else if(systemTier == SystemTierType.IPAActual) {
+							data = word.getPhoneticRepresentation(Form.Actual).getTranscription();
 						}
-						intervals.add(MARKER_TEXT);
-						break;
-						
-					case WORD:
-						for(IWord word:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-							final String group = phoRep.getTranscription();
-							final String[] words = group.split("\\p{Space}");
-							int widx = 0;
-							for(String w:words) {
-								if(widx++ > 0) intervals.add(SPACER_TEXT);
-								intervals.add(w);
-							}
-						}
-						intervals.add(MARKER_TEXT);
-						break;
-						
-					case SYLLABLE:
-						for(IWord word:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-							
-							final List<Phone> currentWord = new ArrayList<Phone>();
-							for(Phone p:phoRep.getPhones()) {
-								int widx = 0;
-								if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
-									if(currentWord.size() > 0) {
-										if(widx++ > 0) intervals.add(SPACER_TEXT);
-										final List<Syllable> sylls = Syllabifier.getSyllabification(currentWord);
-										for(Syllable syll:sylls) {
-											intervals.add(syll.toString());
-										}
-									}
-								}
-							}
-						}
-						intervals.add(MARKER_TEXT);
-						break;
-						
-					case PHONE:
-						for(IWord word:utt.getWords()) {
-							intervals.add(MARKER_TEXT);
-							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-							
-							final List<Phone> currentInterval = new ArrayList<Phone>();
-							for(Phone p:phoRep.getPhones()) {
-								if(p.getScType() == SyllableConstituentType.SyllableBoundaryMarker
-										|| p.getScType() == SyllableConstituentType.SyllableStressMarker) {
-									currentInterval.add(p);
-								} else {
-									String intervalText = "";
-									for(Phone ph:currentInterval) {
-										intervalText += ph.getPhoneString();
-									}
-									intervalText += p.getPhoneString();
-									intervals.add(intervalText);
-									currentInterval.clear();
-								}
-							}
-						}
-						intervals.add(MARKER_TEXT);
-						break;
+					} else {
+						data = word.getDependentTier(tier).getTierValue();
 					}
-				} else {
-					intervals.add("#");
-					intervals.add(utt.getTierString(tier));
-					intervals.add("#");
-				}
-			} else {
-				// user-defined tier
-				if(utt.getWordAlignedTierNames().contains(tier)) {
-					for(IWord word:utt.getWords()) {
-						intervals.add(MARKER_TEXT);
-						final IDependentTier depTier = word.getDependentTier(tier);
-						intervals.add(depTier.getTierValue());
+					
+					addWords(tgTier, data, currentStart, currentStart + groupLength);
+					currentStart += groupLength;
+				} else if(type == ExportType.SYLLABLE) {
+					if(systemTier == SystemTierType.IPATarget ||
+							systemTier == SystemTierType.IPAActual) {
+						final Form form = (systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual);
+						final IPhoneticRep phoRep = word.getPhoneticRepresentation(form);
+						
+						addSyllables(tgTier, phoRep, currentStart, currentStart + groupLength);
+						currentStart += groupLength;
 					}
-					intervals.add(MARKER_TEXT);
-				} else {
-					intervals.add("#");
-					intervals.add(utt.getTierString(tier));
-					intervals.add("#");
+				} else if(type == ExportType.PHONE) {
+					if(systemTier == SystemTierType.IPATarget ||
+							systemTier == SystemTierType.IPAActual) {
+						final Form form = (systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual);
+						final IPhoneticRep phoRep = word.getPhoneticRepresentation(form);
+						
+						addPhones(tgTier, phoRep, currentStart, currentStart + groupLength);
+						currentStart += groupLength;
+					}
 				}
 			}
-		}
-		
-		// create textgrid invervals
-		int markerCount = 0;
-		int spacerCount = 0;
-		for(String interval:intervals) {
-			if(interval.equals(MARKER_TEXT)) {
-				markerCount++;
-			} else if(interval.equals(SPACER_TEXT)) {
-				spacerCount++;
-			}
-		}
-		
-		final float tgLength = textgrid.getMax() - textgrid.getMin();
-		final float intervalsLength = tgLength - (MARKER_LENGTH * markerCount) - (SPACER_LENGTH * spacerCount);
-		final float intervalLength = intervalsLength / (intervals.size() - markerCount - spacerCount);
-		
-		float currentStart = textgrid.getMin();
-		for(String interval:intervals) {
-			float len = intervalLength;
-			if(interval.equals(MARKER_TEXT)) {
-				len = MARKER_LENGTH;
-			} else if(interval.equals(SPACER_TEXT)) {
-				len = SPACER_LENGTH;
-			}
-			final TextGridInterval tgInt = new TextGridInterval(interval, currentStart, currentStart + len);
-			tgTier.addInterval(tgInt);
-			currentStart += len;
+			final TextGridInterval marker = new TextGridInterval(MARKER_TEXT, currentStart, currentStart + MARKER_LENGTH);
+			tgTier.addInterval(marker);
 		}
 	}
+	
+	private void addGroup(TextGridTier tier, String groupData, float start, float end) {
+		final TextGridInterval interval = new TextGridInterval(groupData, start, end);
+		tier.addInterval(interval);
+	}
+	
+	private void addWords(TextGridTier tier, String groupData, float start, float end) {
+		final String[] words = groupData.split("\\p{Space}");
+		final float wordLength = (end - start) / words.length;
+		
+		float currentStart = start;
+		for(String word:words) {
+			
+			final TextGridInterval interval = new TextGridInterval(word, 
+					Math.max(start, currentStart), Math.min(end, currentStart + wordLength));
+			currentStart += wordLength;
+			
+			tier.addInterval(interval);
+		}
+	}
+	
+	private void addSyllables(TextGridTier tier, IPhoneticRep ipaGroup, float start, float end) {
+		// break into words first so we know where to add spaces
+		final List<List<Phone>> ipaWords = new ArrayList<List<Phone>>();
+		
+		List<Phone> currentWord = new ArrayList<Phone>();
+		for(Phone p:ipaGroup.getPhones()) {
+			if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
+				if(currentWord.size() > 0) {
+					ipaWords.add(currentWord);
+					currentWord = new ArrayList<Phone>();
+				}
+			} else {
+				currentWord.add(p);
+			}
+		}
+		if(currentWord.size() > 0) {
+			ipaWords.add(currentWord);
+		}
+		
+		// calculate length of each word
+		final float dataLength = (end - start);
+		final float wordLength = dataLength / ipaWords.size();
+		
+		// add intervals to tier
+		float currentStart = start;
+		for(int i = 0; i < ipaWords.size(); i++) {
+			if(i > 0) {
+				// add space to previous interval
+				final TextGridInterval lastInterval =
+						(tier.getNumberOfIntervals() > 0 ? tier.getIntervalAt(tier.getNumberOfIntervals()-1) : null);
+				if(lastInterval != null) {
+					lastInterval.setLabel(lastInterval.getLabel() + SPACER_TEXT);
+				}
+			}
+			
+			final List<Phone> word = ipaWords.get(i);
+			final List<Syllable> sylls = Syllabifier.getSyllabification(word);
+			
+			final float syllLength = wordLength / sylls.size();
+			for(Syllable syll:sylls) {
+				final TextGridInterval interval = new TextGridInterval(syll.toString(),
+						Math.max(start, currentStart), Math.min(end, currentStart + syllLength));
+				tier.addInterval(interval);
+				currentStart += syllLength;
+			}
+		}
+	}
+	
+	private void addPhones(TextGridTier tier, IPhoneticRep ipaGroup, float start, float end) {
+		// break into words first so we know where to add spaces
+		final List<List<Phone>> ipaWords = new ArrayList<List<Phone>>();
+		
+		List<Phone> currentWord = new ArrayList<Phone>();
+		for(Phone p:ipaGroup.getPhones()) {
+			if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
+				if(currentWord.size() > 0) {
+					ipaWords.add(currentWord);
+					currentWord = new ArrayList<Phone>();
+				}
+			} else {
+				currentWord.add(p);
+			}
+		}
+		if(currentWord.size() > 0) {
+			ipaWords.add(currentWord);
+		}
+		
+		// calculate length of each word
+		final float dataLength = (end - start);
+		final float wordLength = dataLength / ipaWords.size();
+		
+		// add intervals to tier
+		float currentStart = start;
+		for(int i = 0; i < ipaWords.size(); i++) {
+			if(i > 0) {
+				// add space to previous interval
+				final TextGridInterval lastInterval =
+						(tier.getNumberOfIntervals() > 0 ? tier.getIntervalAt(tier.getNumberOfIntervals()-1) : null);
+				if(lastInterval != null) {
+					lastInterval.setLabel(lastInterval.getLabel() + SPACER_TEXT);
+				}
+			}
+			
+			final List<Phone> word = ipaWords.get(i);
+			final List<Syllable> sylls = Syllabifier.getSyllabification(word);
+			
+			final float syllLength = wordLength / sylls.size();
+			float lastEnd = currentStart;
+			for(Syllable syll:sylls) {
+				final List<String> intervals = new ArrayList<String>();
+				Phone prevPhone = null;
+				for(Phone p:syll.getPhones()) {
+					if(p.getScType() == SyllableConstituentType.SyllableBoundaryMarker ||
+							p.getScType() == SyllableConstituentType.SyllableStressMarker) {
+						prevPhone = p;
+					} else {
+						String text = p.getPhoneString();
+						if(prevPhone != null) {
+							text = prevPhone.getPhoneString() + text;
+							prevPhone = null;
+						}
+						intervals.add(text);
+					}
+				}
+				
+				// add phone intervals
+				final float phoneLength = syllLength / intervals.size();
+				final float phoneMax = currentStart + syllLength;
+				for(String text:intervals) {
+					final TextGridInterval interval = new TextGridInterval(text, 
+							lastEnd, Math.min(phoneMax, currentStart + phoneLength));
+					tier.addInterval(interval);
+					currentStart += phoneLength;
+					lastEnd = currentStart;
+				}
+			}
+		}
+	}
+	
+	/*
+	 * Helper methods for adding tiers to TextGrids
+	 */
+	private void setupThreeIntervalTier(TextGrid textgrid, TextGridTier tier, String data) {
+		final float start = textgrid.getMin();
+		
+		float currentStart = start;
+		final TextGridInterval firstHash = new TextGridInterval(MARKER_TEXT, start, start+MARKER_LENGTH);
+		currentStart += MARKER_LENGTH;
+		
+		final float dataEnd = textgrid.getMax() - MARKER_LENGTH;
+		final TextGridInterval dataInterval = new TextGridInterval(data, currentStart, dataEnd);
+		currentStart = dataEnd;
+		
+		final TextGridInterval lastHash = new TextGridInterval(MARKER_TEXT, currentStart, textgrid.getMax());
+		
+		tier.addInterval(firstHash);
+		tier.addInterval(dataInterval);
+		tier.addInterval(lastHash);
+	}
+	
+//	public void addTierToTextGrid(IUtterance utt, String tier,  ExportType type,
+//			TextGrid textgrid, String tgName) {
+//		// create the new textgrid tier
+//		final TextGridTier tgTier = new TextGridTier(tgName, TextGridTierType.INTERVAL);
+//		textgrid.addTier(tgTier);
+//		
+//		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
+//		final List<String> intervals = new ArrayList<String>();
+//		
+//		// handle 'TIER' case here
+//		if(type == ExportType.TIER) {
+//			intervals.add("#");
+//			intervals.add(utt.getTierString(tier));
+//			intervals.add("#");
+//		} else {
+//			if(systemTier != null) {
+//				
+//				if(systemTier == SystemTierType.Orthography) {
+//					switch(type) {
+//					case GROUP:
+//						for(IWord word:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							intervals.add(word.getWord());
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//						
+//					default:
+//						for(IWord group:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							final String[] split = group.getWord().split("\\p{Space}");
+//							int widx = 0;
+//							for(String word:split) {
+//								if(widx++ > 0) intervals.add(SPACER_TEXT);
+//								intervals.add(word);
+//							}
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//					}
+//				} else if(systemTier == SystemTierType.IPATarget || systemTier == SystemTierType.IPAActual) {
+//					switch(type) {
+//					case GROUP:
+//						for(IWord word:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
+//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
+//							intervals.add(phoRep.getTranscription());
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//						
+//					case WORD:
+//						for(IWord word:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
+//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
+//							final String group = phoRep.getTranscription();
+//							final String[] words = group.split("\\p{Space}");
+//							int widx = 0;
+//							for(String w:words) {
+//								if(widx++ > 0) intervals.add(SPACER_TEXT);
+//								intervals.add(w);
+//							}
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//						
+//					case SYLLABLE:
+//						for(IWord word:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
+//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
+//							
+//							final List<Phone> currentWord = new ArrayList<Phone>();
+//							for(Phone p:phoRep.getPhones()) {
+//								int widx = 0;
+//								if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
+//									if(currentWord.size() > 0) {
+//										if(widx++ > 0) intervals.add(SPACER_TEXT);
+//										final List<Syllable> sylls = Syllabifier.getSyllabification(currentWord);
+//										for(Syllable syll:sylls) {
+//											intervals.add(syll.toString());
+//										}
+//									}
+//								}
+//							}
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//						
+//					case PHONE:
+//						for(IWord word:utt.getWords()) {
+//							intervals.add(MARKER_TEXT);
+//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
+//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
+//							
+//							final List<Phone> currentInterval = new ArrayList<Phone>();
+//							for(Phone p:phoRep.getPhones()) {
+//								if(p.getScType() == SyllableConstituentType.SyllableBoundaryMarker
+//										|| p.getScType() == SyllableConstituentType.SyllableStressMarker) {
+//									currentInterval.add(p);
+//								} else {
+//									String intervalText = "";
+//									for(Phone ph:currentInterval) {
+//										intervalText += ph.getPhoneString();
+//									}
+//									intervalText += p.getPhoneString();
+//									intervals.add(intervalText);
+//									currentInterval.clear();
+//								}
+//							}
+//						}
+//						intervals.add(MARKER_TEXT);
+//						break;
+//					}
+//				} else {
+//					intervals.add("#");
+//					intervals.add(utt.getTierString(tier));
+//					intervals.add("#");
+//				}
+//			} else {
+//				// user-defined tier
+//				if(utt.getWordAlignedTierNames().contains(tier)) {
+//					for(IWord word:utt.getWords()) {
+//						intervals.add(MARKER_TEXT);
+//						final IDependentTier depTier = word.getDependentTier(tier);
+//						intervals.add(depTier.getTierValue());
+//					}
+//					intervals.add(MARKER_TEXT);
+//				} else {
+//					intervals.add("#");
+//					intervals.add(utt.getTierString(tier));
+//					intervals.add("#");
+//				}
+//			}
+//		}
+//		
+//		// create textgrid invervals
+//		int markerCount = 0;
+//		int spacerCount = 0;
+//		for(String interval:intervals) {
+//			if(interval.equals(MARKER_TEXT)) {
+//				markerCount++;
+//			} else if(interval.equals(SPACER_TEXT)) {
+//				spacerCount++;
+//			}
+//		}
+//		
+//		final float tgLength = textgrid.getMax() - textgrid.getMin();
+//		final float intervalsLength = tgLength - (MARKER_LENGTH * markerCount) - (SPACER_LENGTH * spacerCount);
+//		final float intervalLength = intervalsLength / (intervals.size() - markerCount - spacerCount);
+//		
+//		float currentStart = textgrid.getMin();
+//		for(String interval:intervals) {
+//			float len = intervalLength;
+//			if(interval.equals(MARKER_TEXT)) {
+//				len = MARKER_LENGTH;
+//			} else if(interval.equals(SPACER_TEXT)) {
+//				len = SPACER_LENGTH;
+//			}
+//			final TextGridInterval tgInt = new TextGridInterval(interval, currentStart, currentStart + len);
+//			tgTier.addInterval(tgInt);
+//			currentStart += len;
+//		}
+//	}
 	
 	/**
 	 * Create an empty textgrid from the given record.

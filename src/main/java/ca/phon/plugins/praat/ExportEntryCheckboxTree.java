@@ -3,6 +3,7 @@ package ca.phon.plugins.praat;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import ca.phon.application.transcript.ITierOrderItem;
@@ -124,16 +125,23 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	public List<TextGridExportEntry> getSelectedExports() {
 		final List<TextGridExportEntry> retVal = new ArrayList<TextGridExportEntry>();
 		
-		final TreePath[] checkedPaths = getCheckingPaths();
 		
-		for(TreePath checkedPath:checkedPaths) {
-			if(checkedPath.getPathCount() == 3) {
-				final String tierName = checkedPath.getParentPath().getLastPathComponent().toString();
-				final ExportType type = (ExportType) ((CheckedTreeNode)checkedPath.getLastPathComponent()).getUserObject();
-				final String tgTier = tierName + ": " + type;
+		for(int i = 0; i < rootNode.getChildCount(); i++) {
+			final TreeNode tierNode = rootNode.getChildAt(i);
+			
+			for(int j = 0; j < tierNode.getChildCount(); j++) {
+				final TreeNode typeNode = tierNode.getChildAt(j);
 				
-				final TextGridExportEntry entry = new TextGridExportEntry(tierName, type, tgTier);
-				retVal.add(entry);
+				final TreePath tp = new TreePath(new Object[]{ rootNode, tierNode, typeNode });
+				if(getCheckingModel().isPathChecked(tp)) {
+					final String tierName = tierNode.toString();
+					final ExportType type = (ExportType) ((CheckedTreeNode)typeNode).getUserObject();
+					final String tgTier = tierName + ": " + type;
+					
+					final TextGridExportEntry entry = new TextGridExportEntry(tierName, type, tgTier);
+					retVal.add(entry);
+				}
+				
 			}
 		}
 		
