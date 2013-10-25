@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ca.phon.plugins.praat.textgrid;
+package ca.phon.textgrid;
 
 /**
  * An interval on a text grid tier.

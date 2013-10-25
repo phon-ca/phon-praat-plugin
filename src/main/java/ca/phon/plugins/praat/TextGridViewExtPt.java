@@ -5,7 +5,7 @@ import ca.phon.system.plugin.IPluginExtensionFactory;
 import ca.phon.system.plugin.IPluginExtensionPoint;
 import ca.phon.system.plugin.PhonPlugin;
 
-@PhonPlugin(name="Text Grid",version="0.1")
+@PhonPlugin(name="Text Grid",version="0.1",minPhonVersion="1.5.2")
 public class TextGridViewExtPt implements IPluginExtensionPoint<RecordEditorView> {
 
 	@Override

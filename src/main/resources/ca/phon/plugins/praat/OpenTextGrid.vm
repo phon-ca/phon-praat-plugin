@@ -1,0 +1,15 @@
+sound$ = "$soundFile"
+textGrid$ = "$tgFile"
+
+start = $interval.startValue / 1000.0
+end = $interval.endValue / 1000.0
+preserveTimes$ = "yes"
+
+Open long sound file... 'sound$'
+segment = Extract part... start end 'preserveTimes$'
+tg = Read from file... 'textGrid$'
+select tg
+
+select segment
+plus tg
+Edit

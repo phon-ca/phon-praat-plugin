@@ -6,6 +6,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
+import ca.phon.gui.action.PhonUIAction;
+import ca.phon.gui.recordeditor.RecordEditor;
 import ca.phon.system.logger.PhonLogger;
 import ca.phon.system.plugin.IPluginExtensionFactory;
 import ca.phon.system.plugin.IPluginExtensionPoint;
@@ -61,16 +63,18 @@ public class PraatMenuFilterExtPt implements IPluginExtensionPoint<IPluginMenuFi
 				pluginsMenu.addSeparator();
 			}
 			
-			PluginAction runScriptAct = new PluginAction("SendPraat");
-			runScriptAct.putArg("script", "Create Sound from formula... sine Mono 0 1 44100 sin (2*pi*100*x)");
-			runScriptAct.putArg("batchMode", false);
-			runScriptAct.putArg("output", new ByteArrayOutputStream());
-			runScriptAct.putValue(PluginAction.NAME, "Run Praat script...");
-			runScriptAct.putValue(PluginAction.SHORT_DESCRIPTION, "Execute a script in praat");
-			JMenuItem runScriptItem = new JMenuItem(runScriptAct);
-			pluginsMenu.add(runScriptItem);
-			
-			
+			if(owner instanceof RecordEditor) {
+				final RecordEditor editor = (RecordEditor)owner;
+				
+				pluginsMenu.add("-- TextGrid --").setEnabled(false);
+				
+				PluginAction genTgAct = new PluginAction("GenerateTextGrids");
+				genTgAct.putArg("editor", editor);
+				genTgAct.putValue(PluginAction.NAME, "Generate TextGrids");
+				genTgAct.putValue(PluginAction.SHORT_DESCRIPTION, "Generate/Export TextGrids for Session");
+				JMenuItem genTgItem = new JMenuItem(genTgAct);
+				pluginsMenu.add(genTgItem);
+			}
 		}
 		
 	}

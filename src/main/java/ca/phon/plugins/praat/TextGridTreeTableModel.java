@@ -19,9 +19,9 @@ package ca.phon.plugins.praat;
 
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
-import ca.phon.plugins.praat.textgrid.TextGrid;
-import ca.phon.plugins.praat.textgrid.TextGridInterval;
-import ca.phon.plugins.praat.textgrid.TextGridTier;
+import ca.phon.textgrid.TextGrid;
+import ca.phon.textgrid.TextGridInterval;
+import ca.phon.textgrid.TextGridTier;
 import ca.phon.util.Tuple;
 
 /**

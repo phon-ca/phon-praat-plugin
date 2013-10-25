@@ -2,7 +2,6 @@ package ca.phon.plugins.praat;
 
 import java.io.Serializable;
 
-import ca.phon.plugins.praat.TextGridExporter.ExportType;
 
 /**
  * Container for exporting a Phon tier to a TextGrid tier
@@ -14,7 +13,7 @@ public class TextGridExportEntry implements Serializable {
 
 	private String phonTier;
 	
-	private ExportType exportType;
+	private Segmentation exportType;
 	
 	private String textGridTier;
 	
@@ -22,7 +21,7 @@ public class TextGridExportEntry implements Serializable {
 		super();
 	}
 
-	public TextGridExportEntry(String phonTier, ExportType exportType,
+	public TextGridExportEntry(String phonTier, Segmentation exportType,
 			String textGridTier) {
 		super();
 		this.phonTier = phonTier;
@@ -38,11 +37,11 @@ public class TextGridExportEntry implements Serializable {
 		this.phonTier = phonTier;
 	}
 
-	public ExportType getExportType() {
+	public Segmentation getExportType() {
 		return exportType;
 	}
 
-	public void setExportType(ExportType exportType) {
+	public void setExportType(Segmentation exportType) {
 		this.exportType = exportType;
 	}
 

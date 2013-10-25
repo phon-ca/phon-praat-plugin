@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ca.phon.plugins.praat.textgrid;
+package ca.phon.textgrid;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,7 +99,7 @@ public class TextGridTier {
 
     /**
      * Add an interval/point to the list. The list is
-     * kept in-order.
+     * kept in-order..
      *
      * @param interval
      */
@@ -117,7 +117,7 @@ public class TextGridTier {
             throw new IllegalArgumentException("Interval overlaps");
         }
     }
-
+    
     /**
      * Remove an interval/point from the list.
      *

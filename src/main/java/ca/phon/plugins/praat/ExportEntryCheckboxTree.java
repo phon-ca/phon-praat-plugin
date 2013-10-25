@@ -11,8 +11,6 @@ import ca.phon.application.transcript.ITranscript;
 import ca.phon.gui.components.CheckedTreeNode;
 import ca.phon.gui.components.CheckedTreeNode.SelectionMode;
 import ca.phon.gui.recordeditor.SystemTierType;
-import ca.phon.plugins.praat.TextGridExporter.ExportType;
-import ca.phon.plugins.praat.TextGridExporter.ExportType;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 
 public class ExportEntryCheckboxTree extends CheckboxTree {
@@ -54,8 +52,8 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 			rootNode.add(tierNode);
 			
 			// setup export entries
-			for(ExportType type:ExportType.values()) {
-				if(type == ExportType.SYLLABLE || type == ExportType.PHONE) {
+			for(Segmentation type:Segmentation.values()) {
+				if(type == Segmentation.SYLLABLE || type == Segmentation.PHONE) {
 					final boolean isIPA = 
 							(systemTier == SystemTierType.IPATarget) || (systemTier == SystemTierType.IPAActual);
 					if(!isIPA) continue;
@@ -92,7 +90,7 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	 */
 	public CheckedTreeNode nodeForEntry(TextGridExportEntry entry) {
 		final String tierName = entry.getPhonTier();
-		final ExportType type = entry.getExportType();
+		final Segmentation type = entry.getExportType();
 		
 		// find tier
 		CheckedTreeNode tierNode = null;
@@ -135,7 +133,7 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 				final TreePath tp = new TreePath(new Object[]{ rootNode, tierNode, typeNode });
 				if(getCheckingModel().isPathChecked(tp)) {
 					final String tierName = tierNode.toString();
-					final ExportType type = (ExportType) ((CheckedTreeNode)typeNode).getUserObject();
+					final Segmentation type = (Segmentation) ((CheckedTreeNode)typeNode).getUserObject();
 					final String tgTier = tierName + ": " + type;
 					
 					final TextGridExportEntry entry = new TextGridExportEntry(tierName, type, tgTier);

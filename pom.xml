@@ -1,48 +1,45 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-textgrid-plugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  
+
   <repositories>
-        <repository>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-          <id>central</id>
-          <name>libs-release</name>
-          <url>https://www.phon.ca/artifacts/libs-release</url>
-        </repository>
-        <repository>
-          <snapshots />
-          <id>snapshots</id>
-          <name>libs-snapshot</name>
-          <url>https://www.phon.ca/artifacts/libs-snapshot</url>
-        </repository>
-      </repositories>
-      <pluginRepositories>
-        <pluginRepository>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-          <id>central</id>
-          <name>plugins-release</name>
-          <url>https://www.phon.ca/artifacts/plugins-release</url>
-        </pluginRepository>
-        <pluginRepository>
-          <snapshots />
-          <id>snapshots</id>
-          <name>plugins-snapshot</name>
-          <url>https://www.phon.ca/artifacts/plugins-snapshot</url>
-        </pluginRepository>
-      </pluginRepositories>
-      
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>libs-release</name>
+      <url>https://www.phon.ca/artifacts/libs-release</url>
+    </repository>
+    <repository>
+      <snapshots />
+      <id>snapshots</id>
+      <name>libs-snapshot</name>
+      <url>https://www.phon.ca/artifacts/libs-snapshot</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>plugins-release</name>
+      <url>https://www.phon.ca/artifacts/plugins-release</url>
+    </pluginRepository>
+    <pluginRepository>
+      <snapshots />
+      <id>snapshots</id>
+      <name>plugins-snapshot</name>
+      <url>https://www.phon.ca/artifacts/plugins-snapshot</url>
+    </pluginRepository>
+  </pluginRepositories>
+
   <dependencies>
-    <dependency>
-      <groupId>ca.phon</groupId>
-      <artifactId>jsendpraat</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency>
     <dependency>
       <groupId>org.swinglabs</groupId>
       <artifactId>swingx</artifactId>
@@ -58,25 +55,57 @@
       <artifactId>velocity</artifactId>
       <version>1.7</version>
     </dependency>
-  	<dependency>
-  		<groupId>ca.phon</groupId>
-  		<artifactId>phon</artifactId>
-  		<version>1.6.0</version>
-  	</dependency>
+    <dependency>
+      <groupId>ca.phon</groupId>
+      <artifactId>phon</artifactId>
+      <version>1.6.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>ca.phon</groupId>
+      <artifactId>jsendpraat</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
   </dependencies>
-  
+
   <build>
-  <plugins>
-		      <!-- Setup target/source settings for Java compilation -->
-		<plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-compiler-plugin</artifactId>
-		<version>2.3.2</version>
-		<configuration>
-		<source>1.6</source>
-		<target>1.6</target>
-		</configuration>
-		</plugin>
-		</plugins>
+    <plugins>
+      <!-- Setup target/source settings for Java compilation -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+              	<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+              </transformers>
+              <artifactSet>
+              	<excludes>
+              		<exclude>ca.phon:phon</exclude>
+              		<exclude>ca.phon:jsendpraat</exclude>
+              		<exclude>org.swinglabs:swingx</exclude>
+              		<exclude>it.cnr.imaa.essi:lablib-checkboxtree</exclude>
+              	</excludes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>

@@ -15,22 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ca.phon.plugins.praat.textgrid;
+package ca.phon.textgrid;
 
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.CLASS;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.HEADER_LINE_1;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.HEADER_LINE_2;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.INTERVALS;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.ITEM;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.MARK;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.NAME;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.POINTS;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.SIZE;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.TEXT;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.TIERS_EXISTS;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.TIME;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.XMAX;
-import static ca.phon.plugins.praat.textgrid.TextGridTokens.XMIN;
+import static ca.phon.textgrid.TextGridTokens.CLASS;
+import static ca.phon.textgrid.TextGridTokens.HEADER_LINE_1;
+import static ca.phon.textgrid.TextGridTokens.HEADER_LINE_2;
+import static ca.phon.textgrid.TextGridTokens.INTERVALS;
+import static ca.phon.textgrid.TextGridTokens.ITEM;
+import static ca.phon.textgrid.TextGridTokens.MARK;
+import static ca.phon.textgrid.TextGridTokens.NAME;
+import static ca.phon.textgrid.TextGridTokens.POINTS;
+import static ca.phon.textgrid.TextGridTokens.SIZE;
+import static ca.phon.textgrid.TextGridTokens.TEXT;
+import static ca.phon.textgrid.TextGridTokens.TIERS_EXISTS;
+import static ca.phon.textgrid.TextGridTokens.TIME;
+import static ca.phon.textgrid.TextGridTokens.XMAX;
+import static ca.phon.textgrid.TextGridTokens.XMIN;
 
 import java.io.BufferedWriter;
 import java.io.File;
