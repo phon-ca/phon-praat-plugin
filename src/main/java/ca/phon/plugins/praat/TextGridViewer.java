@@ -16,6 +16,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -29,47 +31,54 @@ import javax.swing.JToolBar;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.phon.application.transcript.IMedia;
-import ca.phon.gui.action.PhonUIAction;
-import ca.phon.gui.recordeditor.DelegateEditorAction;
-import ca.phon.gui.recordeditor.EditorAction;
-import ca.phon.gui.recordeditor.EditorEvent;
-import ca.phon.gui.recordeditor.EditorEventType;
-import ca.phon.gui.recordeditor.RecordEditorModel;
-import ca.phon.gui.recordeditor.SegmentPanel;
-import ca.phon.gui.recordeditor.SegmentPanelCalculator;
-import ca.phon.gui.recordeditor.SegmentPanelTier;
+import ca.phon.app.session.editor.DelegateEditorAction;
+import ca.phon.app.session.editor.EditorAction;
+import ca.phon.app.session.editor.EditorEvent;
+import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.SessionEditor;
+import ca.phon.app.session.editor.media.WaveformEditorView;
+import ca.phon.app.session.editor.media.WaveformViewCalculator;
+import ca.phon.app.session.editor.media.WaveformTier;
 import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.WavDisplay;
-import ca.phon.system.logger.PhonLogger;
+import ca.phon.session.MediaSegment;
+import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
-import ca.phon.util.iconManager.IconManager;
-import ca.phon.util.iconManager.IconSize;
+import ca.phon.ui.action.PhonUIAction;
+import ca.phon.util.icons.IconManager;
+import ca.phon.util.icons.IconSize;
 
 /**
  * Display a TextGrid as a vertical list of tiers.
  */
-public class TextGridViewer extends JPanel implements SegmentPanelTier {
+public class TextGridViewer extends JPanel implements WaveformTier {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(TextGridViewer.class.getName());
 	
 	private static final long serialVersionUID = -4777676504641976886L;
 	
 	private final static String OPEN_TEXTGRID_TEMPLATE = "ca/phon/plugins/praat/OpenTextGrid.vm";
+	private final static String FORMANTS_TEMPLATE = "ca/phon/plugins/praat/FormantListing.vm";
 	
 	private TextGrid tg;
 	
-	private SegmentPanelCalculator calculator;
+	private WaveformViewCalculator calculator;
 	
 	// parent panel
-	private SegmentPanel parent;
+	private WaveformEditorView parent;
 	
 	// toolbar buttons
 	private JCheckBox toggleViewerButton;
 	
 	private JButton openTextGridButton;
+	
+	// temporary 'formants' button
+	private JButton formantsButton;
 	
 	private JLayeredPane layeredPane;
 	
@@ -82,11 +91,14 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 	 */
 	private JButton playIntervalButton;
 	
-	public TextGridViewer() {
+	public TextGridViewer(WaveformEditorView parent) {
 		super();
 		setVisible(false);
 		setFocusable(true);
 		addFocusListener(focusListener);
+		
+		this.parent = parent;
+		this.calculator = parent.getCalculator();
 		
 		layeredPane = new JLayeredPane();
 		layeredPane.setLayout(null);
@@ -111,6 +123,17 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 		
 		playIntervalButton.setBounds(0, 0, 16, 16);
 		widgetPane.add(playIntervalButton);
+		
+		this.parent.addComponentListener(resizeListener);
+		
+		// setup editor actions
+		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
+		
+		// setup toolbar buttons
+		setupToolbar();
+		
+		update();
 	}
 	
 	public void setTextGrid(TextGrid tg) {
@@ -141,22 +164,9 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 			widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
 		}
 	}
-
+	
 	@Override
-	public JComponent createView(SegmentPanel parent, SegmentPanelCalculator calculator) {
-		this.parent = parent;
-		this.parent.addComponentListener(resizeListener);
-		this.calculator = calculator;
-		
-		// setup editor actions
-		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		parent.getModel().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
-		
-		// setup toolbar buttons
-		setupToolbar();
-		
-		update();
-		
+	public JComponent getTierComponent() {
 		return this;
 	}
 	
@@ -197,8 +207,17 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 		openTextGridButton = new JButton(openTextGridAct);
 		openTextGridButton.setVisible(false);
 		
+		final PhonUIAction formantsAct = new PhonUIAction(this, "showFormants");
+		formantsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display formants for selected interval");
+		formantsAct.putValue(PhonUIAction.NAME, "Formants");
+		formantsButton = new JButton(formantsAct);
+		formantsButton.setVisible(false);
+		formantsButton.setEnabled(false);
+		
 		toolbar.add(toggleViewerButton);
 		toolbar.add(openTextGridButton);
+		
+		toolbar.add(formantsButton);
 	}
 	
 	/**
@@ -206,11 +225,11 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 	 * 
 	 */
 	public File getAudioFile() {
-		final RecordEditorModel model = parent.getModel();
-		if(model == null) return null;
+		final SessionEditor editor = parent.getEditor();
+		if(editor == null) return null;
 		
 		File selectedMedia = 
-				MediaLocator.findMediaFile(model.getProject(), model.getSession());
+				MediaLocator.findMediaFile(editor.getProject(), editor.getSession());
 		if(selectedMedia == null) return null;
 		File audioFile = null;
 		
@@ -220,7 +239,7 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 			mediaName = mediaName.substring(0, lastDot);
 		}
 		if(!selectedMedia.isAbsolute()) selectedMedia = 
-			MediaLocator.findMediaFile(model.getSession().getMediaLocation(), model.getProject(), model.getSession().getCorpus());
+			MediaLocator.findMediaFile(editor.getSession().getMediaLocation(), editor.getProject(), editor.getSession().getCorpus());
 		
 		if(selectedMedia != null) {
 			File parentFile = selectedMedia.getParentFile();
@@ -238,12 +257,14 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 				getAudioFile();
 		if(mediaFile == null) return;
 
-		final RecordEditorModel model = parent.getModel();
-		final IMedia media = model.getRecord().getMedia();
-		if(media == null) return;
+		final SessionEditor model = parent.getEditor();
+		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
+		
+		if(segmentTier.numberOfGroups() == 0) return;
 
+		final MediaSegment media = segmentTier.getGroup(0);
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
+		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
 
 		final Map<String, Object> map = new HashMap<String, Object>();
 		map.put("soundFile", mediaFile.getAbsolutePath());
@@ -268,16 +289,54 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 				SendPraat.sendPraat(script);
 			}
 		} catch (IOException e) {
-			PhonLogger.severe(e.getMessage());
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+	}
+	
+	public void showFormants() {
+		File mediaFile =
+				getAudioFile();
+		if(mediaFile == null) return;
+
+		if(selectedComponent == null) return;
+		
+		final TextGridInterval interval = selectedComponent.getSelectedInterval();
+		
+		final Map<String, Object> map = new HashMap<String, Object>();
+		map.put("soundFile", mediaFile.getAbsolutePath());
+		map.put("interval", interval);
+		
+		final PraatScript ps = new PraatScript();
+		String script;
+		try {
+			script = ps.generateScript(FORMANTS_TEMPLATE, map);
+			
+			String errVal = SendPraat.sendPraat(script);
+			if(errVal != null) {
+				// try to open praat
+				SendPraat.openPraat();
+				// wait
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {}
+				
+				// try again
+				String val = SendPraat.sendPraat(script);
+//				String val = SendPraat.sendPraatInBatch(script);
+				if(val != null) {
+					LOGGER.info(val);
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 	
 	private void update() {
-		final RecordEditorModel model = parent.getModel();
+		final SessionEditor model = parent.getEditor();
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		tgManager.addTextGridListener(tgListener);
-		final TextGrid tg = tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
+		final TextGrid tg = tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
 		setTextGrid(tg);
 	}
 	
@@ -292,6 +351,7 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 			final boolean enabled = toggleViewerButton.isSelected();
 			TextGridViewer.this.setVisible(enabled);
 			openTextGridButton.setVisible(enabled);
+			formantsButton.setVisible(enabled);
 		}
 	};
 	
@@ -301,12 +361,12 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 		public void textGridEvent(TextGridEvent event) {
 			if(parent == null) return;
 			// check the event and see if it matches our current record
-			final RecordEditorModel model = parent.getModel();
-			if(model == null || model.getSession() == null || model.getRecord() == null) return;
+			final SessionEditor model = parent.getEditor();
+			if(model == null || model.getSession() == null || model.currentRecord() == null) return;
 			
 			final String currentCorpus = model.getSession().getCorpus();
-			final String currentSession = model.getSession().getID();
-			final String recordID = model.getRecord().getID();
+			final String currentSession = model.getSession().getName();
+			final String recordID = model.currentRecord().getUuid().toString();
 			
 			if( event.getCorpus().equals(currentCorpus) &&
 					event.getSession().equals(currentSession) &&
@@ -332,6 +392,8 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 			final TextGridTierComponent comp = selectedComponent;
 			selectedComponent = tierComp;
 			if(selectedComponent != null) {
+				formantsButton.setEnabled(true);
+
 				selectedComponent.setSelectionPainted(true);
 				
 				final TextGridInterval interval = selectedComponent.getSelectedInterval();
@@ -350,6 +412,8 @@ public class TextGridViewer extends JPanel implements SegmentPanelTier {
 					layeredPane.moveToFront(widgetPane);
 					requestFocus();
 				}
+			} else {
+				formantsButton.setEnabled(false);
 			}
 		}
 	};

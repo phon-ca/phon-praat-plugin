@@ -1,6 +1,6 @@
 package ca.phon.plugins.praat;
 
-import ca.phon.application.project.IPhonProject;
+import ca.phon.project.Project;
 
 /**
  * Event sent to TextGridListeners when a TextGrid file
@@ -17,7 +17,7 @@ public class TextGridEvent {
 	/**
 	 * Project
 	 */
-	private IPhonProject project;
+	private Project project;
 	
 	/**
 	 * Corpus
@@ -48,7 +48,7 @@ public class TextGridEvent {
 		super();
 	}
 
-	public TextGridEvent(IPhonProject project, String corpus, String session,
+	public TextGridEvent(Project project, String corpus, String session,
 			String recordID, TextGridManager manager, TextGridEventType type) {
 		super();
 		this.project = project;
@@ -67,11 +67,11 @@ public class TextGridEvent {
 		this.type = type;
 	}
 
-	public IPhonProject getProject() {
+	public Project getProject() {
 		return project;
 	}
 
-	public void setProject(IPhonProject project) {
+	public void setProject(Project project) {
 		this.project = project;
 	}
 

@@ -40,13 +40,16 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-
-import ca.phon.system.logger.PhonLogger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Write a text grid to an output stream.
  */
 public class TextGridWriter {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(TextGridWriter.class.getName());
 
     /* Writer */
     private PrintWriter writer;
@@ -73,8 +76,8 @@ public class TextGridWriter {
             writer = new PrintWriter(
                   new BufferedWriter(
                   new OutputStreamWriter(new FileOutputStream(file), encoding)));
-        } catch (IOException ex) {
-            PhonLogger.severe(TextGridWriter.class, ex.toString());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
         }
     }
 
@@ -89,8 +92,8 @@ public class TextGridWriter {
             writer = new PrintWriter(
                     new BufferedWriter(
                     new OutputStreamWriter(os, encoding)));
-        } catch (IOException ex) {
-            PhonLogger.severe(TextGridWriter.class, ex.toString());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
         }
     }
 

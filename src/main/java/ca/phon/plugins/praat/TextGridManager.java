@@ -2,12 +2,7 @@ package ca.phon.plugins.praat;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,15 +13,14 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ca.phon.application.PhonTask;
-import ca.phon.application.PhonWorker;
-import ca.phon.application.project.IPhonProject;
-import ca.phon.exceptions.ParserException;
 import ca.phon.plugins.praat.TextGridEvent.TextGridEventType;
-import ca.phon.system.logger.PhonLogger;
+import ca.phon.project.Project;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridReader;
 import ca.phon.textgrid.TextGridWriter;
+import ca.phon.worker.PhonTask;
+import ca.phon.worker.PhonTask.TaskStatus;
+import ca.phon.worker.PhonWorker;
 
 /**
  * Utility class for reading/writing TextGrid files
@@ -48,14 +42,14 @@ public class TextGridManager {
 	/**
 	 * Project we are managing
 	 */
-	private IPhonProject project;
+	private Project project;
 	
 	private List<TextGridListener> listeners = Collections.synchronizedList(new ArrayList<TextGridListener>());
 	
-	private static final Map<IPhonProject, TextGridManager> managers = 
-			Collections.synchronizedMap(new HashMap<IPhonProject, TextGridManager>());
+	private static final Map<Project, TextGridManager> managers = 
+			Collections.synchronizedMap(new HashMap<Project, TextGridManager>());
 	
-	public synchronized static TextGridManager getInstance(IPhonProject project) {
+	public synchronized static TextGridManager getInstance(Project project) {
 		TextGridManager retVal = managers.get(project);
 		if(retVal == null) {
 			retVal = new TextGridManager(project);
@@ -64,7 +58,7 @@ public class TextGridManager {
 		return retVal;
 	}
 	
-	private TextGridManager(IPhonProject project) {
+	private TextGridManager(Project project) {
 		super();
 		
 		this.project = project;
@@ -114,8 +108,7 @@ public class TextGridManager {
 			saveTextGrid(textgrid, tgPath);
 			retVal = true;
 		} catch (IOException e) {
-			e.printStackTrace();
-			PhonLogger.severe(e.getMessage());
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 		
 		return retVal;
@@ -157,7 +150,7 @@ public class TextGridManager {
 		TextGrid retVal;
 		try {
 			retVal = tgReader.readTextGrid();
-		} catch (ParserException e) {
+		} catch (ParseException e) {
 			throw new IOException(e);
 		}
 		tgReader.close();
@@ -176,7 +169,7 @@ public class TextGridManager {
 	 */
 	public String textGridPath(String corpus, String session, String recordId) {
 		final StringBuilder sb = new StringBuilder();
-		sb.append(project.getProjectLocation());
+		sb.append(project.getLocation());
 		sb.append(File.separator);
 		sb.append(TEXTGRID_FOLDER);
 		sb.append(File.separator);
@@ -199,17 +192,17 @@ public class TextGridManager {
 		if(!listeners.contains(listener)) {
 			listeners.add(listener);
 			
-			if(listeners.size() == 1) {
-				startWatcher();
-			}
+//			if(listeners.size() == 1) {
+//				startWatcher();
+//			}
 		}
 	}
 	
 	public void removeTextGridListener(TextGridListener listener) {
 		listeners.remove(listener);
-		if(listeners.size() == 0) {
-			watcher.shutdown();
-		}
+//		if(listeners.size() == 0) {
+//			watcher.shutdown();
+//		}
 	}
 
 	public List<TextGridListener> getTextGridListeners() {
@@ -222,92 +215,92 @@ public class TextGridManager {
 		}
 	}
 	
-	private WatchService watchService;
+//	private WatchService watchService;
+//	
+//	private void startWatcher() {
+//		try {
+//			watchService = FileSystems.getDefault().newWatchService();
+//			
+//			final Path dir = FileSystems.getDefault().getPath(project.getLocation(), TEXTGRID_FOLDER);
+//			final WatchKey key = dir.register(watchService, 
+//					StandardWatchEventKinds.ENTRY_CREATE,
+//					StandardWatchEventKinds.ENTRY_DELETE, 
+//					StandardWatchEventKinds.ENTRY_MODIFY);
+//			final PhonWorker worker = PhonWorker.createWorker();
+//			worker.setFinishWhenQueueEmpty(true);
+//			worker.invokeLater(watcher);
+//			worker.start();
+//			
+//		} catch (IOException e) {
+//			LOGGER.log(Level.SEVERE, e.getMessage(), e);
+//		}
+//	}
 	
-	private void startWatcher() {
-		try {
-			watchService = FileSystems.getDefault().newWatchService();
-			
-			final Path dir = FileSystems.getDefault().getPath(project.getProjectLocation(), TEXTGRID_FOLDER);
-			final WatchKey key = dir.register(watchService, 
-					StandardWatchEventKinds.ENTRY_CREATE,
-					StandardWatchEventKinds.ENTRY_DELETE, 
-					StandardWatchEventKinds.ENTRY_MODIFY);
-			final PhonWorker worker = PhonWorker.createWorker();
-			worker.setFinishWhenQueueEmpty(true);
-			worker.invokeLater(watcher);
-			worker.start();
-			
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getMessage(), e);
-		}
-	}
-	
-	private final PhonTask watcher = new PhonTask() {
-		
-		@Override
-		public void performTask() {
-			setStatus(TaskStatus.RUNNING);
-			
-			for(;;) {
-				if(super.isShutdown())
-					break;
-				
-				WatchKey key = null;
-				try {
-					key = watchService.take();
-				} catch (InterruptedException e) {
-					LOGGER.log(Level.SEVERE, e.getMessage(), e);
-					super.err = e;
-					setStatus(TaskStatus.ERROR);
-					return;
-				}
-				
-				if(key == null) continue;
-				
-				for(WatchEvent<?> evt:key.pollEvents()) {
-					final WatchEvent.Kind<?> kind = evt.kind();
-					if(kind == StandardWatchEventKinds.OVERFLOW
-							|| !(evt.context() instanceof Path)) {
-						continue;
-					}
-					
-					
-					final Path path = (Path)evt.context();
-					final String filename = path.getFileName().toString();
-					
-//					LOGGER.info(filename);
-					
-					final String regex = "([^_]+)_([^_]+)_(u[0-9]+)\\.TextGrid";
-					final Pattern pattern = Pattern.compile(regex);
-					final Matcher matcher = pattern.matcher(filename);
-					
-					if(matcher.matches()) {
-						final String corpus = matcher.group(1);
-						final String session = matcher.group(2);
-						final String recordID = matcher.group(3);
-						
-						TextGridEvent.TextGridEventType type = null;
-						if(kind == StandardWatchEventKinds.ENTRY_CREATE) 
-							type = TextGridEventType.TEXTGRID_ADDED;
-						else if(kind == StandardWatchEventKinds.ENTRY_DELETE)
-							type = TextGridEventType.TEXTGRID_REMOVED;
-						else
-							type = TextGridEventType.TEXTGRID_CHANGED;
-						
-						final TextGridEvent tgEvent = 
-								new TextGridEvent(project, corpus, session, recordID, TextGridManager.this, type);
-						fireTextGridEvent(tgEvent);
-					}
-					
-					boolean valid = key.reset();
-					if(!valid) {
-						break;
-					}
-				}
-			}
-			
-			setStatus(TaskStatus.FINISHED);
-		}
-	};
+//	private final PhonTask watcher = new PhonTask() {
+//		
+//		@Override
+//		public void performTask() {
+//			setStatus(TaskStatus.RUNNING);
+//			
+//			for(;;) {
+//				if(super.isShutdown())
+//					break;
+//				
+//				WatchKey key = null;
+//				try {
+//					key = watchService.take();
+//				} catch (InterruptedException e) {
+//					LOGGER.log(Level.SEVERE, e.getMessage(), e);
+//					super.err = e;
+//					setStatus(TaskStatus.ERROR);
+//					return;
+//				}
+//				
+//				if(key == null) continue;
+//				
+//				for(WatchEvent<?> evt:key.pollEvents()) {
+//					final WatchEvent.Kind<?> kind = evt.kind();
+//					if(kind == StandardWatchEventKinds.OVERFLOW
+//							|| !(evt.context() instanceof Path)) {
+//						continue;
+//					}
+//					
+//					
+//					final Path path = (Path)evt.context();
+//					final String filename = path.getFileName().toString();
+//					
+////					LOGGER.info(filename);
+//					
+//					final String regex = "([^_]+)_([^_]+)_(u[0-9]+)\\.TextGrid";
+//					final Pattern pattern = Pattern.compile(regex);
+//					final Matcher matcher = pattern.matcher(filename);
+//					
+//					if(matcher.matches()) {
+//						final String corpus = matcher.group(1);
+//						final String session = matcher.group(2);
+//						final String recordID = matcher.group(3);
+//						
+//						TextGridEvent.TextGridEventType type = null;
+//						if(kind == StandardWatchEventKinds.ENTRY_CREATE) 
+//							type = TextGridEventType.TEXTGRID_ADDED;
+//						else if(kind == StandardWatchEventKinds.ENTRY_DELETE)
+//							type = TextGridEventType.TEXTGRID_REMOVED;
+//						else
+//							type = TextGridEventType.TEXTGRID_CHANGED;
+//						
+//						final TextGridEvent tgEvent = 
+//								new TextGridEvent(project, corpus, session, recordID, TextGridManager.this, type);
+//						fireTextGridEvent(tgEvent);
+//					}
+//					
+//					boolean valid = key.reset();
+//					if(!valid) {
+//						break;
+//					}
+//				}
+//			}
+//			
+//			setStatus(TaskStatus.FINISHED);
+//		}
+//	};
 }

@@ -16,11 +16,11 @@ import java.awt.geom.Rectangle2D;
 import javax.swing.JComponent;
 import javax.swing.event.MouseInputAdapter;
 
-import ca.phon.gui.PhonGuiConstants;
-import ca.phon.gui.action.PhonUIAction;
-import ca.phon.gui.recordeditor.SegmentPanelCalculator;
+import ca.phon.app.session.editor.media.WaveformEditorViewCalculator;
+import ca.phon.app.session.editor.media.WaveformViewCalculator;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
+import ca.phon.ui.PhonGuiConstants;
 
 /**
  * Display a text grid tier.
@@ -32,12 +32,12 @@ public class TextGridTierComponent extends JComponent {
 
 	private TextGridTier tier;
 	
-	private SegmentPanelCalculator calculator;
+	private WaveformViewCalculator calculator;
 	
 	/**
 	 * Constructor
 	 */
-	public TextGridTierComponent(TextGridTier tier, SegmentPanelCalculator calculator) {
+	public TextGridTierComponent(TextGridTier tier, WaveformViewCalculator calculator) {
 		super();
 		this.tier = tier;
 		this.calculator = calculator;

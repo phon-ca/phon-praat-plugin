@@ -2,11 +2,11 @@ package ca.phon.plugins.praat;
 
 import java.util.Map;
 
-import ca.phon.application.project.IPhonProject;
-import ca.phon.application.transcript.ITranscript;
-import ca.phon.gui.recordeditor.RecordEditor;
-import ca.phon.system.plugin.IPluginEntryPoint;
-import ca.phon.system.plugin.PhonPlugin;
+import ca.phon.app.session.editor.SessionEditor;
+import ca.phon.plugin.IPluginEntryPoint;
+import ca.phon.plugin.PhonPlugin;
+import ca.phon.project.Project;
+import ca.phon.session.Session;
 
 @PhonPlugin(name="phon-textgrid-plugin",version="0.1",author="Greg J. Hedlund")
 public class GenerateTextGridsEP implements IPluginEntryPoint {
@@ -20,11 +20,11 @@ public class GenerateTextGridsEP implements IPluginEntryPoint {
 
 	@Override
 	public void pluginStart(Map<String, Object> arg0) {
-		final RecordEditor editor = (RecordEditor)arg0.get("editor");
+		final SessionEditor editor = (SessionEditor)arg0.get("editor");
 		if(editor == null) 
 			throw new NullPointerException(EP_NAME + ": editor");
-		final IPhonProject project = editor.getProject();
-		final ITranscript session = editor.getModel().getSession();
+		final Project project = editor.getProject();
+		final Session session = editor.getSession();
 		
 		final TextGridExportWizard wizard = new TextGridExportWizard(project, session);
 		wizard.setSize(500, 550);

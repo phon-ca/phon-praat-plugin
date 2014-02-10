@@ -27,15 +27,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JMenu;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
@@ -47,38 +52,35 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.jdesktop.swingx.JXTreeTable;
 
-import ca.phon.application.transcript.Form;
-import ca.phon.application.transcript.IMedia;
-import ca.phon.application.transcript.IPhoneticRep;
-import ca.phon.application.transcript.IWord;
-import ca.phon.application.transcript.MediaUnit;
-import ca.phon.exceptions.ParserException;
-import ca.phon.gui.CommonModuleFrame;
-import ca.phon.gui.DialogHeader;
-import ca.phon.gui.action.PhonActionEvent;
-import ca.phon.gui.action.PhonUIAction;
-import ca.phon.gui.recordeditor.DelegateEditorAction;
-import ca.phon.gui.recordeditor.EditorAction;
-import ca.phon.gui.recordeditor.EditorEvent;
-import ca.phon.gui.recordeditor.EditorEventType;
-import ca.phon.gui.recordeditor.RecordEditorModel;
-import ca.phon.gui.recordeditor.RecordEditorView;
-import ca.phon.gui.recordeditor.SystemTierType;
+import ca.phon.app.session.editor.DelegateEditorAction;
+import ca.phon.app.session.editor.EditorAction;
+import ca.phon.app.session.editor.EditorEvent;
+import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.EditorView;
+import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.phone.Phone;
-import ca.phon.system.logger.PhonLogger;
-import ca.phon.system.prefs.UserPrefManager;
+import ca.phon.session.MediaSegment;
+import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridReader;
 import ca.phon.textgrid.TextGridWriter;
+import ca.phon.ui.CommonModuleFrame;
+import ca.phon.ui.action.PhonActionEvent;
+import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.decorations.DialogHeader;
 
 /**
  * Display a table representing a textgrid for a record
  * and allow for Praat operations on the data.
  */
-public class TextGridPanel extends RecordEditorView {
+public class TextGridPanel extends EditorView {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(TextGridPanel.class.getName());
+	
+	private static final long serialVersionUID = 2535987323765660243L;
 
 	private final String VIEW_TITLE = "Text Grid";
 
@@ -92,10 +94,6 @@ public class TextGridPanel extends RecordEditorView {
 	
 	private JButton openTgButton;
 
-	/** Model
-	 */
-	private RecordEditorModel model;
-	
 	/**
 	 * Velocity templates
 	 */
@@ -104,10 +102,11 @@ public class TextGridPanel extends RecordEditorView {
 	/**
 	 * Constructor
 	 */
-	public TextGridPanel() {
-		super();
+	public TextGridPanel(SessionEditor editor) {
+		super(editor);
 		
 		init();
+		registerEvents();
 	}
 
 	private void init() {
@@ -148,24 +147,7 @@ public class TextGridPanel extends RecordEditorView {
 		add(scroller, BorderLayout.CENTER);
 
 	}
-
-	@Override
-	public void setModel(RecordEditorModel model) {
-		this.model = model;
-		registerEvents();
-		updatePanel();
-	}
-
-	@Override
-	public RecordEditorModel getModel() {
-		return this.model;
-	}
-
-	@Override
-	public String getTitle() {
-		return VIEW_TITLE;
-	}
-
+	
 	private void updatePanel() {
 		TextGrid tg = getTextGrid();
 		if(tg == null) return;
@@ -187,10 +169,11 @@ public class TextGridPanel extends RecordEditorView {
 
 	private TextGrid generateTextGrid() {
 		final TextGridExporter tgExporter = new TextGridExporter();
-		final TextGrid retVal = tgExporter.createEmptyTextGrid(model.getRecord());
+		final TextGrid retVal = tgExporter.createEmptyTextGrid(getEditor().currentRecord());
 
+		final SessionEditor model = getEditor();
 		// create some default tiers
-		tgExporter.setupTextGrid(model.getProject(), model.getRecord(), retVal);
+		tgExporter.setupTextGrid(model.getProject(), model.currentRecord(), retVal);
 		
 		// save text grid to file
 		saveTextGrid(retVal);
@@ -202,13 +185,15 @@ public class TextGridPanel extends RecordEditorView {
 	 * Look for the text grid in project resources.
 	 */
 	private TextGrid readTextGrid() {
-		final TextGridManager tgManager = TextGridManager.getInstance(getModel().getProject());
-		return tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
+		final SessionEditor model = getEditor();
+		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
+		return tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
 	}
 
 	private void saveTextGrid(TextGrid tg) {
-		final TextGridManager tgManager = TextGridManager.getInstance(getModel().getProject());
-		tgManager.saveTextGrid(tg, model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
+		final SessionEditor model = getEditor();
+		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
+		tgManager.saveTextGrid(tg, model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
 	}
 
 	/**
@@ -216,10 +201,9 @@ public class TextGridPanel extends RecordEditorView {
 	 * 
 	 */
 	public File getAudioFile() {
-		if(getModel() == null) return null;
-		
+		final SessionEditor model = getEditor();
 		File selectedMedia = 
-				MediaLocator.findMediaFile(getModel().getProject(), getModel().getSession());
+				MediaLocator.findMediaFile(model.getProject(), model.getSession());
 		if(selectedMedia == null) return null;
 		File audioFile = null;
 		
@@ -229,7 +213,7 @@ public class TextGridPanel extends RecordEditorView {
 			mediaName = mediaName.substring(0, lastDot);
 		}
 		if(!selectedMedia.isAbsolute()) selectedMedia = 
-			MediaLocator.findMediaFile(getModel().getSession().getMediaLocation(), getModel().getProject(), getModel().getSession().getCorpus());
+			MediaLocator.findMediaFile(model.getSession().getMediaLocation(), model.getProject(), model.getSession().getCorpus());
 		
 		if(selectedMedia != null) {
 			File parentFile = selectedMedia.getParentFile();
@@ -248,11 +232,13 @@ public class TextGridPanel extends RecordEditorView {
 				getAudioFile();
 		if(mediaFile == null) return;
 
-		final IMedia media = getModel().getRecord().getMedia();
-		if(media == null) return;
+		final SessionEditor model = getEditor();
+		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
+		if(segmentTier.numberOfGroups() == 0) return;
+		final MediaSegment media = segmentTier.getGroup(0);
 
-		final TextGridManager tgManager = TextGridManager.getInstance(getModel().getProject());
-		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getID(), model.getRecord().getID());
+		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
+		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
 
 		final Map<String, Object> map = new HashMap<String, Object>();
 		map.put("soundFile", mediaFile.getAbsolutePath());
@@ -277,8 +263,7 @@ public class TextGridPanel extends RecordEditorView {
 				SendPraat.sendPraat(script);
 			}
 		} catch (IOException e) {
-			PhonLogger.severe(e.getMessage());
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 
@@ -287,7 +272,8 @@ public class TextGridPanel extends RecordEditorView {
 	}
 	
 	public void generateTextGrids() {
-		final TextGridExportWizard wizard = new TextGridExportWizard(getModel().getProject(), getModel().getSession());
+		final SessionEditor model = getEditor();
+		final TextGridExportWizard wizard = new TextGridExportWizard(model.getProject(), model.getSession());
 		wizard.pack();
 		wizard.setLocationRelativeTo(this);
 		wizard.setVisible(true);
@@ -302,6 +288,7 @@ public class TextGridPanel extends RecordEditorView {
 		final DialogHeader header = new DialogHeader("TextGrid Settings", "Setup defaults for the TextGrid plug-in");
 		dialog.add(header, BorderLayout.NORTH);
 		
+		final SessionEditor model = getEditor();
 		final ExportEntryCheckboxTree checkboxTree = new ExportEntryCheckboxTree(model.getSession());
 		final TextGridExporter tgExporter = new TextGridExporter();
 		final List<TextGridExportEntry> exports = tgExporter.getExports(model.getProject());
@@ -338,12 +325,28 @@ public class TextGridPanel extends RecordEditorView {
 	 */
 	private void registerEvents() {
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		model.registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
+		getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
 	}
 
 	public void onRecordChanged(EditorEvent evt) {
 		// update on any change to the record
 		updatePanel();
+	}
+
+	@Override
+	public String getName() {
+		return VIEW_TITLE;
+	}
+
+	@Override
+	public ImageIcon getIcon() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public JMenu getMenu() {
+		return null;
 	}
 	
 }

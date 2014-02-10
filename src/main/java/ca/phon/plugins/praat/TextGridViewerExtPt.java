@@ -1,28 +1,29 @@
 package ca.phon.plugins.praat;
 
-import ca.phon.gui.recordeditor.SegmentPanelTier;
-import ca.phon.system.plugin.IPluginExtensionFactory;
-import ca.phon.system.plugin.IPluginExtensionPoint;
-import ca.phon.system.plugin.PhonPlugin;
+import ca.phon.app.session.editor.media.WaveformEditorView;
+import ca.phon.app.session.editor.media.WaveformTier;
+import ca.phon.plugin.IPluginExtensionFactory;
+import ca.phon.plugin.IPluginExtensionPoint;
 
-@PhonPlugin(name="Text Grid",version="0.1",minPhonVersion="1.6.2")
-public class TextGridViewerExtPt implements IPluginExtensionPoint<SegmentPanelTier> {
+@ca.phon.plugin.PhonPlugin(name="Text Grid",version="0.1",minPhonVersion="1.6.2")
+public class TextGridViewerExtPt implements IPluginExtensionPoint<WaveformTier> {
 
 	@Override
 	public Class<?> getExtensionType() {
-		return SegmentPanelTier.class;
+		return WaveformTier.class;
 	}
 
 	@Override
-	public IPluginExtensionFactory<SegmentPanelTier> getFactory() {
+	public IPluginExtensionFactory<WaveformTier> getFactory() {
 		return new TextGridViewerFactory();
 	}
 
-	private class TextGridViewerFactory implements IPluginExtensionFactory<SegmentPanelTier> {
+	private class TextGridViewerFactory implements IPluginExtensionFactory<WaveformTier> {
 
 		@Override
-		public SegmentPanelTier createObject(Object... arg0) {
-			return new TextGridViewer();
+		public WaveformTier createObject(Object... arg0) {
+			final WaveformEditorView parent = WaveformEditorView.class.cast(arg0[0]);
+			return new TextGridViewer(parent);
 		}
 		
 	}

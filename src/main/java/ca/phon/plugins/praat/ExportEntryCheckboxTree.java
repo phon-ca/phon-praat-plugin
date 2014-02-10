@@ -6,11 +6,10 @@ import java.util.List;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import ca.phon.application.transcript.ITierOrderItem;
-import ca.phon.application.transcript.ITranscript;
-import ca.phon.gui.components.CheckedTreeNode;
-import ca.phon.gui.components.CheckedTreeNode.SelectionMode;
-import ca.phon.gui.recordeditor.SystemTierType;
+import ca.phon.session.Session;
+import ca.phon.session.SystemTierType;
+import ca.phon.session.TierViewItem;
+import ca.phon.ui.CheckedTreeNode;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 
 public class ExportEntryCheckboxTree extends CheckboxTree {
@@ -22,9 +21,9 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	 */
 	private CheckedTreeNode rootNode;
 	
-	private final ITranscript session;
+	private final Session session;
 	
-	public ExportEntryCheckboxTree(ITranscript session) {
+	public ExportEntryCheckboxTree(Session session) {
 		super(new CheckedTreeNode());
 		
 		rootNode = (CheckedTreeNode)super.getModel().getRoot();
@@ -40,9 +39,9 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	}
 	
 	private void createTree() {
-		final List<ITierOrderItem> tierOrder = session.getTierView();
+		final List<TierViewItem> tierOrder = session.getTierView();
 		
-		for(ITierOrderItem tierView:tierOrder) {
+		for(TierViewItem tierView:tierOrder) {
 			if(!tierView.isVisible()) continue;
 			
 			final String tierName = tierView.getTierName();

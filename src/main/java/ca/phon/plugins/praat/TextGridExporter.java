@@ -12,25 +12,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import ca.phon.application.IPhonFactory;
-import ca.phon.application.project.IPhonProject;
-import ca.phon.application.transcript.Form;
-import ca.phon.application.transcript.IDependentTier;
-import ca.phon.application.transcript.IMedia;
-import ca.phon.application.transcript.IPhoneticRep;
-import ca.phon.application.transcript.ITranscript;
-import ca.phon.application.transcript.IUtterance;
-import ca.phon.application.transcript.IWord;
-import ca.phon.application.transcript.MediaUnit;
-import ca.phon.application.transcript.UtteranceFilter;
-import ca.phon.engines.syllabifier.Syllabifier;
-import ca.phon.gui.recordeditor.SystemTierType;
+import ca.phon.ipa.IPAElement;
+import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.phone.Phone;
-import ca.phon.syllable.Syllable;
+import ca.phon.project.Project;
+import ca.phon.session.Group;
+import ca.phon.session.MediaSegment;
+import ca.phon.session.MediaUnit;
+import ca.phon.session.Record;
+import ca.phon.session.RecordFilter;
+import ca.phon.session.Session;
+import ca.phon.session.SystemTierType;
+import ca.phon.session.Tier;
 import ca.phon.syllable.SyllableConstituentType;
-import ca.phon.system.logger.PhonLogger;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
@@ -43,6 +40,9 @@ import ca.phon.textgrid.TextGridWriter;
  * 
  */
 public class TextGridExporter {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(TextGridExporter.class.getName());
 	
 	/** Default hash length in ms */
 	public final static float MARKER_LENGTH = 0.1f;
@@ -67,7 +67,7 @@ public class TextGridExporter {
 	 * @param textgrid
 	 * @param entry
 	 */
-	public void addTierToTextGrid(IUtterance utt, TextGrid textgrid, TextGridExportEntry entry) {
+	public void addTierToTextGrid(Record utt, TextGrid textgrid, TextGridExportEntry entry) {
 		addTierToTextGrid(utt, entry.getPhonTier(), entry.getExportType(), textgrid, entry.getTextGridTier());
 	}
 	
@@ -81,7 +81,7 @@ public class TextGridExporter {
 	 * @param textgrid
 	 * @param tgName
 	 */
-	public void addTierToTextGrid(IUtterance utt, String tier, Segmentation type,
+	public void addTierToTextGrid(Record record, String tier, Segmentation type,
 			TextGrid textgrid, String tgName) {
 		// create the new textgrid tier
 		final TextGridTier tgTier = new TextGridTier(tgName, TextGridTierType.INTERVAL);
@@ -91,42 +91,44 @@ public class TextGridExporter {
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
 		
 		// calculate some values for interval times
-		final int numHashes = utt.getWords().size() + 1;
+		final int numHashes = record.numberOfGroups() + 1;
 		final float totalTime = textgrid.getMax() - textgrid.getMin();
 		final float hashLength = MARKER_LENGTH * numHashes;
 		final float dataLength = totalTime - hashLength;
-		final float groupLength = dataLength / utt.getWords().size();
+		final float groupLength = dataLength / record.numberOfGroups();
 		
 		// if the exportType is TIER, we create a 3-interval tier
 		// this takes care of all flat tiers
 		if(type == Segmentation.TIER) {
-			setupThreeIntervalTier(textgrid, tgTier, utt.getTierString(tier));
+			setupThreeIntervalTier(textgrid, tgTier, record.getTier(tier, String.class).toString());
 		} else {
 			float currentStart = textgrid.getMin();
 			float dataEnd = textgrid.getMax() - MARKER_LENGTH;
 			
-			final List<IWord> words = utt.getWords();
-			for(int i = 0; i < words.size(); i++) {
+//			final List<IWord> words = utt.getWords();
+			for(int i = 0; i < record.numberOfGroups(); i++) {
+				final Group group = record.getGroup(i);
+				
 				// add group marker
 				final TextGridInterval marker = new TextGridInterval(MARKER_TEXT, currentStart, currentStart + MARKER_LENGTH);
 				tgTier.addInterval(marker);
 				currentStart += MARKER_LENGTH;
 				
-				final IWord word = words.get(i);
+//				final IWord word = words.get(i);
 				final float groupStart = currentStart;
-				final float groupEnd = (i == words.size() - 1 ? dataEnd : groupStart + groupLength);
+				final float groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
 				if(type == Segmentation.GROUP) {
 					String data = "";
 					if(systemTier != null) {
 						if(systemTier == SystemTierType.Orthography) {
-							data = word.getWord();
+							data = group.getOrthography().toString();
 						} else if(systemTier == SystemTierType.IPATarget) {
-							data = word.getPhoneticRepresentation(Form.Target).getTranscription();
+							data = group.getIPATarget().toString();
 						} else if(systemTier == SystemTierType.IPAActual) {
-							data = word.getPhoneticRepresentation(Form.Actual).getTranscription();
+							data = group.getIPAActual().toString();
 						}
 					} else {
-						data = word.getDependentTier(tier).getTierValue();
+						data = group.getTier(tier).toString();
 					}
 					
 					addGroup(tgTier, data, currentStart, groupEnd);
@@ -135,14 +137,14 @@ public class TextGridExporter {
 					String data = "";
 					if(systemTier != null) {
 						if(systemTier == SystemTierType.Orthography) {
-							data = word.getWord();
+							data = group.getOrthography().toString();
 						} else if(systemTier == SystemTierType.IPATarget) {
-							data = word.getPhoneticRepresentation(Form.Target).getTranscription();
+							data = group.getIPATarget().toString();
 						} else if(systemTier == SystemTierType.IPAActual) {
-							data = word.getPhoneticRepresentation(Form.Actual).getTranscription();
+							data = group.getIPAActual().toString();
 						}
 					} else {
-						data = word.getDependentTier(tier).getTierValue();
+						data = group.getTier(tier, String.class);
 					}
 					
 					addWords(tgTier, data, currentStart, groupEnd);
@@ -150,19 +152,13 @@ public class TextGridExporter {
 				} else if(type == Segmentation.SYLLABLE) {
 					if(systemTier == SystemTierType.IPATarget ||
 							systemTier == SystemTierType.IPAActual) {
-						final Form form = (systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual);
-						final IPhoneticRep phoRep = word.getPhoneticRepresentation(form);
-						
-						addSyllables(tgTier, phoRep, currentStart, groupEnd);
+						addSyllables(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
 						currentStart = groupEnd;
 					}
 				} else if(type == Segmentation.PHONE) {
 					if(systemTier == SystemTierType.IPATarget ||
 							systemTier == SystemTierType.IPAActual) {
-						final Form form = (systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual);
-						final IPhoneticRep phoRep = word.getPhoneticRepresentation(form);
-						
-						addPhones(tgTier, phoRep, currentStart, groupEnd);
+						addPhones(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
 						currentStart = groupEnd;
 					}
 				}
@@ -193,24 +189,8 @@ public class TextGridExporter {
 		}
 	}
 	
-	private void addSyllables(TextGridTier tier, IPhoneticRep ipaGroup, float start, float end) {
-		// break into words first so we know where to add spaces
-		final List<List<Phone>> ipaWords = new ArrayList<List<Phone>>();
-		
-		List<Phone> currentWord = new ArrayList<Phone>();
-		for(Phone p:ipaGroup.getPhones()) {
-			if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
-				if(currentWord.size() > 0) {
-					ipaWords.add(currentWord);
-					currentWord = new ArrayList<Phone>();
-				}
-			} else {
-				currentWord.add(p);
-			}
-		}
-		if(currentWord.size() > 0) {
-			ipaWords.add(currentWord);
-		}
+	private void addSyllables(TextGridTier tier, IPATranscript ipaGroup, float start, float end) {
+		final List<IPATranscript> ipaWords = ipaGroup.words();
 		
 		// calculate length of each word
 		final float dataLength = (end - start);
@@ -228,15 +208,15 @@ public class TextGridExporter {
 				}
 			}
 			
-			final List<Phone> word = ipaWords.get(i);
-			final List<Syllable> sylls = Syllabifier.getSyllabification(word);
+			final IPATranscript word = ipaWords.get(i);
+			final List<IPATranscript> sylls = word.syllables();
 			
 			final float wordStart = currentStart;
 			final float wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
 			final float syllLength = wordLength / sylls.size();
 			
 			for(int j = 0; j < sylls.size(); j++) {
-				final Syllable syll = sylls.get(j);
+				final IPATranscript syll = sylls.get(j);
 				float intEnd = (j == sylls.size() - 1 ? wordEnd : currentStart + syllLength);
 				final TextGridInterval interval = new TextGridInterval(syll.toString(),
 						currentStart, intEnd);
@@ -246,24 +226,8 @@ public class TextGridExporter {
 		}
 	}
 	
-	private void addPhones(TextGridTier tier, IPhoneticRep ipaGroup, float start, float end) {
-		// break into words first so we know where to add spaces
-		final List<List<Phone>> ipaWords = new ArrayList<List<Phone>>();
-		
-		List<Phone> currentWord = new ArrayList<Phone>();
-		for(Phone p:ipaGroup.getPhones()) {
-			if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
-				if(currentWord.size() > 0) {
-					ipaWords.add(currentWord);
-					currentWord = new ArrayList<Phone>();
-				}
-			} else {
-				currentWord.add(p);
-			}
-		}
-		if(currentWord.size() > 0) {
-			ipaWords.add(currentWord);
-		}
+	private void addPhones(TextGridTier tier, IPATranscript ipaGroup, float start, float end) {
+		final List<IPATranscript> ipaWords = ipaGroup.words();
 		
 		// calculate length of each word
 		final float dataLength = (end - start);
@@ -281,28 +245,28 @@ public class TextGridExporter {
 				}
 			}
 			
-			final List<Phone> word = ipaWords.get(i);
-			final List<Syllable> sylls = Syllabifier.getSyllabification(word);
+			final IPATranscript word = ipaWords.get(i);
+			final List<IPATranscript> sylls = word.syllables();
 			
 			final float wordStart = currentStart;
 			final float wordEnd = (i == ipaWords.size() - 1 ? end : currentStart + wordLength);
 			final float syllLength = wordLength / sylls.size();
 			
 			for(int j = 0; j < sylls.size(); j++) {
-				final Syllable syll = sylls.get(j);
+				final IPATranscript syll = sylls.get(j);
 				final float syllStart = currentStart;
 				final float syllEnd = (j == sylls.size() - 1 ? wordEnd: syllStart + syllLength);
 				
 				final List<String> intervals = new ArrayList<String>();
-				Phone prevPhone = null;
-				for(Phone p:syll.getPhones()) {
-					if(p.getScType() == SyllableConstituentType.SyllableBoundaryMarker ||
-							p.getScType() == SyllableConstituentType.SyllableStressMarker) {
+				IPAElement prevPhone = null;
+				for(IPAElement p:syll) {
+					if(p.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER ||
+							p.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
 						prevPhone = p;
 					} else {
-						String text = p.getPhoneString();
+						String text = p.toString();
 						if(prevPhone != null) {
-							text = prevPhone.getPhoneString() + text;
+							text = prevPhone.toString() + text;
 							prevPhone = null;
 						}
 						intervals.add(text);
@@ -519,10 +483,11 @@ public class TextGridExporter {
 	 * 
 	 * @param utt
 	 */
-	public TextGrid createEmptyTextGrid(IUtterance utt) {
+	public TextGrid createEmptyTextGrid(Record utt) {
 		final TextGrid retVal = new TextGrid();
-		final IMedia media = utt.getMedia();
-
+		final Tier<MediaSegment> segmentTier = utt.getSegment();
+		final MediaSegment media = segmentTier.getGroup(0);
+		
 		if(media != null) {
 			float startTime = media.getStartValue();
 			if(media.getUnitType() == MediaUnit.Millisecond)
@@ -548,7 +513,7 @@ public class TextGridExporter {
 	 * 
 	 * @throws IOException
 	 */
-	public void exportTextGrids(ITranscript session, UtteranceFilter recordFilter, List<TextGridExportEntry> exports, String outputFolder) 
+	public void exportTextGrids(Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, String outputFolder) 
 		throws IOException {
 		final File folder = new File(outputFolder);
 		if(!folder.exists()) {
@@ -558,16 +523,16 @@ public class TextGridExporter {
 			throw new IllegalArgumentException("Specified path is not a folder: " + outputFolder);
 		}
 		
-		for(int i = 0; i < session.getNumberOfUtterances(); i++) {
-			final IUtterance utt = session.getUtterance(i);
-			if(recordFilter.checkUtterance(utt)) {
+		for(int i = 0; i < session.getRecordCount(); i++) {
+			final Record utt = session.getRecord(i);
+			if(recordFilter.checkRecord(utt)) {
 				// export text grid
 				final TextGrid tg = new TextGrid();
 				setupTextGrid(utt, tg, exports);
 				
 				// save text grid to file
 				final String tgFilename = 
-						utt.getID() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "") + ".TextGrid";
+						utt.getUuid().toString() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "") + ".TextGrid";
 				final File tgFile = new File(folder, tgFilename);
 				
 				TextGridManager.saveTextGrid(tg, tgFile.getAbsolutePath());
@@ -575,14 +540,14 @@ public class TextGridExporter {
 		}
 	}
 	
-	public void exportTextGrids(IPhonProject project, ITranscript session, UtteranceFilter recordFilter, List<TextGridExportEntry> exports, boolean overwrite) 
+	public void exportTextGrids(Project project, Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, boolean overwrite) 
 		throws IOException {
 		final TextGridManager tgManager = TextGridManager.getInstance(project);
 		
-		for(int i = 0; i < session.getNumberOfUtterances(); i++) {
-			final IUtterance utt = session.getUtterance(i);
-			if(recordFilter.checkUtterance(utt)) {
-				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getID(), utt.getID());
+		for(int i = 0; i < session.getRecordCount(); i++) {
+			final Record utt = session.getRecord(i);
+			if(recordFilter.checkRecord(utt)) {
+				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getName(), utt.getUuid().toString());
 				if(tg != null && !overwrite) {
 					continue;
 				}
@@ -591,7 +556,7 @@ public class TextGridExporter {
 				tg = createEmptyTextGrid(utt);
 				setupTextGrid(utt, tg, exports);
 				
-				tgManager.saveTextGrid(tg, session.getCorpus(), session.getID(), utt.getID());
+				tgManager.saveTextGrid(tg, session.getCorpus(), session.getName(), utt.getUuid().toString());
 			}
 		}
 	}
@@ -600,7 +565,7 @@ public class TextGridExporter {
 	 * Get the location of the audio file.
 	 * 
 	 */
-	public File getAudioFile(IPhonProject project, ITranscript session) {
+	public File getAudioFile(Project project, Session session) {
 		File selectedMedia = 
 				MediaLocator.findMediaFile(project, session);
 		if(selectedMedia == null) return null;
@@ -625,7 +590,7 @@ public class TextGridExporter {
 		return audioFile;
 	}
 	
-	public void exportTextGrids(IPhonProject project, ITranscript session, UtteranceFilter recordFilter, List<TextGridExportEntry> exports, 
+	public void exportTextGrids(Project project, Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, 
 			String outputFolder, boolean copyExisting) 
 			throws IOException {
 		final TextGridManager tgManager = TextGridManager.getInstance(project);
@@ -638,10 +603,10 @@ public class TextGridExporter {
 			throw new IllegalArgumentException("Specified path is not a folder: " + outputFolder);
 		}
 		
-		for(int i = 0; i < session.getNumberOfUtterances(); i++) {
-			final IUtterance utt = session.getUtterance(i);
-			if(recordFilter.checkUtterance(utt)) {
-				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getID(), utt.getID());
+		for(int i = 0; i < session.getRecordCount(); i++) {
+			final Record utt = session.getRecord(i);
+			if(recordFilter.checkRecord(utt)) {
+				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getName(), utt.getUuid().toString());
 				
 				// export text grid
 				if(tg == null || (tg != null && !copyExisting)) {
@@ -650,18 +615,19 @@ public class TextGridExporter {
 				}
 				
 				// save text grid to file
-				final String tgPrefix = utt.getID() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "");
+				final String tgPrefix = utt.getUuid().toString() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "");
 				final String tgFilename = tgPrefix + ".TextGrid";
 				final File tgFile = new File(folder, tgFilename);
 				
 				final PraatScript ps = new PraatScript();
-				final Map<String, Object> map = new HashMap<>();
+				final Map<String, Object> map = new HashMap<String, Object>();
 				File mediaFile =
 						getAudioFile(project, session);
 				if(mediaFile == null) continue;
 
-				final IMedia media = utt.getMedia();
-				if(media == null) continue;
+				final Tier<MediaSegment> mediaTier = utt.getSegment();
+				if(mediaTier.numberOfGroups()  == 0) continue;
+				final MediaSegment media = mediaTier.getGroup(0);
 				
 				map.put("soundFile", mediaFile.getAbsolutePath());
 				map.put("tgFile", tgFilename);
@@ -686,12 +652,12 @@ public class TextGridExporter {
 	 * @param utt
 	 * @param textgrid
 	 */
-	public void setupTextGrid(IPhonProject project, IUtterance utt, TextGrid textgrid) {
+	public void setupTextGrid(Project project, Record utt, TextGrid textgrid) {
 		final List<TextGridExportEntry> exports = getExports(project);
 		setupTextGrid(utt, textgrid, exports);
 	}
 	
-	public void setupTextGrid(IUtterance utt, TextGrid textgrid, List<TextGridExportEntry> exports) {
+	public void setupTextGrid(Record utt, TextGrid textgrid, List<TextGridExportEntry> exports) {
 		for(TextGridExportEntry entry:exports) {
 			addTierToTextGrid(utt, textgrid, entry);
 		}
@@ -706,21 +672,21 @@ public class TextGridExporter {
 		final List<TextGridExportEntry> retVal = new ArrayList<TextGridExportEntry>();
 		
 		// add orthography tiers
-		final TextGridExportEntry ortho1 = new TextGridExportEntry(SystemTierType.Orthography.getTierName(), Segmentation.TIER, 
-				SystemTierType.Orthography.getTierName() + ": " + Segmentation.TIER.toString());
-		final TextGridExportEntry ortho2 = new TextGridExportEntry(SystemTierType.Orthography.getTierName(), Segmentation.GROUP, 
-				SystemTierType.Orthography.getTierName() + ": " + Segmentation.GROUP.toString());
-		final TextGridExportEntry ortho3 = new TextGridExportEntry(SystemTierType.Orthography.getTierName(), Segmentation.WORD, 
-				SystemTierType.Orthography.getTierName() + ": " + Segmentation.WORD.toString());
+		final TextGridExportEntry ortho1 = new TextGridExportEntry(SystemTierType.Orthography.getName(), Segmentation.TIER, 
+				SystemTierType.Orthography.getName() + ": " + Segmentation.TIER.toString());
+		final TextGridExportEntry ortho2 = new TextGridExportEntry(SystemTierType.Orthography.getName(), Segmentation.GROUP, 
+				SystemTierType.Orthography.getName() + ": " + Segmentation.GROUP.toString());
+		final TextGridExportEntry ortho3 = new TextGridExportEntry(SystemTierType.Orthography.getName(), Segmentation.WORD, 
+				SystemTierType.Orthography.getName() + ": " + Segmentation.WORD.toString());
 		retVal.add(ortho1);
 		retVal.add(ortho2);
 		retVal.add(ortho3);
 		
 		// ipa actual
-		final TextGridExportEntry ipa1 = new TextGridExportEntry(SystemTierType.IPAActual.getTierName(), Segmentation.SYLLABLE, 
-				SystemTierType.IPAActual.getTierName() + ": " + Segmentation.SYLLABLE.toString());
-		final TextGridExportEntry ipa2 = new TextGridExportEntry(SystemTierType.IPAActual.getTierName(), Segmentation.PHONE, 
-				SystemTierType.IPAActual.getTierName() + ": " + Segmentation.PHONE.toString());
+		final TextGridExportEntry ipa1 = new TextGridExportEntry(SystemTierType.IPAActual.getName(), Segmentation.SYLLABLE, 
+				SystemTierType.IPAActual.getName() + ": " + Segmentation.SYLLABLE.toString());
+		final TextGridExportEntry ipa2 = new TextGridExportEntry(SystemTierType.IPAActual.getName(), Segmentation.PHONE, 
+				SystemTierType.IPAActual.getName() + ": " + Segmentation.PHONE.toString());
 		retVal.add(ipa1);
 		retVal.add(ipa2);
 		
@@ -734,11 +700,11 @@ public class TextGridExporter {
 	 * @param project
 	 * @return textgrid export entries
 	 */
-	public List<TextGridExportEntry> getExports(IPhonProject project) {
+	public List<TextGridExportEntry> getExports(Project project) {
 		List<TextGridExportEntry> retVal = null;
 		
 		try {
-			final String exportsFile = project.getProjectLocation() + File.separator + EXPORT_DEFAULTS;
+			final String exportsFile = project.getLocation() + File.separator + EXPORT_DEFAULTS;
 			retVal = getExportsFromFile(exportsFile);
 		} catch (IOException e) {
 			retVal = getDefaultExports();
@@ -755,14 +721,13 @@ public class TextGridExporter {
 	 * 
 	 * @return <code>true</code> if successful, <code>false</code> otherwise
 	 */
-	public boolean saveExports(List<TextGridExportEntry> exports, IPhonProject project) {
+	public boolean saveExports(List<TextGridExportEntry> exports, Project project) {
 		boolean retVal = false;
 		try {
-			final String exportsFile = project.getProjectLocation() + File.separator + EXPORT_DEFAULTS;
+			final String exportsFile = project.getLocation() + File.separator + EXPORT_DEFAULTS;
 			saveExportsToFile(exports, exportsFile);
 		} catch (IOException e) {
-			e.printStackTrace();
-			PhonLogger.severe(e.getMessage());
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}		
 		return retVal;
 	}

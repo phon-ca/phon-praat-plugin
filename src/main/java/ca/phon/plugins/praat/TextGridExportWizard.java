@@ -19,29 +19,30 @@ import javax.swing.JScrollPane;
 import org.jdesktop.swingx.JXBusyLabel;
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.phon.application.PhonTask;
-import ca.phon.application.PhonTaskListener;
-import ca.phon.application.PhonWorker;
-import ca.phon.application.PhonTask.TaskStatus;
-import ca.phon.application.project.IPhonProject;
-import ca.phon.application.transcript.ITranscript;
-import ca.phon.gui.DialogHeader;
-import ca.phon.gui.components.FileSelectionField;
-import ca.phon.gui.components.FileSelectionField.SelectionMode;
-import ca.phon.gui.components.UtteranceFilterPanel;
-import ca.phon.gui.wizard.WizardFrame;
-import ca.phon.gui.wizard.WizardStep;
+import ca.phon.app.project.ProjectFrameExtension;
+import ca.phon.app.session.RecordFilterPanel;
+import ca.phon.project.Project;
+import ca.phon.session.Session;
+import ca.phon.ui.FileSelectionField;
+import ca.phon.ui.FileSelectionField.SelectionMode;
+import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.wizard.WizardFrame;
+import ca.phon.ui.wizard.WizardStep;
+import ca.phon.worker.PhonTask;
+import ca.phon.worker.PhonTaskListener;
+import ca.phon.worker.PhonWorker;
+import ca.phon.worker.PhonTask.TaskStatus;
 
 public class TextGridExportWizard extends WizardFrame {
 
 	private static final long serialVersionUID = 4037035439180386352L;
 	
-	private final ITranscript session;
+	private final Session session;
 	
 	/*
 	 * UI
 	 */
-	private UtteranceFilterPanel recordFilterPanel;
+	private RecordFilterPanel recordFilterPanel;
 	
 	private FileSelectionField outputFolderField;
 	
@@ -70,9 +71,12 @@ public class TextGridExportWizard extends WizardFrame {
 	private WizardStep exportOptionsStep;
 	
 	
-	public TextGridExportWizard(IPhonProject project, ITranscript session) {
+	public TextGridExportWizard(Project project, Session session) {
 		super("TextGrid Export");
-		super.setProject(project);
+		
+		final ProjectFrameExtension pfe = new ProjectFrameExtension(project);
+		super.putExtension(ProjectFrameExtension.class, pfe);
+		
 		this.session = session;
 		
 		setupWizard();
@@ -91,13 +95,18 @@ public class TextGridExportWizard extends WizardFrame {
 		addWizardStep(exportOptionsStep);
 	}
 	
+	public Project getProject() {
+		final ProjectFrameExtension pfe = getExtension(ProjectFrameExtension.class);
+		return (pfe == null ? null : pfe.getProject());
+	}
+	
 	private WizardStep setupRecordsStep() {
 		final WizardStep retVal = new WizardStep();
 		
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select records.");
 		
 		// add record filter panel
-		recordFilterPanel = new UtteranceFilterPanel(getProject(), session);
+		recordFilterPanel = new RecordFilterPanel(getProject(), session);
 		recordFilterPanel.setBorder(BorderFactory.createTitledBorder("Select records"));
 		final JScrollPane scroller = new JScrollPane(recordFilterPanel);
 		

@@ -1,19 +1,18 @@
 package ca.phon.plugins.praat;
 import java.awt.Window;
 import java.io.ByteArrayOutputStream;
+import java.util.logging.Logger;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
-import ca.phon.gui.action.PhonUIAction;
-import ca.phon.gui.recordeditor.RecordEditor;
-import ca.phon.system.logger.PhonLogger;
-import ca.phon.system.plugin.IPluginExtensionFactory;
-import ca.phon.system.plugin.IPluginExtensionPoint;
-import ca.phon.system.plugin.IPluginMenuFilter;
-import ca.phon.system.plugin.PhonPlugin;
-import ca.phon.system.plugin.PluginAction;
+import ca.phon.app.session.editor.SessionEditor;
+import ca.phon.plugin.IPluginExtensionFactory;
+import ca.phon.plugin.IPluginExtensionPoint;
+import ca.phon.plugin.IPluginMenuFilter;
+import ca.phon.plugin.PhonPlugin;
+import ca.phon.plugin.PluginAction;
 
 
 /**
@@ -24,6 +23,9 @@ import ca.phon.system.plugin.PluginAction;
  */
 @PhonPlugin(name="phon-textgrid-plugin",version="0.1")
 public class PraatMenuFilterExtPt implements IPluginExtensionPoint<IPluginMenuFilter> {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(PraatMenuFilterExtPt.class.getName());
 
 	@Override
 	public Class<IPluginMenuFilter> getExtensionType() {
@@ -54,7 +56,7 @@ public class PraatMenuFilterExtPt implements IPluginExtensionPoint<IPluginMenuFi
 			}
 			
 			if(pluginsMenu == null) {
-				PhonLogger.warning("[PraatMenuFilter] No plugins menu found, aborting.");
+				LOGGER.warning("[PraatMenuFilter] No plugins menu found, aborting.");
 				return;
 			}
 			
@@ -63,8 +65,8 @@ public class PraatMenuFilterExtPt implements IPluginExtensionPoint<IPluginMenuFi
 				pluginsMenu.addSeparator();
 			}
 			
-			if(owner instanceof RecordEditor) {
-				final RecordEditor editor = (RecordEditor)owner;
+			if(owner instanceof SessionEditor) {
+				final SessionEditor editor = (SessionEditor)owner;
 				
 				pluginsMenu.add("-- TextGrid --").setEnabled(false);
 				

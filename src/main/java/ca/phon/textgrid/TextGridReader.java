@@ -39,17 +39,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ca.phon.exceptions.ParserException;
-import ca.phon.system.logger.PhonLogger;
-import ca.phon.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Read TextGrid from a character stream.
  */
 public class TextGridReader {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(TextGridReader.class.getName());
     
     /* Reader */
     private BufferedReader reader;
@@ -57,37 +61,33 @@ public class TextGridReader {
     /**
      * Constructor
      */
-    public TextGridReader(String path) {
+    public TextGridReader(String path) throws IOException {
         this(new File(path));
     }
 
-    public TextGridReader(String path, String encoding) {
+    public TextGridReader(String path, String encoding) throws IOException {
         this(new File(path), encoding);
     }
 
-    public TextGridReader(File f) {
+    public TextGridReader(File f) throws IOException {
         this(f, Charset.defaultCharset().name());
     }
 
-    public TextGridReader(File f, String encoding) {
-        try {
-            reader = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(f), encoding));
-        } catch (IOException ex) {
-            PhonLogger.warning(TextGridReader.class, ex.toString());
-        }
+    public TextGridReader(File f, String encoding) throws IOException {
+        reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(f), encoding));
     }
 
-    public TextGridReader(InputStream is) {
+    public TextGridReader(InputStream is) throws IOException {
         this(is, Charset.defaultCharset().name());
     }
 
-    public TextGridReader(InputStream is, String encoding) {
+    public TextGridReader(InputStream is, String encoding) throws IOException {
         try {
             reader = new BufferedReader(
                     new InputStreamReader(is, encoding));
-        } catch (IOException ex) {
-            PhonLogger.warning(TextGridReader.class, ex.toString());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
         }
     }
 
@@ -96,8 +96,8 @@ public class TextGridReader {
             try {
                 reader.close();
                 reader = null;
-            } catch (IOException ex) {
-                PhonLogger.warning(TextGridReader.class, ex.toString());
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
             }
         }
     }
@@ -108,8 +108,8 @@ public class TextGridReader {
         if(reader != null){
             try {
                 retVal = reader.readLine();
-            } catch (IOException ex) {
-                PhonLogger.warning(TextGridReader.class, ex.toString());
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
             }
         }
 
@@ -117,7 +117,7 @@ public class TextGridReader {
     }
 
     public TextGrid readTextGrid()
-        throws ParserException {
+        throws ParseException {
         TextGrid retVal = new TextGrid();
 
         readHeader();
@@ -144,7 +144,7 @@ public class TextGridReader {
     /*
      * Read header
      */
-    public void readHeader() throws ParserException {
+    public void readHeader() throws ParseException {
         readVerbatimLine(HEADER_LINE_1);
         readVerbatimLine(HEADER_LINE_2);
         
@@ -152,7 +152,7 @@ public class TextGridReader {
         nextLine();
     }
 
-    public TextGridTier readTier() throws ParserException {
+    public TextGridTier readTier() throws ParseException {
         TextGridTier retVal = new TextGridTier();
 
         int tierIdx = readArrayIndexLine(ITEM);
@@ -164,7 +164,7 @@ public class TextGridReader {
         else if(typeStr.equals("TextTier"))
             type = TextGridTierType.POINT;
         else
-            throw new ParserException(typeStr, 0, "Invalid tier type " + typeStr);
+            throw new ParseException(typeStr, 0);
         retVal.setTierType(type);
 
         String name = readStringField(NAME);
@@ -190,7 +190,7 @@ public class TextGridReader {
         return retVal;
     }
 
-    public TextGridInterval readInterval() throws ParserException {
+    public TextGridInterval readInterval() throws ParseException {
         TextGridInterval retVal = null;
 
         readArrayIndexLine(INTERVALS);
@@ -203,7 +203,7 @@ public class TextGridReader {
         return retVal;
     }
 
-    public TextGridPoint readPoint() throws ParserException {
+    public TextGridPoint readPoint() throws ParseException {
         TextGridPoint retVal = null;
 
         readArrayIndexLine(POINTS);
@@ -215,13 +215,13 @@ public class TextGridReader {
         return retVal;
     }
 
-    public int readArrayIndexLine(String arrayName) throws ParserException {        
+    public int readArrayIndexLine(String arrayName) throws ParseException {        
         Pattern pattern = Pattern.compile(arrayName + " \\[([0-9])*\\]:");
         Integer retVal = 0;
 
         String line = nextLine();
         if(line == null)
-            throw new ParserException(line, 0, "Unexpected end of input");
+            throw new ParseException(line, 0);
         line = StringUtils.strip(line);
 
         Matcher m = pattern.matcher(line);
@@ -231,28 +231,28 @@ public class TextGridReader {
                 idxStr = "0";
             retVal = Integer.parseInt(idxStr);
         } else {
-            throw new ParserException(line, 0, "Expected " + arrayName + " [<idx>]:");
+            throw new ParseException(line, 0);
         }
         return retVal;
     }
 
-    public void readVerbatimLine(String txt) throws ParserException {
+    public void readVerbatimLine(String txt) throws ParseException {
         String line = nextLine();
         if(line == null)
-            throw new ParserException(line, 0, "Unexpected end of input");
+            throw new ParseException(line, 0);
         line = StringUtils.strip(line);
 
         if(!line.equals(txt))
-            throw new ParserException(line, 0, "Expected " + txt);
+            throw new ParseException(line, 0);
     }
 
-    public float readFloatField(String field) throws ParserException {
+    public float readFloatField(String field) throws ParseException {
         Pattern pattern = Pattern.compile(field + " = ([0-9]*(\\.[0-9]+)?)");
         Float retVal = 0.0f;
 
         String line = nextLine();
         if(line == null)
-            throw new ParserException(line, 0, "Unexpected end of input");
+            throw new ParseException(line, 0);
         line = StringUtils.strip(line);
         Matcher m = pattern.matcher(line);
         if(m.matches()) {
@@ -260,25 +260,25 @@ public class TextGridReader {
 
             retVal = Float.parseFloat(numStr);
         } else {
-            throw new ParserException(line, 0, "Expected " + field + " = <val>");
+            throw new ParseException(line, 0);
         }
 
         return retVal.floatValue();
     }
 
-    public String readStringField(String field) throws ParserException {
+    public String readStringField(String field) throws ParseException {
         Pattern pattern = Pattern.compile(field + " = \"([^\"\\\\]*)\"");
         String retVal = "";
 
         String line = nextLine();
         if(line == null)
-            throw new ParserException(line, 0, "Unexpected end of input");
+            throw new ParseException(line, 0);
         line = StringUtils.strip(line);
         Matcher m = pattern.matcher(line);
         if(m.matches()) {
             retVal = m.group(1);
         } else {
-            throw new ParserException(line, 0, "Expected " + field + " = \"<val>\"");
+            throw new ParseException(line, 0);
         }
 
         return retVal;

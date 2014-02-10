@@ -38,32 +38,51 @@
       <url>https://www.phon.ca/artifacts/plugins-snapshot</url>
     </pluginRepository>
   </pluginRepositories>
+  
+  <properties>
+    <!-- Project settings -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceVersion>1.6</project.build.sourceVersion>
+    <project.build.targetVersion>1.6</project.build.targetVersion>
+    
+    <!-- Dependency versions -->
+    <ca.phon.jsendpraat.version>0.1-SNAPSHOT</ca.phon.jsendpraat.version>
+    <ca.phon.phon-app.version>1.7.0-SNAPSHOT</ca.phon.phon-app.version>
+    <ca.phon.native-dialogs.version>3-SNAPSHOT</ca.phon.native-dialogs.version>
+    <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
+    <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
+    <org.swinglabs.swingx.version>1.6.1</org.swinglabs.swingx.version>
+    
+    <!-- Plugin versions -->
+    <org.apache.maven.plugins.maven-compiler-plugin.version>3.1</org.apache.maven.plugins.maven-compiler-plugin.version>
+    <org.apache.maven.plugins.maven-shade-plugin.version>2.2</org.apache.maven.plugins.maven-shade-plugin.version>
+  </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.swinglabs</groupId>
       <artifactId>swingx</artifactId>
-      <version>1.6.1</version>
+      <version>${org.swinglabs.swingx.version}</version>
     </dependency>
     <dependency>
       <groupId>it.cnr.imaa.essi</groupId>
       <artifactId>lablib-checkboxtree</artifactId>
-      <version>3.0.2</version>
+      <version>${it.cnr.imaa.essi.lablib-checkboxtree.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.velocity</groupId>
       <artifactId>velocity</artifactId>
-      <version>1.7</version>
+      <version>${org.apache.velocity.velocity.version}</version>
     </dependency>
     <dependency>
       <groupId>ca.phon</groupId>
-      <artifactId>phon</artifactId>
-      <version>1.6.2-SNAPSHOT</version>
+      <artifactId>phon-app</artifactId>
+      <version>${ca.phon.phon-app.version}</version>
     </dependency>
     <dependency>
       <groupId>ca.phon</groupId>
       <artifactId>jsendpraat</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${ca.phon.jsendpraat.version}</version>
     </dependency>
   </dependencies>
 
@@ -73,17 +92,18 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
+        <version>${org.apache.maven.plugins.maven-compiler-plugin.version}</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>${project.build.sourceVersion}</source>
+          <target>${project.build.targetVersion}</target>
+          <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
         </configuration>
       </plugin>
       
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
+        <version>${org.apache.maven.plugins.maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -97,7 +117,6 @@
               <artifactSet>
               	<excludes>
               		<exclude>ca.phon:phon</exclude>
-              		<exclude>ca.phon:jsendpraat</exclude>
               		<exclude>org.swinglabs:swingx</exclude>
               		<exclude>it.cnr.imaa.essi:lablib-checkboxtree</exclude>
               	</excludes>

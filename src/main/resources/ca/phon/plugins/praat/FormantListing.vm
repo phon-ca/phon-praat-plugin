@@ -14,21 +14,21 @@ windowLength = 0.025
 preEmphasis = 50
 
 # list options
-includeFrameNum\$ = "no"
-includeTime\$ = "yes"
+includeFrameNum$ = "no"
+includeTime$ = "yes"
 timeDecimals = 6
-includeIntensity\$ = "no"
+includeIntensity$ = "no"
 intensityDecimals = 3
-includeNumFormants\$ = "no"
+includeNumFormants$ = "no"
 freqDecimals = 3
-includeBandwidths\$ = "no"
+includeBandwidths$ = "no"
 
 ## Procedure
 # open long sound
-Open long sound file... 'sound\$'
+Open long sound file... 'sound$'
 
 # extract part
-segment = Extract part... start end 'preserveTimes\$'
+segment = Extract part... start end 'preserveTimes$'
 
 # to formant
 formant = To Formant (burg)... timeStep maxFormants maxFormant windowLength preEmphasis
@@ -37,4 +37,5 @@ formant = To Formant (burg)... timeStep maxFormants maxFormant windowLength preE
 select formant
 
 # list values
-List... 'includeFrameNum\$' 'includeTime\$' timeDecimals 'includeIntensity\$' intensityDecimals 'includeNumFormants\$' freqDecimals 'includeBandwidths\$'
+List... 'includeFrameNum$' 'includeTime$' timeDecimals 'includeIntensity$' intensityDecimals 'includeNumFormants$' freqDecimals 'includeBandwidths$'
+

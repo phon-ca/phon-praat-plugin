@@ -3,11 +3,12 @@ package ca.phon.plugins.praat;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ca.phon.jsendpraat.SendPraat;
-import ca.phon.system.logger.PhonLogger;
-import ca.phon.system.plugin.IPluginEntryPoint;
-import ca.phon.system.plugin.PhonPlugin;
+import ca.phon.plugin.IPluginEntryPoint;
+import ca.phon.plugin.PhonPlugin;
 
 /**
  * Plugin entry point for sending scripts to Praat.
@@ -24,6 +25,9 @@ import ca.phon.system.plugin.PhonPlugin;
  */
 @PhonPlugin(name="phon-textgrid-plugin",version="0.1",author="Greg J. Hedlund")
 public class SendPraatEP implements IPluginEntryPoint {
+	
+	private static final Logger LOGGER = Logger
+			.getLogger(SendPraatEP.class.getName());
 	
 	private final static String SCRIPT_ARG = "script";
 	private final static String SCRIPTFILE_ARG = "scriptFile";
@@ -64,8 +68,7 @@ public class SendPraatEP implements IPluginEntryPoint {
 				os.write(retVal.getBytes());
 				os.flush();
 			} catch (IOException e) {
-				PhonLogger.severe(e.getMessage());
-				e.printStackTrace();
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 		}
 	}
