@@ -1,4 +1,4 @@
-package ca.phon.plugins.praat;
+package ca.phon.plugins.praat.export;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -18,6 +18,10 @@ import java.util.logging.Logger;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.plugins.praat.Segmentation;
+import ca.phon.plugins.praat.TextGridManager;
+import ca.phon.plugins.praat.script.PraatScript;
+import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.project.Project;
 import ca.phon.session.Group;
 import ca.phon.session.MediaSegment;
@@ -535,7 +539,7 @@ public class TextGridExporter {
 						utt.getUuid().toString() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "") + ".TextGrid";
 				final File tgFile = new File(folder, tgFilename);
 				
-				TextGridManager.saveTextGrid(tg, tgFile.getAbsolutePath());
+				TextGridManager.saveTextGrid(tg, tgFile);
 			}
 		}
 	}
@@ -547,7 +551,7 @@ public class TextGridExporter {
 		for(int i = 0; i < session.getRecordCount(); i++) {
 			final Record utt = session.getRecord(i);
 			if(recordFilter.checkRecord(utt)) {
-				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getName(), utt.getUuid().toString());
+				TextGrid tg = tgManager.loadTextGrid(utt.getUuid().toString());
 				if(tg != null && !overwrite) {
 					continue;
 				}
@@ -556,7 +560,7 @@ public class TextGridExporter {
 				tg = createEmptyTextGrid(utt);
 				setupTextGrid(utt, tg, exports);
 				
-				tgManager.saveTextGrid(tg, session.getCorpus(), session.getName(), utt.getUuid().toString());
+				tgManager.saveTextGrid(tg, utt.getUuid().toString());
 			}
 		}
 	}
@@ -606,7 +610,7 @@ public class TextGridExporter {
 		for(int i = 0; i < session.getRecordCount(); i++) {
 			final Record utt = session.getRecord(i);
 			if(recordFilter.checkRecord(utt)) {
-				TextGrid tg = tgManager.loadTextGrid(session.getCorpus(), session.getName(), utt.getUuid().toString());
+				TextGrid tg = tgManager.loadTextGrid(utt.getUuid().toString());
 				
 				// export text grid
 				if(tg == null || (tg != null && !copyExisting)) {
@@ -619,8 +623,8 @@ public class TextGridExporter {
 				final String tgFilename = tgPrefix + ".TextGrid";
 				final File tgFile = new File(folder, tgFilename);
 				
-				final PraatScript ps = new PraatScript();
-				final Map<String, Object> map = new HashMap<String, Object>();
+				final PraatScript ps = new PraatScript("ca/phon/plugins/praat/OpenTextGrid.vm");
+				final PraatScriptContext map = new PraatScriptContext();
 				File mediaFile =
 						getAudioFile(project, session);
 				if(mediaFile == null) continue;
@@ -632,9 +636,9 @@ public class TextGridExporter {
 				map.put("soundFile", mediaFile.getAbsolutePath());
 				map.put("tgFile", tgFilename);
 				map.put("interval", media);
-				final String script = ps.generateScript("ca/phon/plugins/praat/OpenTextGrid.vm", map);
+				final String script = ps.generateScript(map);
 				
-				TextGridManager.saveTextGrid(tg, tgFile.getAbsolutePath());
+				TextGridManager.saveTextGrid(tg, tgFile);
 				
 				final BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(new File(folder, tgPrefix + ".praatscript")));
 				out.write(script.getBytes());

@@ -75,15 +75,15 @@ public class TextGridManager {
 	 * @return the textgrid or <code>null</code> if not
 	 *  found/loaded
 	 */
-	public TextGrid loadTextGrid(String corpus, String session, String recordId) {
-		final String tgPath = textGridPath(corpus, session, recordId);
+	public TextGrid loadTextGrid(String recordId) {
+		final String tgPath = textGridPath(recordId);
 		
 		TextGrid retVal = null;
 		
 		try {
-			retVal = loadTextGrid(tgPath);
+			retVal = loadTextGrid(new File(tgPath));
 		} catch (IOException e) {
-			
+			LOGGER.log(Level.INFO, e.getLocalizedMessage());
 		}
 		
 		return retVal;
@@ -100,12 +100,12 @@ public class TextGridManager {
 	 * @returns <code>true</code> if successful, <code>false</code>
 	 *  otherwise
 	 */
-	public boolean saveTextGrid(TextGrid textgrid, String corpus, String session, String recordId) {
-		final String tgPath = textGridPath(corpus, session, recordId);
+	public boolean saveTextGrid(TextGrid textgrid, String recordId) {
+		final String tgPath = textGridPath(recordId);
 		boolean retVal = false;
 		
 		try {
-			saveTextGrid(textgrid, tgPath);
+			saveTextGrid(textgrid, new File(tgPath));
 			retVal = true;
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -122,10 +122,9 @@ public class TextGridManager {
 	 * 
 	 * @throws IOException
 	 */
-	public static void saveTextGrid(TextGrid textgrid, String file)
+	public static void saveTextGrid(TextGrid textgrid, File tgFile)
 		throws IOException {
 		
-		final File tgFile = new File(file);
 		final File tgParent = tgFile.getParentFile();
 		if(!tgParent.exists())
 			tgParent.mkdirs();
@@ -142,10 +141,8 @@ public class TextGridManager {
 	 * @return textgrid
 	 * @throws IOException
 	 */
-	public static TextGrid loadTextGrid(String file) 
+	public static TextGrid loadTextGrid(File tgFile) 
 		throws IOException {
-		final File tgFile = new File(file);
-		
 		final TextGridReader tgReader = new TextGridReader(tgFile, TEXTGRID_ENCODING);
 		TextGrid retVal;
 		try {
@@ -167,16 +164,16 @@ public class TextGridManager {
 	 * 
 	 * @return textgrid path
 	 */
-	public String textGridPath(String corpus, String session, String recordId) {
+	public String textGridPath(String recordId) {
 		final StringBuilder sb = new StringBuilder();
 		sb.append(project.getLocation());
 		sb.append(File.separator);
 		sb.append(TEXTGRID_FOLDER);
 		sb.append(File.separator);
-		sb.append(corpus);
-		sb.append("_");
-		sb.append(session);
-		sb.append("_");
+//		sb.append(corpus);
+//		sb.append("_");
+//		sb.append(session);
+//		sb.append("_");
 		sb.append(recordId);
 		sb.append(TEXTGRID_EXT);
 		

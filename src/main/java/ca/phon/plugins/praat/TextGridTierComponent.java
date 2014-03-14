@@ -81,6 +81,10 @@ public class TextGridTierComponent extends JComponent {
 		return null;
 	}
 	
+	public TextGridTier getTier() {
+		return this.tier;
+	}
+	
 	private float getMinTime() {
 		return tier.getIntervalAt(0).getStart();
 	}

@@ -1,4 +1,4 @@
-package ca.phon.plugins.praat;
+package ca.phon.plugins.praat.export;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,7 @@ import java.util.List;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import ca.phon.plugins.praat.Segmentation;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierViewItem;

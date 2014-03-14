@@ -31,6 +31,9 @@ import javax.swing.JToolBar;
 
 import org.jdesktop.swingx.VerticalLayout;
 
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
@@ -43,14 +46,22 @@ import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.WavDisplay;
+import ca.phon.plugins.praat.db.PraatDbManager;
+import ca.phon.plugins.praat.script.PraatScript;
+import ca.phon.plugins.praat.script.PraatScriptContext;
+import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
+import ca.phon.plugins.praat.script.PraatScriptTcpServer;
+import ca.phon.script.PhonScriptContext;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
+import ca.phon.ui.PhonLoggerConsole;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
+import ca.phon.worker.PhonWorker;
 
 /**
  * Display a TextGrid as a vertical list of tiers.
@@ -264,17 +275,20 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 
 		final MediaSegment media = segmentTier.getGroup(0);
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
+		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 
-		final Map<String, Object> map = new HashMap<String, Object>();
+		
+		final PraatScriptContext map = new PraatScriptContext();
+		map.put("recordId", model.currentRecord().getUuid().toString());
 		map.put("soundFile", mediaFile.getAbsolutePath());
 		map.put("tgFile", tgPath);
 		map.put("interval", media);
 		
+		
 		final PraatScript ps = new PraatScript();
 		String script;
 		try {
-			script = ps.generateScript(OPEN_TEXTGRID_TEMPLATE, map);
+			script = ps.generateScript(map);
 			
 			String errVal = SendPraat.sendPraat(script);
 			if(errVal != null) {
@@ -301,23 +315,58 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		if(selectedComponent == null) return;
 		
 		final TextGridInterval interval = selectedComponent.getSelectedInterval();
-		
-		final Map<String, Object> map = new HashMap<String, Object>();
+
+		final PraatScriptTcpServer server = new PraatScriptTcpServer();
+		server.setHandler(new PraatScriptTcpHandler() {
+			
+			@Override
+			public void praatScriptFinished(String data) {
+				if(data == null) return;
+				
+				final PraatDbManager manager = new PraatDbManager(parent.getEditor().getProject());
+				
+				if(!manager.databaseExists()) {
+					manager.createDatabase();
+				}
+				final ODatabaseDocumentTx docDb = manager.openDatabase();
+				final ODocument doc = new ODocument("praatdata");
+				doc.fromJSON(data);
+				docDb.save(doc);
+				
+				
+				
+				docDb.close();
+				
+				
+			}
+			
+		});
+		final PraatScriptContext map = new PraatScriptContext();
 		map.put("soundFile", mediaFile.getAbsolutePath());
 		map.put("interval", interval);
+		map.put("recordId", parent.getEditor().currentRecord().getUuid().toString());
+		map.put("tierName", selectedComponent.getTier().getTierName());
+		map.put("intervalIdx", 0);
+		map.put("timeStep", 0.0f);
+		map.put("maxFormants", 5);
+		map.put("maxFormant", 5500);
+		map.put("windowLength", 0.025f);
+		map.put("preEmphasis", 50);
+		map.put("phonsock", "localhost:" + server.getPort());
 		
-		final PraatScript ps = new PraatScript();
+		final PraatScript ps = new PraatScript(FORMANTS_TEMPLATE);
 		String script;
 		try {
-			script = ps.generateScript(FORMANTS_TEMPLATE, map);
+			script = ps.generateScript(map);
 			
+			server.startServer();
 			String errVal = SendPraat.sendPraat(script);
 			if(errVal != null) {
 				// try to open praat
 				SendPraat.openPraat();
 				// wait
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(2000);
 				} catch (InterruptedException e) {}
 				
 				// try again
@@ -336,7 +385,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		final SessionEditor model = parent.getEditor();
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		tgManager.addTextGridListener(tgListener);
-		final TextGrid tg = tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
+		final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
 		setTextGrid(tg);
 	}
 	
@@ -422,6 +471,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		try {
 			parent.getWavDisplay().play();
 		} catch (PhonMediaException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 	

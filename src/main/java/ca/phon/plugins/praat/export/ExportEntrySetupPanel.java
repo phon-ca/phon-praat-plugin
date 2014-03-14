@@ -1,4 +1,5 @@
-package ca.phon.plugins.praat;
+package ca.phon.plugins.praat.export;
+
 
 /**
  * Setup for export from Phon to textgrid.

@@ -16,7 +16,7 @@
       <url>https://www.phon.ca/artifacts/libs-release</url>
     </repository>
     <repository>
-      <snapshots />
+      <snapshots/>
       <id>snapshots</id>
       <name>libs-snapshot</name>
       <url>https://www.phon.ca/artifacts/libs-snapshot</url>
@@ -32,19 +32,19 @@
       <url>https://www.phon.ca/artifacts/plugins-release</url>
     </pluginRepository>
     <pluginRepository>
-      <snapshots />
+      <snapshots/>
       <id>snapshots</id>
       <name>plugins-snapshot</name>
       <url>https://www.phon.ca/artifacts/plugins-snapshot</url>
     </pluginRepository>
   </pluginRepositories>
-  
+
   <properties>
     <!-- Project settings -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.sourceVersion>1.6</project.build.sourceVersion>
     <project.build.targetVersion>1.6</project.build.targetVersion>
-    
+
     <!-- Dependency versions -->
     <ca.phon.jsendpraat.version>0.1-SNAPSHOT</ca.phon.jsendpraat.version>
     <ca.phon.phon-app.version>1.7.0-SNAPSHOT</ca.phon.phon-app.version>
@@ -52,6 +52,8 @@
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     <org.swinglabs.swingx.version>1.6.1</org.swinglabs.swingx.version>
+    <com.orientechnologies.orient-commons.version>1.7-rc1</com.orientechnologies.orient-commons.version>
+    <com.orientechnologies.orientdb-core.version>1.7-rc1</com.orientechnologies.orientdb-core.version>
     
     <!-- Plugin versions -->
     <org.apache.maven.plugins.maven-compiler-plugin.version>3.1</org.apache.maven.plugins.maven-compiler-plugin.version>
@@ -84,6 +86,21 @@
       <artifactId>jsendpraat</artifactId>
       <version>${ca.phon.jsendpraat.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.orientechnologies</groupId>
+      <artifactId>orient-commons</artifactId>
+      <version>${com.orientechnologies.orient-commons.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.orientechnologies</groupId>
+      <artifactId>orientdb-core</artifactId>
+      <version>${com.orientechnologies.orientdb-core.version}</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.json</groupId>
+    	<artifactId>json</artifactId>
+    	<version>20140107</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -99,7 +116,7 @@
           <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
         </configuration>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -112,14 +129,16 @@
             </goals>
             <configuration>
               <transformers>
-              	<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"
+                />
               </transformers>
               <artifactSet>
-              	<excludes>
-              		<exclude>ca.phon:phon</exclude>
-              		<exclude>org.swinglabs:swingx</exclude>
-              		<exclude>it.cnr.imaa.essi:lablib-checkboxtree</exclude>
-              	</excludes>
+                <excludes>
+                  <exclude>ca.phon:phon</exclude>
+                  <exclude>org.swinglabs:swingx</exclude>
+                  <exclude>it.cnr.imaa.essi:lablib-checkboxtree</exclude>
+                </excludes>
               </artifactSet>
             </configuration>
           </execution>

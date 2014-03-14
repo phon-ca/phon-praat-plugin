@@ -5,6 +5,7 @@ import java.util.Map;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.plugin.IPluginEntryPoint;
 import ca.phon.plugin.PhonPlugin;
+import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.project.Project;
 import ca.phon.session.Session;
 

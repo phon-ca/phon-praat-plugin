@@ -1,3 +1,66 @@
+# FormantList.vm
+#
+# Author: Greg J. Hedlund <ghedlund@mun.ca>
+#
+# Velocity template for obtaining a formant list for a given interval.
+# Data is formatted as a JSON object and sent to Phon using the
+# provided sock address.
+#
+# Required Arguments:
+#  - recordId: The uuid of the phon record
+#  - tierName: The TextGrid tier
+#  - interval: The TextGrid interval
+#  - intervalIdx: The interval index
+#  - soundFile: The location of the large sound file
+#  - interval: interval start/end times
+#  - phonsock: <URL>:<PORT> for sending result
+#  Params:
+#   - timeStep
+#   - maxFormants
+#   - maxFormant
+#   - windowLength
+#   - preEmphasis
+
+# BEGIN PARAMS #
+# [
+#	{
+#		"name": "timeStep",
+#		"label": "",
+#		"prompt": "",
+#		"type": "java.lang.Number",
+#		"default": 0.0
+#	},
+#	{
+#		"name": "maxFormants"
+#		"label": "",
+#		"prompt": "",
+#		"type": "java.lang.Number",
+#		"default": 5
+#	},
+#	{
+#		"name": "maxFormant"
+#		"label": "",
+#		"prompt": "",
+#		"type": "java.lang.Number",
+#		"default": 5500
+#	},
+#	{
+#		"name": "windowLength"
+#		"label": "",
+#		"prompt": "",
+#		"type": "java.lang.Number",
+#		"default": 0.025
+#	},
+#	{
+#		"name": "preEmphasis"
+#		"label": "",
+#		"prompt": "",
+#		"type": "java.lang.Number",
+#		"default": 50
+#	}
+# ]
+# END PARAMS #
+
 ## Vars
 sound$ = "$soundFile"
 
@@ -7,25 +70,15 @@ end = $interval.end
 preserveTimes$ = "yes"
 
 # formant options
-timeStep = 0.0
-maxFormants = 5
-maxFormant = 5500
-windowLength = 0.025
-preEmphasis = 50
-
-# list options
-includeFrameNum$ = "no"
-includeTime$ = "yes"
-timeDecimals = 6
-includeIntensity$ = "no"
-intensityDecimals = 3
-includeNumFormants$ = "no"
-freqDecimals = 3
-includeBandwidths$ = "no"
+timeStep = $timeStep
+maxFormants = $maxFormants
+maxFormant = $maxFormant
+windowLength = $windowLength
+preEmphasis = $preEmphasis
 
 ## Procedure
 # open long sound
-Open long sound file... 'sound$'
+snd = Open long sound file... 'sound$'
 
 # extract part
 segment = Extract part... start end 'preserveTimes$'
@@ -36,6 +89,60 @@ formant = To Formant (burg)... timeStep maxFormants maxFormant windowLength preE
 # select formant
 select formant
 
-# list values
-List... 'includeFrameNum$' 'includeTime$' timeDecimals 'includeIntensity$' intensityDecimals 'includeNumFormants$' freqDecimals 'includeBandwidths$'
+numberOfFrames = Get number of frames
 
+# build our JSON return value
+formantData$ = "{" + newline$
+
+# Add info for database keys
+# record UUID
+formantData$ = formantData$ + """record"": ""$recordId""," + newline$
+
+# TextGrid interval
+formantData$ = formantData$ + """tierName"": ""$tierName""," + newline$
+formantData$ = formantData$ + """interval"": $intervalIdx," + newline$
+
+formantData$ = formantData$ + """formant_info"": {" + newline$
+formantData$ = formantData$ + """timeStep"": $timeStep," + newline$
+formantData$ = formantData$ + """maxFormants"": $maxFormants," + newline$
+formantData$ = formantData$ + """maxFormant"": $maxFormant," + newline$
+formantData$ = formantData$ + """windowLength"": $windowLength," + newline$
+formantData$ = formantData$ + """preEmphasis"": $preEmphasis," + newline$
+
+formantData$ = formantData$ + """frames"": [" + newline$
+for frameNum from 1 to numberOfFrames
+	frameTime = Get time from frame number... frameNum
+	
+	formantData$ = formantData$ + "{" + newline$
+	formantData$ = formantData$ + """time"": " + string$(frameTime) + "," + newline$
+	for fnum from 1 to maxFormants
+		fval = Get value at time... fnum frameTime Hertz Linear
+		formantData$ = formantData$ + """f" + string$(fnum) + """: "
+		if fval = undefined
+			formantData$ = formantData$ + "null"
+		else
+			formantData$ = formantData$ + string$(fval)
+		endif
+		if fnum < maxFormants
+			formantData$ = formantData$ + ", "
+		endif
+	endfor
+	formantData$ = formantData$ + "}"
+	if frameNum < numberOfFrames
+		formantData$ = formantData$ + "," 
+	endif
+	formantData$ = formantData$ + newline$
+endfor
+formantData$ = formantData$ + "]" + newline$
+
+formantData$ = formantData$ + "}" + newline$
+formantData$ = formantData$ + "}" + newline$
+
+## Send data back to Phon
+sendsocket $phonsock 'formantData$'
+
+# Cleanup
+select snd
+plus segment
+plus formant
+Remove

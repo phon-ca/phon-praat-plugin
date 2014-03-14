@@ -60,6 +60,12 @@ import ca.phon.app.session.editor.EditorView;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.plugins.praat.export.ExportEntryCheckboxTree;
+import ca.phon.plugins.praat.export.TextGridExportEntry;
+import ca.phon.plugins.praat.export.TextGridExportWizard;
+import ca.phon.plugins.praat.export.TextGridExporter;
+import ca.phon.plugins.praat.script.PraatScript;
+import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
@@ -187,13 +193,13 @@ public class TextGridPanel extends EditorView {
 	private TextGrid readTextGrid() {
 		final SessionEditor model = getEditor();
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-		return tgManager.loadTextGrid(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
+		return tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
 	}
 
 	private void saveTextGrid(TextGrid tg) {
 		final SessionEditor model = getEditor();
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-		tgManager.saveTextGrid(tg, model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
+		tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
 	}
 
 	/**
@@ -238,9 +244,9 @@ public class TextGridPanel extends EditorView {
 		final MediaSegment media = segmentTier.getGroup(0);
 
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-		String tgPath = tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getName(), model.currentRecord().getUuid().toString());
+		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 
-		final Map<String, Object> map = new HashMap<String, Object>();
+		final PraatScriptContext map = new PraatScriptContext();
 		map.put("soundFile", mediaFile.getAbsolutePath());
 		map.put("tgFile", tgPath);
 		map.put("interval", media);
@@ -248,7 +254,7 @@ public class TextGridPanel extends EditorView {
 		final PraatScript ps = new PraatScript();
 		String script;
 		try {
-			script = ps.generateScript(OPEN_TEXTGRID_TEMPLATE, map);
+			script = ps.generateScript(map);
 			
 			String errVal = SendPraat.sendPraat(script);
 			if(errVal != null) {

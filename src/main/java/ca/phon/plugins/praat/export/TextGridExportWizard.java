@@ -1,4 +1,4 @@
-package ca.phon.plugins.praat;
+package ca.phon.plugins.praat.export;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

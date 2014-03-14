@@ -1,6 +1,8 @@
-package ca.phon.plugins.praat;
+package ca.phon.plugins.praat.export;
 
 import java.io.Serializable;
+
+import ca.phon.plugins.praat.Segmentation;
 
 
 /**
