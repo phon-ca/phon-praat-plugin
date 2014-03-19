@@ -19,13 +19,12 @@ import javax.swing.JScrollPane;
 import org.jdesktop.swingx.JXBusyLabel;
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.phon.app.project.ProjectFrameExtension;
 import ca.phon.app.session.RecordFilterPanel;
 import ca.phon.project.Project;
 import ca.phon.session.Session;
-import ca.phon.ui.FileSelectionField;
-import ca.phon.ui.FileSelectionField.SelectionMode;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.text.FileSelectionField;
+import ca.phon.ui.text.FileSelectionField.SelectionMode;
 import ca.phon.ui.wizard.WizardFrame;
 import ca.phon.ui.wizard.WizardStep;
 import ca.phon.worker.PhonTask;
@@ -74,8 +73,8 @@ public class TextGridExportWizard extends WizardFrame {
 	public TextGridExportWizard(Project project, Session session) {
 		super("TextGrid Export");
 		
-		final ProjectFrameExtension pfe = new ProjectFrameExtension(project);
-		super.putExtension(ProjectFrameExtension.class, pfe);
+		super.putExtension(Project.class, project);
+		super.putExtension(Session.class, session);
 		
 		this.session = session;
 		
@@ -96,8 +95,7 @@ public class TextGridExportWizard extends WizardFrame {
 	}
 	
 	public Project getProject() {
-		final ProjectFrameExtension pfe = getExtension(ProjectFrameExtension.class);
-		return (pfe == null ? null : pfe.getProject());
+		return getExtension(Project.class);
 	}
 	
 	private WizardStep setupRecordsStep() {
