@@ -16,8 +16,8 @@ import java.awt.geom.Rectangle2D;
 import javax.swing.JComponent;
 import javax.swing.event.MouseInputAdapter;
 
-import ca.phon.app.session.editor.media.WaveformEditorViewCalculator;
-import ca.phon.app.session.editor.media.WaveformViewCalculator;
+import ca.phon.app.session.editor.view.waveform.WaveformEditorViewCalculator;
+import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
 import ca.phon.ui.PhonGuiConstants;

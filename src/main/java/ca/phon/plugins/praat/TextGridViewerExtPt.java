@@ -1,7 +1,7 @@
 package ca.phon.plugins.praat;
 
-import ca.phon.app.session.editor.media.WaveformEditorView;
-import ca.phon.app.session.editor.media.WaveformTier;
+import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
+import ca.phon.app.session.editor.view.waveform.WaveformTier;
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
 
