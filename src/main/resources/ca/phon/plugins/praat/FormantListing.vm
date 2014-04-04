@@ -168,7 +168,7 @@ formantData$ = formantData$ + "}" + newline$
 sendsocket $phonsock 'formantData$'
 
 # Cleanup
-#select snd
-#plus segment
-#plus formant
-#Remove
+select snd
+plus segment
+plus formant
+Remove

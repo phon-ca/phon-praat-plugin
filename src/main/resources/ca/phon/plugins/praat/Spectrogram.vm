@@ -1,0 +1,105 @@
+# Spectrogram.vm
+#
+# Author: Greg J. Hedlund <ghedlund@mun.ca>
+#
+# Velocity template for obtaining spectrgram data for a given interval.
+# Data is formatted as a JSON object and sent to Phon using the
+# provided sock address.
+#
+# Required Arguments:
+#  - recordId: The uuid of the phon record
+#  - tierName: The TextGrid tier
+#  - interval: The TextGrid interval
+#  - intervalIdx: The interval index
+#  - soundFile: The location of the large sound file
+#  - interval: interval start/end times
+#  - phonsock: <URL>:<PORT> for sending result
+#	Params:
+#	 - windowLength
+#	 - maxFreq
+#	 - timeStep
+#	 - freqStep
+#	 - windowShape
+
+# BEGIN PARAMS #
+# [
+#	{
+#		"name": "windowLength",
+#		"label": "Window Length (s)",
+#		"prompt": "",
+#		"type": "java.lang.Float",
+#		"default": 0.005
+#	},
+#	{
+#		"name": "maxFreq",
+#		"label": "Maximum Frequency (Hz)",
+#		"prompt": "",
+#		"type": "java.lang.Integer",
+#		"default": 5000
+#	},
+#	{
+#		"name": "timeStep",
+#		"label": "Time Step (s)",
+#		"prompt": "",
+#		"type": "java.lang.Float",
+#		"default": 0.002
+#	},
+#	{
+#		"name": "freqStep",
+#		"label": "Frequency Step (Hz)",
+#		"prompt": "",
+#		"type": "java.lang.Integer",
+#		"default": 20
+#	},
+#	{
+#		"name": "windowShape",
+#		"label": "Window Shape",
+#		"type": "java.lang.String",
+#		"options": [ "square (rectangular)", "Hamming (raised sine-squared)",
+#					 "Bartlett (triangular)", "Welch (parabolic)",
+#					 "Hanning (sine-squared)", "Gaussian" ],
+#		"default": "Gaussian"
+#	}
+# ]
+# END PARAMS #
+
+## Vars
+sound$ = "$soundFile"
+
+# segment options
+start = $interval.start
+end = $interval.end
+preserveTimes$ = "yes"
+
+windowLength = $windowLength;
+maxFreq = $maxFreq
+timeStep = $timeStep
+freqStep = $freqStep
+windowShape$ = "$windowShape"
+
+## Procedure
+# open long sound
+snd = Open long sound file... 'sound$'
+
+# extract part
+segment = Extract part... start end 'preserveTimes$'
+
+# spectrogram
+spectrogram = To Spectrogram... windowLength maxFreq timeStep freqStep 'windowShape$'
+
+numBins = maxFreq / 31.25
+
+# build our JSON return value
+resultPrefix$ = "{" + newline$
+
+# Add info for database keys
+# record UUID
+resultPrefix$ = resultPrefix$ + """record"": ""$recordId""," + newline$
+
+# TextGrid interval
+resultPrefix$ = resultPrefix$ + """tierName"": ""$tierName""," + newline$
+resultPrefix$ = resultPrefix$ + """interval"": $intervalIdx," + newline$
+
+for binNum from 1 to numBins
+
+endfor

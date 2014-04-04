@@ -323,7 +323,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			public void praatScriptFinished(String data) {
 				if(data == null) return;
 				
-				final PraatDbManager manager = new PraatDbManager(parent.getEditor().getProject());
+				final PraatDbManager manager = PraatDbManager.getInstance(parent.getEditor().getProject());
 				
 				if(!manager.databaseExists()) {
 					manager.createDatabase();

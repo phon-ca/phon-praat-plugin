@@ -16,13 +16,7 @@ public class PraatDbManagerProvider implements ExtensionProvider {
 	@Override
 	public void installExtension(IExtendable obj) {
 		final Project project = (Project)obj;
-		final PraatDbManager dbManager = new PraatDbManager(project);
-		
-		// ensure database exists
-		if(!dbManager.databaseExists()) {
-			final ODatabaseDocumentTx docDb = dbManager.createDatabase();
-			docDb.close();
-		}
+		final PraatDbManager dbManager = PraatDbManager.getInstance(project);
 		
 		project.putExtension(PraatDbManager.class, dbManager);
 	}

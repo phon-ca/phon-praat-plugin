@@ -2,6 +2,8 @@ package ca.phon.plugins.praat.db;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
@@ -23,12 +25,23 @@ public class PraatDbManager {
 	 */
 	private final static String DB_PATH = "__res/plugin_data/praat/db";
 	
+	private final static Map<Project, PraatDbManager> instanceMap = new WeakHashMap<Project, PraatDbManager>();
+	
+	public static PraatDbManager getInstance(Project project) {
+		PraatDbManager retVal = instanceMap.get(project);
+		if(retVal == null) {
+			retVal = new PraatDbManager(project);
+			instanceMap.put(project, retVal);
+		}
+		return retVal;
+	}
+	
 	/**
 	 * Project we are managing data for
 	 */
 	private final Project project;
 	
-	public PraatDbManager(Project project) {
+	private PraatDbManager(Project project) {
 		super();
 		this.project = project;
 	}
