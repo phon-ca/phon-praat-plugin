@@ -45,6 +45,7 @@ import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
 import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.media.wavdisplay.TimeBar;
 import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.plugins.praat.db.PraatDbManager;
 import ca.phon.plugins.praat.script.PraatScript;
@@ -75,6 +76,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	private final static String OPEN_TEXTGRID_TEMPLATE = "ca/phon/plugins/praat/OpenTextGrid.vm";
 	private final static String FORMANTS_TEMPLATE = "ca/phon/plugins/praat/FormantListing.vm";
+	private final static String SPECTROGRAM_TEMPLATE = "ca/phon/plugins/praat/Spectrogram.vm";
 	
 	private TextGrid tg;
 	
@@ -90,6 +92,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	// temporary 'formants' button
 	private JButton formantsButton;
+	private JButton spectrogramButton;
 	
 	private JLayeredPane layeredPane;
 	
@@ -130,7 +133,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		action.putValue(PhonUIAction.SHORT_DESCRIPTION, "Play selected interval...");
 		action.putValue(PhonUIAction.SMALL_ICON, icon);
 		playIntervalButton = new JButton(action);
-//		playIntervalButton.setBorderPainted(false);
 		
 		playIntervalButton.setBounds(0, 0, 16, 16);
 		widgetPane.add(playIntervalButton);
@@ -207,8 +209,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		toggleViewerButton = new JCheckBox("TextGrid");
 		toggleViewerButton.setSelected(false);
 		toggleViewerButton.addActionListener(toggleViewerAction);
-//		toggleViewerButton.putClientProperty( "JButton.buttonType", "square" );
-//		toggleViewerButton.putClientProperty( "JComponent.sizeVariant", "small" );
 		
 		final ImageIcon praatIcon = IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL);
 		final PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid");
@@ -225,7 +225,14 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		formantsButton.setVisible(false);
 		formantsButton.setEnabled(false);
 		
+		final PhonUIAction spectrogramAct = new PhonUIAction(this, "toggleSpectrogram");
+		spectrogramAct.putValue(PhonUIAction.NAME, "Spectrogram");
+		spectrogramAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Toggle spectrogram");
+		spectrogramButton = new JButton(spectrogramAct);
+		
 		toolbar.add(toggleViewerButton);
+		toolbar.add(spectrogramButton);
+		
 		toolbar.add(openTextGridButton);
 		
 		toolbar.add(formantsButton);
@@ -285,7 +292,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("interval", media);
 		
 		
-		final PraatScript ps = new PraatScript();
+		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
 		String script;
 		try {
 			script = ps.generateScript(map);
@@ -333,11 +340,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 				doc.fromJSON(data);
 				docDb.save(doc);
 				
-				
-				
 				docDb.close();
-				
-				
 			}
 			
 		});
@@ -391,6 +394,83 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	public void onRecordChanged(EditorEvent ee) {
 		update();
+	}
+	
+	public void toggleSpectrogram() {
+		File mediaFile =
+				getAudioFile();
+		if(mediaFile == null) return;
+
+		final TimeBar tb = parent.getWavDisplay().get_timeBar();
+		if(tb == null) return;
+		
+		final TextGridInterval interval = new TextGridInterval(
+				tb.getSegStart()/1000.0f, (tb.getSegStart()+tb.getSegLength())/1000.0f);
+
+		final PraatScriptTcpServer server = new PraatScriptTcpServer();
+		server.setHandler(new PraatScriptTcpHandler() {
+			
+			@Override
+			public void praatScriptFinished(String data) {
+				if(data == null) return;
+				
+				final PraatDbManager manager = PraatDbManager.getInstance(parent.getEditor().getProject());
+				
+				if(!manager.databaseExists()) {
+					manager.createDatabase();
+				}
+				final ODatabaseDocumentTx docDb = manager.openDatabase();
+				final ODocument doc = new ODocument("spectrogram");
+				doc.fromJSON(data);
+				docDb.save(doc);
+				
+				docDb.close();
+			}
+			
+		});
+		final PraatScriptContext map = new PraatScriptContext();
+		try {
+			final String tmpFile = File.createTempFile("praat", "spectrogram").getPath();
+			System.out.println(tmpFile);
+			map.put("tempFile", tmpFile);
+		} catch (IOException e1) {
+			LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
+		}
+		map.put("soundFile", mediaFile.getAbsolutePath());
+		map.put("interval", interval);
+		map.put("recordId", parent.getEditor().currentRecord().getUuid().toString());
+		map.put("timeStep", 0.002f);
+		map.put("windowLength", 0.005);
+		map.put("maxFreq", 5000);
+		map.put("freqStep", 20);
+		map.put("windowShape", "Gaussian");
+		map.put("phonsock", "localhost:" + server.getPort());
+		
+		final PraatScript ps = new PraatScript(SPECTROGRAM_TEMPLATE);
+		String script;
+		try {
+			script = ps.generateScript(map);
+			
+			server.startServer();
+			String errVal = SendPraat.sendPraat(script);
+			if(errVal != null) {
+				// try to open praat
+				SendPraat.openPraat();
+				// wait
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {}
+				
+				// try again
+				String val = SendPraat.sendPraat(script);
+//				String val = SendPraat.sendPraatInBatch(script);
+				if(val != null) {
+					LOGGER.info(val);
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
 	}
 	
 	private final ActionListener toggleViewerAction = new ActionListener() {

@@ -2,12 +2,16 @@ package ca.phon.plugins.praat.db;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 
 import ca.phon.project.Project;
 
@@ -94,11 +98,24 @@ public class PraatDbManager {
 	}
 	
 	/**
-	 * Get documents for given record.
+	 * Get documents for given record id
 	 * 
 	 * @param record
+	 * @param docType
 	 */
-	public void documentsForRecord() {
+	public List<ODocument> documentsForRecord(UUID recordId, String docType) {
+		final List<ODocument> retVal = new ArrayList<ODocument>();
+		if(docType == null || docType.length() == 0) return retVal;
+		final String qSt = "select * from " + docType + " where record = ?";
+
+		final ODatabaseDocumentTx db = openDatabase();
 		
+		final OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(qSt);
+		final List<ODocument> results = db.command(query).execute(recordId.toString());
+		retVal.addAll(results);
+		
+		db.close();
+		
+		return retVal;
 	}
 }

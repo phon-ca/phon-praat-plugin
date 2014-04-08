@@ -1,4 +1,5 @@
 ca.phon.plugins.praat.PraatMenuFilterExtPt
+ca.phon.plugins.praat.SpectrogramViewExtPt
 #ca.phon.plugins.praat.TextGridViewExtPt
 ca.phon.plugins.praat.TextGridViewerExtPt
 

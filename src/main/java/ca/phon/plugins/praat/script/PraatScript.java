@@ -2,15 +2,12 @@ package ca.phon.plugins.praat.script;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Map;
 
 import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
-import ca.phon.script.PhonScriptContext;
 
 /**
  * Helper class for loading script templates
@@ -64,10 +61,6 @@ public class PraatScript {
 		final StringWriter sw = new StringWriter();
 		
 		t.merge(ctx.velocityContext(), sw);
-		
-		final String retVal = sw.toString();
-		
-		System.out.println(PraatScriptParams.extractParamSection(retVal));
 		
 		return sw.toString();
 	}

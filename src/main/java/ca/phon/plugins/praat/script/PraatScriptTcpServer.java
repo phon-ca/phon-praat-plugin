@@ -25,7 +25,7 @@ public class PraatScriptTcpServer {
 	/*
 	 * Default timeout is 5 seconds 
 	 */
-	private final static Integer DEFAULT_TIMEOUT = 5000;
+	private final static Integer DEFAULT_TIMEOUT = 0;
 	
 	private final static Logger LOGGER = Logger
 			.getLogger(PraatScriptTcpServer.class.getName());
