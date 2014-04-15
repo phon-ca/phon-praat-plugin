@@ -53,13 +53,9 @@ public class SpectrogramPanel extends JPanel {
      * The zooming factor.
      */
     private float zoom = 1.0f;
-    private float vzoom = 2.0f;
-
-    /**
-     * Offset factor - what will be subtracted from the image to
-     * adjust for noise level.
-     */
-    private double offsetFactor;
+    private float vzoom = 1.0f;
+    
+    private float dynamicRange = 50.0f;
 
     /**
      * The data matrix to be displayed
@@ -69,10 +65,9 @@ public class SpectrogramPanel extends JPanel {
     private int width;
     private int height;
 
-    private ColorMap cmap = ColorMap.getJet(256);
+    private ColorMap cmap = ColorMap.getGreyscale(64);
     //private static float minZoom = .1f;
     
-    private double minVal; 
     private double maxVal; 
 
     /**
@@ -92,20 +87,18 @@ public class SpectrogramPanel extends JPanel {
         try {
             // prepare the data:
             maxVal = 0;
-            minVal = Integer.MAX_VALUE;
             for(int x = 0; x < width; x++)
             {
                 for(int y = 0; y < height; y++)
                 {
-                    if (data[x][y] > maxVal) 
-                        maxVal = data[x][y];
-                    if (data[x][y] < minVal)
-                        minVal = data[x][y];
+                	double val = data[x][y];
+                	
+                    if (val > maxVal)
+                        maxVal = val;
                 }
             }
-            double minIntensity = Math.abs(minVal);
-            double maxIntensity = maxVal + minIntensity;
-
+            double minIntensity = maxVal - dynamicRange;
+            
             int maxYIndex = height - 1;
             Dimension d = new Dimension((int)(width * getHZoom()), (int)( height * getVZoom()));
         
@@ -119,21 +112,14 @@ public class SpectrogramPanel extends JPanel {
                                             height,
                                             BufferedImage.TYPE_INT_RGB);
             
-            /* Set scaleFactor so that the maximum value, after removing
-             * the offset, will be 0xff.
-             */
-            double scaleFactor = ((0xff + offsetFactor) / maxIntensity);
-            
+            double scaleFactor = (cmap.size() / dynamicRange);
             for (int i = 0; i < width; i++) {                
                 for (int j = maxYIndex; j >= 0; j--) {
+                	double dataVal = data[i][j];
+                	if(dataVal < minIntensity)
+                		dataVal = minIntensity;
+                    int grey = (int)Math.round( (dataVal - minIntensity) * scaleFactor);
                     
-                    /* Adjust the grey value to make a value of 0 to mean
-                     * white and a value of 0xff to mean black.
-                     */
-                    int grey = (int)((data[i][j] + minIntensity) * scaleFactor
-                                      - offsetFactor);
-                    
-                    // use grey as an index into the colormap;
                     spectrogram.setRGB(i, maxYIndex - j, cmap.getColor(grey));
                 }
             }
@@ -148,20 +134,6 @@ public class SpectrogramPanel extends JPanel {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Updates the offset factor used to calculate the greyscale
-     * values from the intensities.  This also calculates and
-     * populates all the greyscale values in the image.
-     *
-     * @param offsetFactor the offset factor used to calculate the
-     * greyscale values from the intensities; this is used to adjust
-     * the level of background noise that shows up in the image
-     */
-    public void setOffsetFactor(double offsetFactor) {
-        this.offsetFactor = offsetFactor;
-        computeSpectrogram();
     }
 
     /**
@@ -270,7 +242,6 @@ public class SpectrogramPanel extends JPanel {
     {
         return height;
     }
-
 
     /** 
      * Paint the component.  This will be called by AWT/Swing.

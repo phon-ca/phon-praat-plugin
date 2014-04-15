@@ -76,6 +76,28 @@ package ca.phon.plugins.praat;
          return cm;
      }
  
+     public static ColorMap getGreyscale(int n) {
+    	 byte r[] = new byte[n];
+         byte g[] = new byte[n];
+         byte b[] = new byte[n];
+         
+         if(n > 256) n = 256;
+         int step = 0xff / n;
+         
+         for(int i = 0; i < n; i++) {
+        	 r[i] = g[i] = b[i] = (byte)(0xff - Math.max((i * step), 0));
+         }
+         
+         ColorMap cm = new ColorMap();
+         cm.size = n;
+         cm.r = r;
+         cm.g = g;
+         cm.b = b;
+         cm.table = new Color[n];
+         for(int x = 0; x < n; x++)
+             cm.table[x] = new Color(cm.getColor(x));
+         return cm;
+     }
  
      public int getColor(int idx)
      {
@@ -97,6 +119,10 @@ package ca.phon.plugins.praat;
          }
  
          return s.toString();
+     }
+     
+     public int size() {
+    	 return table.length;
      }
  
      public static void main(String[] args)
