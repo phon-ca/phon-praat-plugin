@@ -58,7 +58,6 @@ import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.EditorView;
 import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.plugins.praat.export.ExportEntryCheckboxTree;
 import ca.phon.plugins.praat.export.TextGridExportEntry;
@@ -251,26 +250,26 @@ public class TextGridPanel extends EditorView {
 		map.put("tgFile", tgPath);
 		map.put("interval", media);
 		
-		final PraatScript ps = new PraatScript();
-		String script;
-		try {
-			script = ps.generateScript(map);
-			
-			String errVal = SendPraat.sendPraat(script);
-			if(errVal != null) {
-				// try to open praat
-				SendPraat.openPraat();
-				// wait
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {}
-				
-				// try again
-				SendPraat.sendPraat(script);
-			}
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
+//		final PraatScript ps = new PraatScript();
+//		String script;
+//		try {
+//			script = ps.generateScript(map);
+//			
+//			String errVal = SendPraat.sendPraat(script);
+//			if(errVal != null) {
+//				// try to open praat
+//				SendPraat.openPraat();
+//				// wait
+//				try {
+//					Thread.sleep(1000);
+//				} catch (InterruptedException e) {}
+//				
+//				// try again
+//				SendPraat.sendPraat(script);
+//			}
+//		} catch (IOException e) {
+//			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//		}
 	}
 
 	public void refreshAction(PhonActionEvent pae) {

@@ -77,7 +77,7 @@ public class SpectrogramPanel extends JPanel {
         data = dat;
         width = dat.length;
         height = dat[0].length;
-        computeSpectrogram();
+//        computeSpectrogram();
     }
 
     /**
@@ -119,7 +119,8 @@ public class SpectrogramPanel extends JPanel {
                 	if(dataVal < minIntensity)
                 		dataVal = minIntensity;
                     int grey = (int)Math.round( (dataVal - minIntensity) * scaleFactor);
-                    
+                    if(grey >= cmap.size())
+                    	grey = cmap.size()-1;
                     spectrogram.setRGB(i, maxYIndex - j, cmap.getColor(grey));
                 }
             }
@@ -211,7 +212,16 @@ public class SpectrogramPanel extends JPanel {
         return zoom;
     }
     
-    public SpectrogramPanel getColorBar()
+    public float getDynamicRange() {
+		return dynamicRange;
+	}
+
+	public void setDynamicRange(float dynamicRange) {
+		this.dynamicRange = dynamicRange;
+		computeSpectrogram();
+	}
+
+	public SpectrogramPanel getColorBar()
     {
         int barWidth = 20;
         

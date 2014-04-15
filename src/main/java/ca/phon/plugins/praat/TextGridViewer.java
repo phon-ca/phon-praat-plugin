@@ -42,7 +42,6 @@ import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
 import ca.phon.app.session.editor.view.waveform.WaveformTier;
 import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
-import ca.phon.jsendpraat.SendPraat;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.TimeBar;
@@ -76,7 +75,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	private final static String OPEN_TEXTGRID_TEMPLATE = "ca/phon/plugins/praat/OpenTextGrid.vm";
 	private final static String FORMANTS_TEMPLATE = "ca/phon/plugins/praat/FormantListing.vm";
-	private final static String SPECTROGRAM_TEMPLATE = "ca/phon/plugins/praat/Spectrogram.vm";
 	
 	private TextGrid tg;
 	
@@ -92,7 +90,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	// temporary 'formants' button
 	private JButton formantsButton;
-	private JButton spectrogramButton;
 	
 	private JLayeredPane layeredPane;
 	
@@ -225,14 +222,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		formantsButton.setVisible(false);
 		formantsButton.setEnabled(false);
 		
-		final PhonUIAction spectrogramAct = new PhonUIAction(this, "toggleSpectrogram");
-		spectrogramAct.putValue(PhonUIAction.NAME, "Spectrogram");
-		spectrogramAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Toggle spectrogram");
-		spectrogramButton = new JButton(spectrogramAct);
-		
 		toolbar.add(toggleViewerButton);
-		toolbar.add(spectrogramButton);
-		
 		toolbar.add(openTextGridButton);
 		
 		toolbar.add(formantsButton);
@@ -292,26 +282,26 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("interval", media);
 		
 		
-		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
-		String script;
-		try {
-			script = ps.generateScript(map);
-			
-			String errVal = SendPraat.sendPraat(script);
-			if(errVal != null) {
-				// try to open praat
-				SendPraat.openPraat();
-				// wait
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {}
-				
-				// try again
-				SendPraat.sendPraat(script);
-			}
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
+//		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
+//		String script;
+//		try {
+//			script = ps.generateScript(map);
+//			
+//			String errVal = SendPraat.sendPraat(script);
+//			if(errVal != null) {
+//				// try to open praat
+//				SendPraat.openPraat();
+//				// wait
+//				try {
+//					Thread.sleep(1000);
+//				} catch (InterruptedException e) {}
+//				
+//				// try again
+//				SendPraat.sendPraat(script);
+//			}
+//		} catch (IOException e) {
+//			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//		}
 	}
 	
 	public void showFormants() {
@@ -357,31 +347,31 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("preEmphasis", 50);
 		map.put("phonsock", "localhost:" + server.getPort());
 		
-		final PraatScript ps = new PraatScript(FORMANTS_TEMPLATE);
-		String script;
-		try {
-			script = ps.generateScript(map);
-			
-			server.startServer();
-			String errVal = SendPraat.sendPraat(script);
-			if(errVal != null) {
-				// try to open praat
-				SendPraat.openPraat();
-				// wait
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {}
-				
-				// try again
-				String val = SendPraat.sendPraat(script);
-//				String val = SendPraat.sendPraatInBatch(script);
-				if(val != null) {
-					LOGGER.info(val);
-				}
-			}
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
+//		final PraatScript ps = new PraatScript(FORMANTS_TEMPLATE);
+//		String script;
+//		try {
+//			script = ps.generateScript(map);
+//			
+//			server.startServer();
+//			String errVal = SendPraat.sendPraat(script);
+//			if(errVal != null) {
+//				// try to open praat
+//				SendPraat.openPraat();
+//				// wait
+//				try {
+//					Thread.sleep(2000);
+//				} catch (InterruptedException e) {}
+//				
+//				// try again
+//				String val = SendPraat.sendPraat(script);
+////				String val = SendPraat.sendPraatInBatch(script);
+//				if(val != null) {
+//					LOGGER.info(val);
+//				}
+//			}
+//		} catch (IOException e) {
+//			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//		}
 	}
 	
 	private void update() {
@@ -446,31 +436,31 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("windowShape", "Gaussian");
 		map.put("phonsock", "localhost:" + server.getPort());
 		
-		final PraatScript ps = new PraatScript(SPECTROGRAM_TEMPLATE);
-		String script;
-		try {
-			script = ps.generateScript(map);
-			
-			server.startServer();
-			String errVal = SendPraat.sendPraat(script);
-			if(errVal != null) {
-				// try to open praat
-				SendPraat.openPraat();
-				// wait
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {}
-				
-				// try again
-				String val = SendPraat.sendPraat(script);
-//				String val = SendPraat.sendPraatInBatch(script);
-				if(val != null) {
-					LOGGER.info(val);
-				}
-			}
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
+//		final PraatScript ps = new PraatScript(SPECTROGRAM_TEMPLATE);
+//		String script;
+//		try {
+//			script = ps.generateScript(map);
+//			
+//			server.startServer();
+//			String errVal = SendPraat.sendPraat(script);
+//			if(errVal != null) {
+//				// try to open praat
+//				SendPraat.openPraat();
+//				// wait
+//				try {
+//					Thread.sleep(2000);
+//				} catch (InterruptedException e) {}
+//				
+//				// try again
+//				String val = SendPraat.sendPraat(script);
+////				String val = SendPraat.sendPraatInBatch(script);
+//				if(val != null) {
+//					LOGGER.info(val);
+//				}
+//			}
+//		} catch (IOException e) {
+//			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//		}
 	}
 	
 	private final ActionListener toggleViewerAction = new ActionListener() {

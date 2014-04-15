@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ca.phon.jsendpraat.SendPraat;
+//import ca.phon.jsendpraat.SendPraat;
 import ca.phon.plugin.IPluginEntryPoint;
 import ca.phon.plugin.PhonPlugin;
 
@@ -58,10 +58,10 @@ public class SendPraatEP implements IPluginEntryPoint {
 		}
 		
 		String retVal = "";
-		if(runInBatch)
-			retVal = SendPraat.sendPraatInBatch(script);
-		else
-			retVal = SendPraat.sendPraat(script);
+//		if(runInBatch)
+//			retVal = SendPraat.sendPraatInBatch(script);
+//		else
+//			retVal = SendPraat.sendPraat(script);
 		
 		if(retVal != null) {
 			try {
