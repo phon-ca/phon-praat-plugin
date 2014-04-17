@@ -2,13 +2,18 @@ package ca.phon.plugins.praat;
 
 import java.text.NumberFormat;
 
+import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 
 import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
+import ca.phon.syllabifier.opgraph.extensions.SyllabifierSettings;
 
+import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
@@ -33,6 +38,12 @@ public class SpectrogramSettingsPanel extends JPanel {
 	private JFormattedTextField preEmphasisField;
 	
 	private JFormattedTextField dynamicRangeField;
+	
+	private JRadioButton colorBtn;
+	
+	private JRadioButton greyscaleBtn;
+	
+	private ButtonGroup colorSelectionGroup = new ButtonGroup();
 
 	public SpectrogramSettingsPanel() {
 		super();
@@ -43,52 +54,71 @@ public class SpectrogramSettingsPanel extends JPanel {
 	private void init() {
 		final FormLayout layout = new FormLayout(
 				"right:pref, fill:pref:grow, pref",
-				"pref, pref, pref, pref, pref, pref, pref");
+				"pref, pref, pref, pref, pref, pref, pref, pref");
 		setLayout(layout);
 		final CellConstraints cc = new CellConstraints();
 		
 		final NumberFormat numberFormat = NumberFormat.getNumberInstance();
 		
 		windowLengthField = new JFormattedTextField(numberFormat);
-		windowLengthField.setValue(SpectrogramSettings.DEFAULT_WINDOW_LENGTH);
 		add(new JLabel("Window length:"), cc.xy(1, 1));
 		add(windowLengthField, cc.xy(2, 1));
 		add(new JLabel("(s)"), cc.xy(3, 1));
 		
 		maxFreqField = new JFormattedTextField(numberFormat);
-		maxFreqField.setValue(SpectrogramSettings.DEFAULT_MAX_FREQUENCY);
 		add(new JLabel("Max frequency:"), cc.xy(1, 2));
 		add(maxFreqField, cc.xy(2, 2));
 		add(new JLabel("(Hz)"), cc.xy(3, 2));
 		
 		timeStepField = new JFormattedTextField(numberFormat);
-		timeStepField.setValue(SpectrogramSettings.DEFAULT_TIME_STEP);
 		add(new JLabel("Time step:"), cc.xy(1, 3));
 		add(timeStepField, cc.xy(2, 3));
 		add(new JLabel("(s)"), cc.xy(3, 3));
 		
 		freqStepField = new JFormattedTextField(numberFormat);
-		freqStepField.setValue(SpectrogramSettings.DEFAULT_FREQUENCY_STEP);
 		add(new JLabel("Frequency step:"), cc.xy(1, 4));
 		add(freqStepField, cc.xy(2, 4));
 		add(new JLabel("(Hz)"), cc.xy(3, 4));
 		
 		windowShapeBox = new JComboBox(kSound_to_Spectrogram_windowShape.values());
-		windowShapeBox.setSelectedItem(SpectrogramSettings.DEFAULT_WINDOW_SHAPE);
 		add(new JLabel("Window shape:"), cc.xy(1, 5));
 		add(windowShapeBox, cc.xy(2, 5));
 		
 		preEmphasisField = new JFormattedTextField(numberFormat);
-		preEmphasisField.setValue(SpectrogramSettings.DEFAULT_PREEMPHASIS);
 		add(new JLabel("Pre-emphasis:"), cc.xy(1, 6));
 		add(preEmphasisField, cc.xy(2, 6));
 		add(new JLabel("(dB/Hz)"), cc.xy(3, 6));
 		
 		dynamicRangeField = new JFormattedTextField(numberFormat);
-		dynamicRangeField.setValue(SpectrogramSettings.DEFAULT_DYNAMIC_RANGE);
 		add(new JLabel("Dynamic range:"), cc.xy(1, 7));
 		add(dynamicRangeField, cc.xy(2, 7));
 		add(new JLabel("(Hz)"), cc.xy(3, 7));
+		
+		colorBtn = new JRadioButton("Color");
+		colorSelectionGroup.add(colorBtn);
+		colorBtn.setSelected(true);
+		
+		greyscaleBtn = new JRadioButton("Greyscale");
+		colorSelectionGroup.add(greyscaleBtn);
+		greyscaleBtn.setSelected(false);
+		
+		final ButtonBarBuilder builder = new ButtonBarBuilder();
+		builder.addButton(colorBtn).addButton(greyscaleBtn);
+		add(builder.getPanel(), cc.xy(2, 8));
+		
+		loadSettings(new SpectrogramSettings());
+	}
+	
+	public void loadSettings(SpectrogramSettings settings) {
+		windowLengthField.setValue(settings.getWindowLength());
+		maxFreqField.setValue(settings.getMaxFrequency());
+		timeStepField.setValue(settings.getTimeStep());
+		freqStepField.setValue(settings.getFrequencyStep());
+		windowShapeBox.setSelectedItem(settings.getWindowShape());
+		preEmphasisField.setValue(settings.getPreEmphasis());
+		dynamicRangeField.setValue(settings.getDynamicRange());
+		colorBtn.setSelected(settings.isUseColor());
+		greyscaleBtn.setSelected(!settings.isUseColor());
 	}
 	
 	public SpectrogramSettings getSettings() {
@@ -115,6 +145,8 @@ public class SpectrogramSettingsPanel extends JPanel {
 		
 		final double dynamicRange = ((Number)dynamicRangeField.getValue()).doubleValue();
 		retVal.setDynamicRange(dynamicRange);
+		
+		retVal.setUseColor(colorBtn.isSelected());
 		
 		return retVal;
 	}

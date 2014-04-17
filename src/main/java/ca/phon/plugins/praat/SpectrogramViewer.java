@@ -14,6 +14,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -110,6 +111,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		dialog.add(header, BorderLayout.NORTH);
 		
 		final SpectrogramSettingsPanel settingsPanel = new SpectrogramSettingsPanel();
+		settingsPanel.loadSettings(spectrogramSettings);
+		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		dialog.add(settingsPanel, BorderLayout.CENTER);
 		
 		final AtomicBoolean wasCanceled = new AtomicBoolean(false);
@@ -133,15 +136,19 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 		});
 		
+		dialog.getRootPane().setDefaultButton(okButton);
+		okButton.requestFocusInWindow();
+		
 		final ButtonBarBuilder builder = new ButtonBarBuilder();
+//		builder.setLeftToRight(false);
 		builder.addButton(okButton).addButton(cancelButton);
 		dialog.add(builder.build(), BorderLayout.SOUTH);
 		
 		dialog.pack();
-		dialog.setLocationRelativeTo(this);
+		dialog.setLocationRelativeTo(parent);
 		dialog.setVisible(true);
 		
-		// ... wait, it's model
+		// ... wait, it's modal
 		
 		if(!wasCanceled.get()) {
 			spectrogramSettings = settingsPanel.getSettings();
@@ -215,6 +222,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 					return;
 				}
 				spectrogramPanel = new SpectrogramPanel(spectrogramData);
+				if(spectrogramSettings.isUseColor())
+					spectrogramPanel.setColorMap(ColorMap.getJet(128));
+				else
+					spectrogramPanel.setColorMap(ColorMap.getGreyscale(128));
+				
 				spectrogramPanel.setDynamicRange((float)spectrogramSettings.getDynamicRange());
 				final WaveformViewCalculator calculator = parent.getCalculator();
 				

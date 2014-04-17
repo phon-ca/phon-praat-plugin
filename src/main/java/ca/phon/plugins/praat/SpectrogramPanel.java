@@ -32,6 +32,7 @@ import java.awt.image.ReplicateScaleFilter;
 import java.util.Arrays;
 
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 
 
 /**
@@ -65,8 +66,7 @@ public class SpectrogramPanel extends JPanel {
     private int width;
     private int height;
 
-    private ColorMap cmap = ColorMap.getGreyscale(64);
-    //private static float minZoom = .1f;
+    private ColorMap cmap = ColorMap.getJet(64);
     
     private double maxVal; 
 
@@ -220,6 +220,14 @@ public class SpectrogramPanel extends JPanel {
 		this.dynamicRange = dynamicRange;
 		computeSpectrogram();
 	}
+	
+	public void setColorMap(ColorMap cm) {
+		this.cmap = cm;
+	}
+	
+	public ColorMap getColorMap() {
+		return this.cmap;
+	}
 
 	public SpectrogramPanel getColorBar()
     {
@@ -271,4 +279,5 @@ public class SpectrogramPanel extends JPanel {
             g.drawImage(scaledSpectrogram, 0, 0, (ImageObserver) null);
         }
     }
+    
 }
