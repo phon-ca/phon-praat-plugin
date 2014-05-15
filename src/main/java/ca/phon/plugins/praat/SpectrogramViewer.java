@@ -156,11 +156,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
-	private double[][] loadSpectrogram() {
+	private Spectrogram loadSpectrogram() {
 		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
 		// TODO check segment length
 		final File audioFile = parent.getAudioFile();
-		if(audioFile == null) return new double[0][];
+		if(audioFile == null) return null;
 		
 		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
 		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
@@ -168,34 +168,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
 				spectrogramSettings.getTimeStep(), spectrogramSettings.getFrequencyStep(), 
 				spectrogramSettings.getWindowShape(), 8.0, 8.0);
-		
-		final int numFrames = (int)spectrogram.getNx();
-		final int numBins = (int)spectrogram.getNy();
-		
-		double retVal[][] = new double[numFrames][];
-		/*
-		 * The following code comes from Praat
-		 * Spectrogram.cpp
-		 */
-		double NUMln2 = 0.6931471805599453094172321214581765680755;
-		double NUMln10 = 2.3025850929940456840179914546843642076011;
-		double localMax[] = new double[numFrames];
-		for(int ifreq = 0; ifreq < numBins; ifreq++) {
-			double preemphasisFactor = (spectrogramSettings.getPreEmphasis() / NUMln2) * Math.log(ifreq * spectrogram.getDy() / 1000.0);
-			for(int itime = 0; itime < numFrames; itime++) {
-				if(retVal[itime] == null) {
-					retVal[itime] = new double[numBins];
-				}
-				double x = spectrogram.getX1() + itime * spectrogram.getDx();
-				double y = spectrogram.getY1() + ifreq * spectrogram.getDy();
-				double value = spectrogram.getValueAtXY(x, y);
-				value = (10.0/NUMln10) * Math.log((value + 1e-30) / 4.0e-10) + preemphasisFactor;  // dB
-				if(value > localMax[itime]) localMax[itime] = value;
-				retVal[itime][ifreq] = value;
-			}
-		}
-		
-		return retVal;
+		return spectrogram;
 	}
 	
 	@RunInBackground(newThread=true)
@@ -211,21 +184,21 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	
 	public void update() {
 		if(!isVisible()) return;
-		final double[][] spectrogramData = loadSpectrogram();
+		final Spectrogram spectrogramData = loadSpectrogram();
 		final Runnable onEdt = new Runnable() {
 			
 			@Override
 			public void run() {
 				removeAll();
 				if(spectrogramData == null 
-						|| spectrogramData.length == 0){
+						|| spectrogramData.getNx() == 0){
 					return;
 				}
-				spectrogramPanel = new SpectrogramPanel(spectrogramData);
+				spectrogramPanel = new SpectrogramPanel(spectrogramData, spectrogramSettings);
 				if(spectrogramSettings.isUseColor())
 					spectrogramPanel.setColorMap(ColorMap.getJet(128));
 				else
-					spectrogramPanel.setColorMap(ColorMap.getGreyscale(128));
+					spectrogramPanel.setColorMap(ColorMap.getGreyscale(16));
 				
 				spectrogramPanel.setDynamicRange((float)spectrogramSettings.getDynamicRange());
 				final WaveformViewCalculator calculator = parent.getCalculator();

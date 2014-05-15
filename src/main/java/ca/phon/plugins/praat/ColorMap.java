@@ -9,7 +9,6 @@ package ca.phon.plugins.praat;
      public byte r[];
      public byte g[];
      public byte b[];
-     public Color table[];
  
      public static ColorMap getJet()
      {
@@ -43,9 +42,7 @@ package ca.phon.plugins.praat;
          cm.r = r;
          cm.g = g;
          cm.b = b;
-         cm.table = new Color[n];
-         for(int x = 0; x < n; x++)
-             cm.table[x] = new Color(cm.getColor(x));
+        
          return cm;
      }
  
@@ -66,9 +63,31 @@ package ca.phon.plugins.praat;
          cm.r = r;
          cm.g = g;
          cm.b = b;
-         cm.table = new Color[n];
-         for(int x = 0; x < n; x++)
-             cm.table[x] = new Color(cm.getColor(x));
+         
+         return cm;
+     }
+     
+     public static ColorMap getBlue(int n) {
+    	 byte r[] = new byte[n];
+         byte g[] = new byte[n];
+         byte b[] = new byte[n];
+         
+         if(n > 256) n = 256;
+         int step = 0xff / n;
+         
+         for(int i = 0; i < n; i++) {
+        	 r[i] = g[i] = 0;
+        	 b[i] = (byte)(Math.max(0xff - (i * step), 0));
+         }
+         
+         r[0] = g[0] = b[0] = (byte)0xff;
+         
+         ColorMap cm = new ColorMap();
+         cm.size = n;
+         cm.r = r;
+         cm.g = g;
+         cm.b = b;
+        
          return cm;
      }
  
@@ -82,7 +101,7 @@ package ca.phon.plugins.praat;
      }
      
      public int size() {
-    	 return table.length;
+    	 return size;
      }
      
  }

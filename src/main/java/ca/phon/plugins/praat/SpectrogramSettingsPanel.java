@@ -39,11 +39,7 @@ public class SpectrogramSettingsPanel extends JPanel {
 	
 	private JFormattedTextField dynamicRangeField;
 	
-	private JRadioButton colorBtn;
-	
-	private JRadioButton greyscaleBtn;
-	
-	private ButtonGroup colorSelectionGroup = new ButtonGroup();
+	private JFormattedTextField dynamicCompressionField;
 
 	public SpectrogramSettingsPanel() {
 		super();
@@ -94,17 +90,10 @@ public class SpectrogramSettingsPanel extends JPanel {
 		add(dynamicRangeField, cc.xy(2, 7));
 		add(new JLabel("(Hz)"), cc.xy(3, 7));
 		
-		colorBtn = new JRadioButton("Color");
-		colorSelectionGroup.add(colorBtn);
-		colorBtn.setSelected(true);
-		
-		greyscaleBtn = new JRadioButton("Greyscale");
-		colorSelectionGroup.add(greyscaleBtn);
-		greyscaleBtn.setSelected(false);
-		
-		final ButtonBarBuilder builder = new ButtonBarBuilder();
-		builder.addButton(colorBtn).addButton(greyscaleBtn);
-		add(builder.getPanel(), cc.xy(2, 8));
+		dynamicCompressionField = new JFormattedTextField(numberFormat);
+		add(new JLabel("Dynamic compression:"), cc.xy(1,8));
+		add(dynamicCompressionField, cc.xy(2, 8));
+		add(new JLabel("(dB)"), cc.xy(3, 8));
 		
 		loadSettings(new SpectrogramSettings());
 	}
@@ -117,8 +106,7 @@ public class SpectrogramSettingsPanel extends JPanel {
 		windowShapeBox.setSelectedItem(settings.getWindowShape());
 		preEmphasisField.setValue(settings.getPreEmphasis());
 		dynamicRangeField.setValue(settings.getDynamicRange());
-		colorBtn.setSelected(settings.isUseColor());
-		greyscaleBtn.setSelected(!settings.isUseColor());
+		dynamicCompressionField.setValue(settings.getDynamicCompression());
 	}
 	
 	public SpectrogramSettings getSettings() {
@@ -146,7 +134,10 @@ public class SpectrogramSettingsPanel extends JPanel {
 		final double dynamicRange = ((Number)dynamicRangeField.getValue()).doubleValue();
 		retVal.setDynamicRange(dynamicRange);
 		
-		retVal.setUseColor(colorBtn.isSelected());
+		final double dynamicCompression = ((Number)dynamicCompressionField.getValue()).doubleValue();
+		retVal.setDynamicCompression(dynamicCompression);
+		
+		retVal.setUseColor(false);
 		
 		return retVal;
 	}

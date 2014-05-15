@@ -34,12 +34,18 @@ import java.util.Arrays;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
+import ca.hedlund.jpraat.binding.fon.Spectrogram;
+
 
 /**
  * Creates a graphical representation from a matrix.  Like Matlab's
  * imagesc.
  */
 public class SpectrogramPanel extends JPanel {
+	
+	private final static double NUMln2 = 0.6931471805599453094172321214581765680755;
+	private final static double NUMln10 = 2.3025850929940456840179914546843642076011;
+	
     /**
      * Where the spectrogram will live.
      */
@@ -61,23 +67,18 @@ public class SpectrogramPanel extends JPanel {
     /**
      * The data matrix to be displayed
      */
-    private double[][] data;
-
-    private int width;
-    private int height;
-
-    private ColorMap cmap = ColorMap.getJet(64);
+    private Spectrogram data;
     
-    private double maxVal; 
+    private SpectrogramSettings spectrogramSettings;
+    
+    private ColorMap cmap = ColorMap.getJet(64);
 
     /**
      * Creates a new SpectrogramPanel for the given data matrix
      */
-    public SpectrogramPanel(double[][] dat) {
-        data = dat;
-        width = dat.length;
-        height = dat[0].length;
-//        computeSpectrogram();
+    public SpectrogramPanel(Spectrogram data, SpectrogramSettings settings) {
+        this.data = data;
+        this.spectrogramSettings = settings;
     }
 
     /**
@@ -85,48 +86,67 @@ public class SpectrogramPanel extends JPanel {
      */
     private void computeSpectrogram() {
         try {
-            // prepare the data:
-            maxVal = 0;
-            for(int x = 0; x < width; x++)
-            {
-                for(int y = 0; y < height; y++)
-                {
-                	double val = data[x][y];
-                	
-                    if (val > maxVal)
-                        maxVal = val;
-                }
-            }
-            double minIntensity = maxVal - dynamicRange;
-            
-            int maxYIndex = height - 1;
-            Dimension d = new Dimension((int)(width * getHZoom()), (int)( height * getVZoom()));
-        
+        	final int numFrames = getDataWidth();
+        	final int numBins = getDataHeight();
+        	final double[] preemphasisFactor = new double[numBins];
+        	final double[] dynamicFactor = new double[numFrames];
+        	
+        	
+        	final double[][] dbData = new double[numFrames][];
+        	
+        	for(int ifreq = 0; ifreq < numBins; ifreq++) {
+    			preemphasisFactor[ifreq] = (spectrogramSettings.getPreEmphasis() / NUMln2) * Math.log(ifreq * data.getDy() / 1000.0);
+    			for(int itime = 0; itime < numFrames; itime++) {
+    				if(dbData[itime] == null) {
+    					dbData[itime] = new double[numBins];
+    				}
+    				double value = data.getZ(itime+1, ifreq+1);
+    				value = (10.0/NUMln10) * Math.log((value + 1e-30) / 4.0e-10) + preemphasisFactor[ifreq];  // dB
+    				if(value > dynamicFactor[itime]) dynamicFactor[itime] = value;
+    				dbData[itime][ifreq] = value;
+    			}
+        	}
+        	
+        	// autoscaling
+        	double maximum = 0.0;
+    		for (int itime = 0; itime < numFrames; itime ++)
+    			if (dynamicFactor [itime] > maximum) maximum = dynamicFactor [itime];
+    		
+    		// dynamic compression
+    		for (int itime = 0; itime < numFrames; itime ++) {
+    			dynamicFactor [itime] = spectrogramSettings.getDynamicCompression() * (maximum - dynamicFactor [itime]);
+    			for (int ifreq = 0; ifreq < numBins; ifreq ++)
+    				dbData [itime] [ifreq] += dynamicFactor [itime];
+    		}
+    		
+    		double minIntensity = maximum - spectrogramSettings.getDynamicRange();
+    		
+    		final Dimension d = new Dimension(numFrames, numBins);
             setMinimumSize(d);
             setMaximumSize(d);        
             setPreferredSize(d);
 
             /* Create the image for displaying the data.
              */
-            spectrogram = new BufferedImage(width,
-                                            height,
+            spectrogram = new BufferedImage(getDataWidth(),
+                                            getDataHeight(),
                                             BufferedImage.TYPE_INT_RGB);
             
             double scaleFactor = (cmap.size() / dynamicRange);
-            for (int i = 0; i < width; i++) {                
-                for (int j = maxYIndex; j >= 0; j--) {
-                	double dataVal = data[i][j];
+            for (int i = 0; i < numFrames; i++) {                
+                for (int j = numBins-1; j >= 0; j--) {
+                	double dataVal = dbData[i][j];
                 	if(dataVal < minIntensity)
                 		dataVal = minIntensity;
                     int grey = (int)Math.round( (dataVal - minIntensity) * scaleFactor);
                     if(grey >= cmap.size())
                     	grey = cmap.size()-1;
-                    spectrogram.setRGB(i, maxYIndex - j, cmap.getColor(grey));
+                    spectrogram.setRGB(i, numBins - j - 1, cmap.getColor(grey));
                 }
             }
 
             ImageFilter scaleFilter = 
-                new ReplicateScaleFilter((int) (zoom * width), (int)(vzoom*height));
+                new ReplicateScaleFilter((int) (zoom * numFrames), (int)(vzoom*numBins));
             scaledSpectrogram = 
                 createImage(new FilteredImageSource(spectrogram.getSource(),
                                                     scaleFilter));
@@ -170,10 +190,8 @@ public class SpectrogramPanel extends JPanel {
     	zoom();
     }
     
-    public void setData(double[][] data) {
+    public void setData(Spectrogram data) {
     	this.data = data;
-    	width = data.length;
-    	height = data[0].length;
     	computeSpectrogram();
     }
 
@@ -229,36 +247,38 @@ public class SpectrogramPanel extends JPanel {
 		return this.cmap;
 	}
 
-	public SpectrogramPanel getColorBar()
-    {
-        int barWidth = 20;
-        
-        double[][] cb = new double[barWidth][cmap.size];
-
-        for(int x = 0; x < cb.length; x++)
-            for(int y = 0; y < cb[x].length; y++) 
-                cb[x][y] = y;
-
-        return new SpectrogramPanel(cb);
-    }
+//	public SpectrogramPanel getColorBar()
+//    {
+//        int barWidth = 20;
+//        
+//        double[][] cb = new double[barWidth][cmap.size];
+//
+//        for(int x = 0; x < cb.length; x++)
+//            for(int y = 0; y < cb[x].length; y++) 
+//                cb[x][y] = y;
+//
+//        return new SpectrogramPanel(cb);
+//    }
 
     public double getData(int x, int y)
     {
-        return data[x][y];
+        return data.getValueAtXY(
+        		data.getX1() + x * data.getDx(),
+        		data.getY1() + y * data.getDy());
     }
     
-    public double[][] getData() {
+    public Spectrogram getData() {
     	return data;
     }
 
     public int getDataWidth()
     {
-        return width;
+        return (int)data.getNx();
     }
 
     public int getDataHeight()
     {
-        return height;
+        return (int)data.getNy();
     }
 
     /** 

@@ -7,6 +7,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
+import ca.phon.app.project.ProjectWindow;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
@@ -72,10 +73,21 @@ public class PraatMenuFilterExtPt implements IPluginExtensionPoint<IPluginMenuFi
 				
 				PluginAction genTgAct = new PluginAction("GenerateTextGrids");
 				genTgAct.putArg("editor", editor);
-				genTgAct.putValue(PluginAction.NAME, "Generate TextGrids");
+				genTgAct.putValue(PluginAction.NAME, "Generate TextGrids...");
 				genTgAct.putValue(PluginAction.SHORT_DESCRIPTION, "Generate/Export TextGrids for Session");
 				JMenuItem genTgItem = new JMenuItem(genTgAct);
 				pluginsMenu.add(genTgItem);
+			} else if (owner instanceof ProjectWindow) {
+				final ProjectWindow pw = (ProjectWindow)owner;
+				
+				pluginsMenu.add("-- TextGrid --").setEnabled(false);
+				
+				PluginAction importTgAct = new PluginAction("ImportTextGrids");
+				importTgAct.putArg("projectWindow", pw);
+				importTgAct.putValue(PluginAction.NAME, "Import TextGrids...");
+				importTgAct.putValue(PluginAction.SHORT_DESCRIPTION, "Import TextGrids into a Session");
+				JMenuItem importTgItem = new JMenuItem(importTgAct);
+				pluginsMenu.add(importTgItem);
 			}
 		}
 		

@@ -9,12 +9,12 @@ import ca.phon.util.PrefHelper;
  */
 public class SpectrogramSettings {
 
-	public final static double DEFAULT_WINDOW_LENGTH = 0.05;
+	public final static double DEFAULT_WINDOW_LENGTH = 0.005;
 	public final static String WINDOW_LENGTH_PROP = SpectrogramSettings.class.getName() + ".windowLength";
 	private double windowLength = 
 			PrefHelper.getDouble(WINDOW_LENGTH_PROP, DEFAULT_WINDOW_LENGTH);
 	
-	public final static double DEFAULT_MAX_FREQUENCY = 3000.0;
+	public final static double DEFAULT_MAX_FREQUENCY = 5000.0;
 	public final static String MAX_FREQUENCY_PROP = SpectrogramSettings.class.getName() + ".maxFreq";
 	private double maxFrequency = 
 			PrefHelper.getDouble(MAX_FREQUENCY_PROP, DEFAULT_MAX_FREQUENCY);
@@ -39,16 +39,27 @@ public class SpectrogramSettings {
 	private double preEmphasis = 
 			PrefHelper.getDouble(PREEMPHASIS_PROP, DEFAULT_PREEMPHASIS);
 	
-	public final static double DEFAULT_DYNAMIC_RANGE = 40.0;
+	public final static double DEFAULT_DYNAMIC_RANGE = 50.0;
 	public final static String DYNAMIC_RANGE_PROP = SpectrogramSettings.class.getName() + ".dynamicRange";
 	private double dynamicRange = 
 			PrefHelper.getDouble(DYNAMIC_RANGE_PROP, DEFAULT_DYNAMIC_RANGE);
 	
-	public final static boolean DEFAULT_USE_COLOR = Boolean.TRUE;
+	public final static boolean DEFAULT_USE_COLOR = Boolean.FALSE;
 	public final static String USE_COLOR_PROP = SpectrogramSettings.class.getName() + ".useColor";
 	private boolean useColor = 
 			PrefHelper.getBoolean(USE_COLOR_PROP, DEFAULT_USE_COLOR);
 	
+	public final static double DEFAULT_DYNAMIC_COMPRESSION = 0.0;
+	public final static String DYNAMIC_COMPRESSION_PROP = SpectrogramSettings.class.getName() + ".dynamicCompression";
+	private double dynamicCompression =
+			PrefHelper.getDouble(DYNAMIC_COMPRESSION_PROP, DEFAULT_DYNAMIC_COMPRESSION);
+	
+	public double getDynamicCompression() {
+		return dynamicCompression;
+	}
+	public void setDynamicCompression(double dynamicCompression) {
+		this.dynamicCompression = dynamicCompression;
+	}
 	public double getWindowLength() {
 		return windowLength;
 	}
