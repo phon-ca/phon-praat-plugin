@@ -23,7 +23,11 @@ package ca.phon.plugins.praat;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
@@ -34,6 +38,8 @@ import java.util.Arrays;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
+import org.pushingpixels.substance.internal.contrib.randelshofer.quaqua.util.Images;
+
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 
 
@@ -41,7 +47,7 @@ import ca.hedlund.jpraat.binding.fon.Spectrogram;
  * Creates a graphical representation from a matrix.  Like Matlab's
  * imagesc.
  */
-public class SpectrogramPanel extends JPanel {
+public class SpectrogramDrawer {
 	
 	private final static double NUMln2 = 0.6931471805599453094172321214581765680755;
 	private final static double NUMln10 = 2.3025850929940456840179914546843642076011;
@@ -55,12 +61,6 @@ public class SpectrogramPanel extends JPanel {
      * A scaled version of the spectrogram image.
      */
     private Image scaledSpectrogram = null;
-
-    /**
-     * The zooming factor.
-     */
-    private float zoom = 1.0f;
-    private float vzoom = 1.0f;
     
     private float dynamicRange = 50.0f;
 
@@ -73,10 +73,15 @@ public class SpectrogramPanel extends JPanel {
     
     private ColorMap cmap = ColorMap.getJet(64);
 
+    public SpectrogramDrawer() {
+    	super();
+    }
+    
     /**
-     * Creates a new SpectrogramPanel for the given data matrix
+     * Creates a new SpectrogramDrawer for the given data matrix
      */
-    public SpectrogramPanel(Spectrogram data, SpectrogramSettings settings) {
+    public SpectrogramDrawer(Spectrogram data, SpectrogramSettings settings) {
+    	super();
         this.data = data;
         this.spectrogramSettings = settings;
     }
@@ -84,7 +89,8 @@ public class SpectrogramPanel extends JPanel {
     /**
      * Actually creates the Spectrogram image.
      */
-    private void computeSpectrogram() {
+    public void computeSpectrogram() {
+    	if(data == null || spectrogramSettings == null) return;
         try {
         	final int numFrames = getDataWidth();
         	final int numBins = getDataHeight();
@@ -120,11 +126,6 @@ public class SpectrogramPanel extends JPanel {
     		}
     		
     		double minIntensity = maximum - spectrogramSettings.getDynamicRange();
-    		
-    		final Dimension d = new Dimension(numFrames, numBins);
-            setMinimumSize(d);
-            setMaximumSize(d);        
-            setPreferredSize(d);
 
             /* Create the image for displaying the data.
              */
@@ -144,50 +145,11 @@ public class SpectrogramPanel extends JPanel {
                     spectrogram.setRGB(i, numBins - j - 1, cmap.getColor(grey));
                 }
             }
-
-            ImageFilter scaleFilter = 
-                new ReplicateScaleFilter((int) (zoom * numFrames), (int)(vzoom*numBins));
-            scaledSpectrogram = 
-                createImage(new FilteredImageSource(spectrogram.getSource(),
-                                                    scaleFilter));
-            Dimension sz = getSize();
-            repaint(0, 0, 0, sz.width - 1, sz.height - 1);
+            
+            scaledSpectrogram = spectrogram;
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Zoom the image in the vertical direction, preparing for new
-     * display.
-     */
-    protected void vzoomSet(float vzoom) {
-        this.vzoom = vzoom;
-        zoom();
-    }
-
-    /**
-     * Zoom the image in the horizontal direction, preparing for new
-     * display.
-     */
-    protected void hzoomSet(float zoom) {
-        zoomSet(zoom);
-    }
-
-    /**
-     * Zoom the image in the horizontal direction, preparing for new
-     * display.
-     */
-    protected void zoomSet(float zoom) {
-        this.zoom = zoom;
-        zoom();
-    }
-    
-    public void setZoom(float hzoom, float vzoom) {
-    	if(hzoom <= 0.1 || vzoom <= 0.1) return;
-    	this.zoom = hzoom;
-    	this.vzoom = vzoom;
-    	zoom();
     }
     
     public void setData(Spectrogram data) {
@@ -195,40 +157,30 @@ public class SpectrogramPanel extends JPanel {
     	computeSpectrogram();
     }
 
-    private void zoom()
-    {
-        if (spectrogram != null) 
-        {
-            int width = spectrogram.getWidth();
-            int height = spectrogram.getHeight();
-            
-            // do the zooming
-            width = (int) (zoom * width);
-            height = (int)(vzoom*height);
-
-            ImageFilter scaleFilter = 
-                new ReplicateScaleFilter(width, height);
-            scaledSpectrogram = 
-                createImage(new FilteredImageSource(spectrogram.getSource(),
-                                                    scaleFilter));
-
-            // so ScrollPane gets notified of the new size:
-            setPreferredSize(new Dimension(width, height));
-            revalidate();
-            
-            repaint();
-        }
-    }
-
-    public float getVZoom()
-    {
-        return vzoom;
-    }
-
-    public float getHZoom()
-    {
-        return zoom;
-    }
+//    private void zoom()
+//    {
+//        if (spectrogram != null) 
+//        {
+//            int width = spectrogram.getWidth();
+//            int height = spectrogram.getHeight();
+//            
+//            // do the zooming
+//            width = (int) (zoom * width);
+//            height = (int)(vzoom*height);
+//
+//            ImageFilter scaleFilter = 
+//                new ReplicateScaleFilter(width, height);
+//            scaledSpectrogram = 
+//                createImage(new FilteredImageSource(spectrogram.getSource(),
+//                                                    scaleFilter));
+//
+//            // so ScrollPane gets notified of the new size:
+//            setPreferredSize(new Dimension(width, height));
+//            revalidate();
+//            
+//            repaint();
+//        }
+//    }
     
     public float getDynamicRange() {
 		return dynamicRange;
@@ -236,9 +188,19 @@ public class SpectrogramPanel extends JPanel {
 
 	public void setDynamicRange(float dynamicRange) {
 		this.dynamicRange = dynamicRange;
-		computeSpectrogram();
+//		computeSpectrogram();
 	}
 	
+	public SpectrogramSettings getSpectrogramSettings() {
+		return spectrogramSettings;
+	}
+
+	public void setSpectrogramSettings(SpectrogramSettings spectrogramSettings) {
+		this.spectrogramSettings = spectrogramSettings;
+//		if(data != null)
+//			computeSpectrogram();
+	}
+
 	public void setColorMap(ColorMap cm) {
 		this.cmap = cm;
 	}
@@ -247,7 +209,7 @@ public class SpectrogramPanel extends JPanel {
 		return this.cmap;
 	}
 
-//	public SpectrogramPanel getColorBar()
+//	public SpectrogramDrawer getColorBar()
 //    {
 //        int barWidth = 20;
 //        
@@ -257,7 +219,7 @@ public class SpectrogramPanel extends JPanel {
 //            for(int y = 0; y < cb[x].length; y++) 
 //                cb[x][y] = y;
 //
-//        return new SpectrogramPanel(cb);
+//        return new SpectrogramDrawer(cb);
 //    }
 
     public double getData(int x, int y)
@@ -286,17 +248,19 @@ public class SpectrogramPanel extends JPanel {
      * 
      * @param g The <code>Graphics</code> to draw on.
      */
-    public void paint(Graphics g) {
-	/**
-	 * Fill in the whole image with white.
-	 */
-	Dimension sz = getSize();
-
-	g.setColor(Color.WHITE);
-	g.fillRect(0, 0, sz.width - 1, sz.height - 1);
-    
-	if(spectrogram != null) {
-            g.drawImage(scaledSpectrogram, 0, 0, (ImageObserver) null);
+    public void paint(Graphics2D g, Rectangle2D bounds) {
+		g.setColor(Color.WHITE);
+		g.fill(bounds);
+		
+		final ImageFilter filter = new ReplicateScaleFilter((int)bounds.getWidth(), (int)bounds.getHeight());
+//		scaledSpectrogram = new BufferedImage(getDataWidth(),
+//                 getDataHeight(),
+//                 BufferedImage.TYPE_INT_RGB);
+		final FilteredImageSource src = new FilteredImageSource(spectrogram.getSource(), filter);
+		scaledSpectrogram = Toolkit.getDefaultToolkit().createImage(src);
+		
+		if(scaledSpectrogram != null) {
+            g.drawImage(scaledSpectrogram, (int)bounds.getX(), (int)bounds.getY(), (ImageObserver) null);
         }
     }
     

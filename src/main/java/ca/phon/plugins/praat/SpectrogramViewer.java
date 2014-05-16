@@ -5,14 +5,19 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Double;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -37,6 +42,7 @@ import ca.phon.app.session.editor.RunInBackground;
 import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
 import ca.phon.app.session.editor.view.waveform.WaveformTier;
 import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
+import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.SystemTierType;
 import ca.phon.ui.CommonModuleFrame;
@@ -52,7 +58,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 
 	private final WaveformEditorView parent;
 
-	private SpectrogramPanel spectrogramPanel;
+	private final SpectrogramDrawer spectrogramDrawer = new SpectrogramDrawer();
 	
 	private SpectrogramSettings spectrogramSettings = new SpectrogramSettings();
 	
@@ -62,6 +68,17 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		setBackground(Color.white);
 		this.parent = parent;
 		this.parent.addComponentListener(resizeListener);
+		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, new PropertyChangeListener() {
+			
+			@Override
+			public void propertyChange(PropertyChangeEvent arg0) {
+				repaint();
+			}
+			
+		});
+		
+		spectrogramDrawer.setSpectrogramSettings(spectrogramSettings);
+		spectrogramDrawer.setColorMap(ColorMap.getGreyscale(16));
 		
 		setLayout(null);
 		
@@ -182,43 +199,23 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			update();
 	}
 	
+	private final ReentrantLock updateLock = new ReentrantLock();
 	public void update() {
 		if(!isVisible()) return;
+		updateLock.lock();
 		final Spectrogram spectrogramData = loadSpectrogram();
+		spectrogramDrawer.setData(spectrogramData);
+		spectrogramDrawer.setSpectrogramSettings(spectrogramSettings);
+		spectrogramDrawer.computeSpectrogram();
+		updateLock.unlock();
+		
 		final Runnable onEdt = new Runnable() {
 			
 			@Override
 			public void run() {
-				removeAll();
-				if(spectrogramData == null 
-						|| spectrogramData.getNx() == 0){
-					return;
-				}
-				spectrogramPanel = new SpectrogramPanel(spectrogramData, spectrogramSettings);
-				if(spectrogramSettings.isUseColor())
-					spectrogramPanel.setColorMap(ColorMap.getJet(128));
-				else
-					spectrogramPanel.setColorMap(ColorMap.getGreyscale(16));
+				final Dimension newSize = new Dimension(parent.getWidth(), spectrogramDrawer.getDataHeight());
+				setPreferredSize(newSize);
 				
-				spectrogramPanel.setDynamicRange((float)spectrogramSettings.getDynamicRange());
-				final WaveformViewCalculator calculator = parent.getCalculator();
-				
-				final Rectangle2D segRect = calculator.getSegmentRect();
-				int x = (segRect.getX() != Float.POSITIVE_INFINITY ? (int)segRect.getX() : 0);
-				int y = 0;
-				float hscale = 1.0f;
-				float vscale = 1.0f;
-				if(segRect.getWidth() > 0) {
-					hscale = (float)(segRect.getWidth() / (float)spectrogramPanel.getDataWidth());
-					spectrogramPanel.setZoom(hscale, vscale);
-				}
-				spectrogramPanel.setBounds(
-						x, y,
-						(int)(spectrogramPanel.getDataWidth() * hscale), spectrogramPanel.getPreferredSize().height);
-				setPreferredSize(
-						new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
-				setSize(new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
-				add(spectrogramPanel);
 				revalidate();
 				repaint();
 			}
@@ -252,7 +249,36 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final Rectangle2D rightInsetRect = calculator.getRightInsetRect();
 		rightInsetRect.setRect(
 				rightInsetRect.getX(), 0.0, rightInsetRect.getWidth(), height);
-
+		
+		updateLock.lock();
+		final Rectangle2D spectrogramRect = new Rectangle2D.Double(
+				calculator.getSegmentRect().getX(), 0, calculator.getSegmentRect().getWidth(), getHeight());
+		spectrogramDrawer.paint(g2, spectrogramRect);
+		updateLock.unlock();
+		
+		final WavDisplay wavDisplay = parent.getWavDisplay();
+		if(wavDisplay.get_selectionStart() >= 0
+				&& wavDisplay.get_selectionEnd() >= 0) {
+			Color selColor = new Color(50, 125, 200, 100);
+			g2.setColor(selColor);
+			
+			double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
+					(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
+			
+			// convert time values to x positions
+			double startXPos = wavDisplay.get_selectionStart() / msPerPixel;
+			double endXPos = wavDisplay.get_selectionEnd() / msPerPixel;
+			double xPos = 
+				Math.min(startXPos, endXPos) + WavDisplay._TIME_INSETS_;
+			double rectLen = 
+				Math.abs(endXPos - startXPos);
+			
+			Rectangle2D selRect =
+				new Rectangle2D.Double(xPos, 0,
+						rectLen, getHeight());
+			g2.fill(selRect);
+		}
+		
 		g2.setColor(new Color(200, 200, 200, 100));
 		g2.fill(leftInsetRect);
 		g2.fill(rightInsetRect);
@@ -266,28 +292,28 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		@Override
 		public void componentResized(ComponentEvent e) {
-			if(spectrogramPanel == null) return;
-			final WaveformViewCalculator calculator = parent.getCalculator();
-			
-			final Rectangle2D segRect = calculator.getSegmentRect();
-			
-			int x = (segRect.getX() != Float.POSITIVE_INFINITY ? (int)segRect.getX() : 0);
-			int y = 0;
-			
-			float hscale = 1.0f;
-			float vscale = 1.0f;
-			
-			if(segRect.getWidth() > 0) {
-				hscale = (float)(segRect.getWidth() / (float)spectrogramPanel.getDataWidth());
-				spectrogramPanel.setZoom(hscale, vscale);
-			}
-			
-			spectrogramPanel.setBounds(
-					x, y,
-					spectrogramPanel.getPreferredSize().width, spectrogramPanel.getPreferredSize().height);
-			setPreferredSize(
-					new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
-			setSize(new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
+//			if(spectrogramPanel == null) return;
+//			final WaveformViewCalculator calculator = parent.getCalculator();
+//			
+//			final Rectangle2D segRect = calculator.getSegmentRect();
+//			
+//			int x = (segRect.getX() != Float.POSITIVE_INFINITY ? (int)segRect.getX() : 0);
+//			int y = 0;
+//			
+//			float hscale = 1.0f;
+//			float vscale = 1.0f;
+//			
+//			if(segRect.getWidth() > 0) {
+//				hscale = (float)(segRect.getWidth() / (float)spectrogramPanel.getDataWidth());
+//				spectrogramPanel.setZoom(hscale, vscale);
+//			}
+//			
+//			spectrogramPanel.setBounds(
+//					x, y,
+//					spectrogramPanel.getPreferredSize().width, spectrogramPanel.getPreferredSize().height);
+//			setPreferredSize(
+//					new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
+//			setSize(new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
 //			revalidate();repaint();
 		}
 		
