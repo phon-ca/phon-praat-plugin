@@ -6,9 +6,6 @@
 #
 # Required Arguments:
 #  - recordId: The uuid of the phon record
-#  - tierName: The TextGrid tier
-#  - interval: The TextGrid interval
-#  - intervalIdx: The interval index
 #  - soundFile: the wav file
 #  - tgFile: TextGrid file location
 #
@@ -33,22 +30,3 @@ select tg
 select segment
 plus tg
 View & Edit
-
-editor: "TextGrid " + recordId$
-# Wait for User to press 'Save to Phon' or 'Cancel'
-beginPause: "Edit TextGrid"
-	comment:	"Modify TextGrid and click 'Send to Phon' to Continue"
-clicked = endPause: "Cancel", "Send to Phon", 2, 1
-
-if clicked = 2
-	# Save text grid data and send filename back to Phon
-	Save TextGrid as text file... textGrid$
-	sendsocket $phonsock 'textGrid$'
-endif
-endeditor
-
-# Cleanup objects
-select snd 
-plus segment
-plus tg
-Remove

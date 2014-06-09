@@ -14,26 +14,21 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-
+import ca.hedlund.jpraat.PraatMain;
+import ca.hedlund.jpraat.binding.Praat;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
@@ -45,26 +40,19 @@ import ca.phon.app.session.editor.view.waveform.WaveformTier;
 import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.media.wavdisplay.TimeBar;
 import ca.phon.media.wavdisplay.WavDisplay;
-import ca.phon.plugins.praat.db.PraatDbManager;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
-import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
-import ca.phon.plugins.praat.script.PraatScriptTcpServer;
-import ca.phon.script.PhonScriptContext;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
-import ca.phon.ui.PhonLoggerConsole;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
-import ca.phon.worker.PhonWorker;
 
 /**
  * Display a TextGrid as a vertical list of tiers.
@@ -272,8 +260,11 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("interval", media);
 		
 		
+		PraatMain.runPraat();
 		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
 		try {
+			while(!PraatMain.isRunning()) Thread.sleep(100);
+			
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
 			if(err != null && err.length() > 0) {
@@ -281,6 +272,11 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 				toast.start(openTextGridButton);
 			}
 		} catch (IOException e) {
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(openTextGridButton);
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		} 
+		catch (InterruptedException e) {
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(openTextGridButton);
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
