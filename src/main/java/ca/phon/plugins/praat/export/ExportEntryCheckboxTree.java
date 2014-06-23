@@ -22,15 +22,29 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	 */
 	private CheckedTreeNode rootNode;
 	
-	private final Session session;
+	private Session session;
+	
+	public ExportEntryCheckboxTree() {
+		super(new CheckedTreeNode());
+		
+		rootNode = (CheckedTreeNode)super.getModel().getRoot();
+	}
 	
 	public ExportEntryCheckboxTree(Session session) {
 		super(new CheckedTreeNode());
 		
 		rootNode = (CheckedTreeNode)super.getModel().getRoot();
+		if(session != null)
+			setSession(session);
+	}
+	
+	public void setSession(Session session) {
 		this.session = session;
-		
 		initTree();
+	}
+	
+	public Session getSession() {
+		return this.session;
 	}
 	
 	private void initTree() {

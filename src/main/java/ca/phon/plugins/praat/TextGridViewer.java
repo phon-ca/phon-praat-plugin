@@ -1,6 +1,7 @@
 package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -14,6 +15,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
@@ -34,6 +37,7 @@ import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
 import ca.phon.app.session.editor.view.waveform.WaveformTier;
@@ -41,9 +45,14 @@ import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.WavDisplay;
+import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.session.MediaSegment;
+import ca.phon.session.RangeRecordFilter;
+import ca.phon.session.Record;
+import ca.phon.session.RecordFilter;
+import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
@@ -58,6 +67,9 @@ import ca.phon.util.icons.IconSize;
  * Display a TextGrid as a vertical list of tiers.
  */
 public class TextGridViewer extends JPanel implements WaveformTier {
+	
+	public static final String TEXT_GRID_CHANGED_EVENT = 
+			TextGridViewer.class.getName() + ".textGridChangedEvent";
 	
 	private static final Logger LOGGER = Logger
 			.getLogger(TextGridViewer.class.getName());
@@ -123,14 +135,25 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		
 		this.parent.addComponentListener(resizeListener);
 		
-		// setup editor actions
-		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
 		
 		// setup toolbar buttons
 		setupToolbar();
 		
+		setupEditorActions();
+		
 		update();
+	}
+	
+	private void setupEditorActions() {
+		// setup editor actions
+		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
+		
+		final EditorAction textGridChangedAct = new DelegateEditorAction(this, "onTextGridChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(TEXT_GRID_CHANGED_EVENT, textGridChangedAct);
+		
+		final EditorAction segChangedAct = new DelegateEditorAction(this, "onTierChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segChangedAct);
 	}
 	
 	public void setTextGrid(TextGrid tg) {
@@ -146,20 +169,62 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		contentPane.removeAll();
 		
 		if(tg != null) {
-			for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-				final TextGridTier tier = tg.getTier(i);
-				final TextGridTierComponent tierComp = new TextGridTierComponent(tier, calculator);
-				tierComp.setFont(getFont());
-				tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
-				contentPane.add(tierComp);
+			final Record currentRecord = parent.getEditor().currentRecord();
+			final Tier<MediaSegment> segTier = currentRecord.getSegment();
+			final MediaSegment seg = (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
+			if(seg == null ||
+					(seg.getStartValue() / 1000.0f != tg.getMin())
+					|| (seg.getEndValue() / 1000.0f != tg.getMax())) {
+				final JLabel errLabel = new JLabel("<html><b>TextGrid dimensions do not match segment</b></html>");
+				errLabel.setBackground(Color.red);
+				errLabel.setOpaque(true);
+				
+				final PhonUIAction generateTextGridAct = new PhonUIAction
+						(this, "onGenerateTextGrid");
+				generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+				generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
+				
+				final JButton generateTextGridBtn = new JButton(generateTextGridAct);
+				contentPane.add(generateTextGridBtn);
+				
+				contentPane.add(errLabel);
+				contentPane.add(generateTextGridBtn);
+			} else {
+				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
+					final TextGridTier tier = tg.getTier(i);
+					final TextGridTierComponent tierComp = new TextGridTierComponent(tier, calculator);
+					tierComp.setFont(getFont());
+					tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
+					contentPane.add(tierComp);
+				}
 			}
+		} else {
+			final PhonUIAction generateTextGridAct = new PhonUIAction
+					(this, "onGenerateTextGrid");
+			generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+			generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
 			
-			final Dimension prefSize = contentPane.getPreferredSize();
-			layeredPane.setPreferredSize(prefSize);
-			final Point p = layeredPane.getLocation();
-			contentPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
-			widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
+			final JButton generateTextGridBtn = new JButton(generateTextGridAct);
+			contentPane.add(generateTextGridBtn);
 		}
+		
+		final Dimension prefSize = contentPane.getPreferredSize();
+		layeredPane.setPreferredSize(prefSize);
+		contentPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
+		widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
+	}
+	
+	public void onGenerateTextGrid() {
+		final SessionEditor editor = parent.getEditor();
+		final int currentRecord = editor.getCurrentRecordIndex();
+		
+		try {
+			final RecordFilter filter = new RangeRecordFilter(editor.getSession(), "" + (currentRecord));
+			
+			final TextGridExportWizard wizard = new TextGridExportWizard(editor.getProject(), editor.getSession(), filter);
+			wizard.showWizard();
+		} catch (ParseException e) {}
+		
 	}
 	
 	@Override
@@ -289,8 +354,25 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		setTextGrid(tg);
 	}
 	
+	@RunOnEDT
 	public void onRecordChanged(EditorEvent ee) {
 		update();
+	}
+	
+	@RunOnEDT
+	public void onTextGridChanged(EditorEvent ee) {
+		if(ee.getEventData() != null && ee.getEventData() instanceof Integer) {
+			final int rIdx = (Integer)ee.getEventData();
+			if(rIdx == parent.getEditor().getCurrentRecordIndex())
+				update();
+		}
+	}
+	
+	@RunOnEDT
+	public void onTierChanged(EditorEvent ee) {
+		if(ee.getEventData() != null && ee.getEventData().equals(SystemTierType.Segment.getName())) {
+			update();
+		}
 	}
 	
 	private final ActionListener toggleViewerAction = new ActionListener() {

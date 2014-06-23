@@ -490,6 +490,7 @@ public class TextGridExporter {
 	public TextGrid createEmptyTextGrid(Record utt) {
 		final TextGrid retVal = new TextGrid();
 		final Tier<MediaSegment> segmentTier = utt.getSegment();
+		if(segmentTier.numberOfGroups() == 0) return retVal;
 		final MediaSegment media = segmentTier.getGroup(0);
 		
 		if(media != null) {

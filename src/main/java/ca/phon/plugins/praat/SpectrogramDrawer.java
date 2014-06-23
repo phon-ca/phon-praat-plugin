@@ -38,8 +38,6 @@ import java.util.Arrays;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
-import org.pushingpixels.substance.internal.contrib.randelshofer.quaqua.util.Images;
-
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 
 

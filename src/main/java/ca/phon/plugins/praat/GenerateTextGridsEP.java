@@ -2,6 +2,8 @@ package ca.phon.plugins.praat;
 
 import java.util.Map;
 
+import ca.phon.app.modules.EntryPointArgs;
+import ca.phon.app.project.ProjectWindow;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.plugin.IPluginEntryPoint;
 import ca.phon.plugin.PhonPlugin;
@@ -21,17 +23,30 @@ public class GenerateTextGridsEP implements IPluginEntryPoint {
 
 	@Override
 	public void pluginStart(Map<String, Object> arg0) {
-		final SessionEditor editor = (SessionEditor)arg0.get("editor");
-		if(editor == null) 
-			throw new NullPointerException(EP_NAME + ": editor");
-		final Project project = editor.getProject();
-		final Session session = editor.getSession();
+		final EntryPointArgs args = new EntryPointArgs(arg0);
+		final SessionEditor editor = (SessionEditor)args.get("editor");
+		Project project = args.getProject();
+		if(project == null && args.get("projectWindow") != null) {
+			final ProjectWindow pw = (ProjectWindow)args.get("projectWindow");
+			project = pw.getProject();
+		}
+		Session session = args.getSession();
+		if(session == null && editor != null) {
+			project = editor.getProject();
+			session = editor.getSession();
+		}
 		
-		final TextGridExportWizard wizard = new TextGridExportWizard(project, session);
+		TextGridExportWizard wizard = null;
+		if(session != null) {
+			wizard = new TextGridExportWizard(project, session);
+		} else {
+			wizard = new TextGridExportWizard(project);
+		}
 		wizard.setSize(500, 550);
 		wizard.centerWindow();
-		wizard.setLocationRelativeTo(editor);
-		wizard.setVisible(true);
+		if(editor != null)
+			wizard.setLocationRelativeTo(editor);
+		wizard.showWizard();
 	}
 
 }
