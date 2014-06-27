@@ -3,3 +3,4 @@ ca.phon.plugins.praat.SpectrogramViewExtPt
 #ca.phon.plugins.praat.TextGridViewExtPt
 ca.phon.plugins.praat.TextGridViewerExtPt
 
+ca.phon.plugins.praat.PraatStartupHook
