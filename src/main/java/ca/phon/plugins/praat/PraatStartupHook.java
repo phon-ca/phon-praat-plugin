@@ -2,6 +2,8 @@ package ca.phon.plugins.praat;
 
 import java.util.logging.Logger;
 
+import com.sun.jna.Native;
+
 import ca.hedlund.jpraat.binding.Praat;
 import ca.phon.app.hooks.PhonStartupHook;
 import ca.phon.plugin.IPluginExtensionFactory;
@@ -20,6 +22,10 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 	@Override
 	public void startup() throws PluginException {
 		LOGGER.info("Initializing Praat library");
+		
+		// try to prevent JVM crashing due to uncaught C++ exceptions
+		Native.setProtected(true);
+		
 		Praat.INSTANCE.praat_lib_init();
 	}
 
