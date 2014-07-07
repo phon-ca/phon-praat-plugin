@@ -22,15 +22,18 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
+import javax.swing.MenuElement;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.hedlund.jpraat.PraatMain;
 import ca.hedlund.jpraat.binding.Praat;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.phon.app.session.editor.DelegateEditorAction;
@@ -84,11 +87,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	// parent panel
 	private WaveformEditorView parent;
-	
-	// toolbar buttons
-	private JCheckBox toggleViewerButton;
-	
-	private JButton openTextGridButton;
 	
 	private JLayeredPane layeredPane;
 	
@@ -250,25 +248,13 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	 * Adds extra buttons to the segment panel toolbar
 	 */
 	private void setupToolbar() {
-		final JToolBar toolbar = parent.getToolbar();
-		
-		toolbar.addSeparator();
-		
-		// toggle textgrid visibility
-		toggleViewerButton = new JCheckBox("TextGrid");
-		toggleViewerButton.setSelected(false);
-		toggleViewerButton.addActionListener(toggleViewerAction);
-		
-		final ImageIcon praatIcon = IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL);
-		final PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid");
-		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid in Praat");
-		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid");
-		openTextGridAct.putValue(PhonUIAction.SMALL_ICON, praatIcon);
-		openTextGridButton = new JButton(openTextGridAct);
-		openTextGridButton.setVisible(false);
-		
-		toolbar.add(toggleViewerButton);
-		toolbar.add(openTextGridButton);
+		PraatMenuButton menuBtn = parent.getExtension(PraatMenuButton.class);
+		if(menuBtn == null) {
+			menuBtn = new PraatMenuButton(parent);
+			parent.getToolbar().addSeparator();
+			parent.getToolbar().add(menuBtn);
+			parent.putExtension(PraatMenuButton.class, menuBtn);
+		}
 	}
 	
 	/**
@@ -316,7 +302,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		final MediaSegment media = segmentTier.getGroup(0);
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
-
 		
 		final PraatScriptContext map = new PraatScriptContext();
 		map.put("recordId", model.currentRecord().getUuid().toString());
@@ -324,24 +309,16 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("tgFile", tgPath);
 		map.put("interval", media);
 		
-		
-		PraatMain.runPraat();
 		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
 		try {
-			while(!PraatMain.isRunning()) Thread.sleep(100);
-			
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
 			if(err != null && err.length() > 0) {
 				final Toast toast = ToastFactory.makeToast("Praat error: " + err);
-				toast.start(openTextGridButton);
+				toast.start(this);
 			}
 		} catch (IOException e) {
-			ToastFactory.makeToast(e.getLocalizedMessage()).start(openTextGridButton);
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		} 
-		catch (InterruptedException e) {
-			ToastFactory.makeToast(e.getLocalizedMessage()).start(openTextGridButton);
+			ToastFactory.makeToast(e.getLocalizedMessage()).start();
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
@@ -375,15 +352,17 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
-	private final ActionListener toggleViewerAction = new ActionListener() {
-		
-		@Override
-		public void actionPerformed(ActionEvent arg0) {
-			final boolean enabled = toggleViewerButton.isSelected();
-			TextGridViewer.this.setVisible(enabled);
-			openTextGridButton.setVisible(enabled);
-		}
-	};
+	public void onSendPraat() {
+		final SendPraatDialog dlg = new SendPraatDialog(parent.getEditor());
+		dlg.pack();
+		dlg.setLocationRelativeTo(this);
+		dlg.setVisible(true);
+	}
+	
+	public void onToggleTextGrid() {
+		final boolean enabled = !TextGridViewer.this.isVisible();
+		TextGridViewer.this.setVisible(enabled);
+	}
 	
 	private final TextGridListener tgListener = new TextGridListener() {
 		
@@ -487,4 +466,46 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		public void componentHidden(ComponentEvent e) {
 		}
 	};
+
+	@Override
+	public void addMenuItems(JMenu menu) {
+		JMenu praatMenu = null;
+		for(int i = 0; i < menu.getItemCount(); i++) {
+			if(menu.getItem(i) != null && menu.getItem(i).getText() != null 
+					&& menu.getItem(i).getText().equals("Praat")) {
+				praatMenu = (JMenu)menu.getItem(i);
+			}
+		}
+		if(praatMenu == null) {
+			praatMenu = new JMenu("Praat");
+			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+			menu.addSeparator();
+			menu.add(praatMenu);
+		} else {
+			praatMenu.addSeparator();
+		}
+		
+		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleTextGrid");
+		toggleAct.putValue(PhonUIAction.NAME, "Toggle TextGrid");
+		toggleAct.putValue(PhonUIAction.SELECTED_KEY, TextGridViewer.this.isVisible());
+		final JCheckBoxMenuItem toggleItem = new JCheckBoxMenuItem(toggleAct);
+		praatMenu.add(toggleItem);
+		
+		final PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid");
+		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid in an open instance of Praat");
+		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat");
+		praatMenu.add(openTextGridAct);
+		
+		final PhonUIAction genTextGridAct = new PhonUIAction(this, "onGenerateTextGrid");
+		genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
+		genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for current record...");
+		praatMenu.add(genTextGridAct);
+		
+		praatMenu.addSeparator();
+		
+		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
+		sendPraatAct.putValue(PhonUIAction.NAME, "SendPraat...");
+		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Execute Praat script...");
+		praatMenu.add(sendPraatAct);
+	}
 }
