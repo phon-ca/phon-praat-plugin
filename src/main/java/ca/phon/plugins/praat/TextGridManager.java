@@ -35,7 +35,9 @@ public class TextGridManager {
 	 */
 	private final static String TEXTGRID_FOLDER = "__res/plugin_data/textgrid/data";
 	
-	private final static String TEXTGRID_ENCODING = "UTF-16";
+	private final static String ALTERNATE_TEXTGRID_ENCODING = "UTF-8";
+	
+	private final static String DEFAULT_TEXTGRID_ENCODING = "UTF-16";
 	
 	private final static String TEXTGRID_EXT = ".TextGrid";
 	
@@ -81,9 +83,17 @@ public class TextGridManager {
 		TextGrid retVal = null;
 		
 		try {
-			retVal = loadTextGrid(new File(tgPath));
-		} catch (IOException e) {
-			LOGGER.log(Level.INFO, e.getLocalizedMessage());
+			retVal = loadTextGrid(new File(tgPath), DEFAULT_TEXTGRID_ENCODING);
+		} catch (ParseException e) {
+			try {
+				retVal = loadTextGrid(new File(tgPath), ALTERNATE_TEXTGRID_ENCODING);
+			} catch (IOException e1) {
+				LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
+			} catch (ParseException e1) {
+				LOGGER.log(Level.SEVERE, "Unable to read TextGrid file, unknown encoding.", e);
+			}
+		} catch(IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 		
 		return retVal;
@@ -129,7 +139,7 @@ public class TextGridManager {
 		if(!tgParent.exists())
 			tgParent.mkdirs();
 		
-		final TextGridWriter tgWriter = new TextGridWriter(textgrid, tgFile, TEXTGRID_ENCODING);
+		final TextGridWriter tgWriter = new TextGridWriter(textgrid, tgFile, DEFAULT_TEXTGRID_ENCODING);
 		tgWriter.writeTextGrid();
 		tgWriter.close();
 	}
@@ -141,16 +151,33 @@ public class TextGridManager {
 	 * @return textgrid
 	 * @throws IOException
 	 */
-	public static TextGrid loadTextGrid(File tgFile) 
-		throws IOException {
-		final TextGridReader tgReader = new TextGridReader(tgFile, TEXTGRID_ENCODING);
+	public static TextGrid loadTextGrid(File tgFile, String encoding) 
+		throws IOException, ParseException {
+		final TextGridReader tgReader = new TextGridReader(tgFile, encoding);
 		TextGrid retVal;
-		try {
-			retVal = tgReader.readTextGrid();
-		} catch (ParseException e) {
-			throw new IOException(e);
-		}
+		retVal = tgReader.readTextGrid();
 		tgReader.close();
+		
+		return retVal;
+	}
+	
+	public static TextGrid loadTextGrid(File tgFile)
+		throws IOException {
+		TextGrid retVal = null;
+		
+		try {
+			TextGridReader reader = new TextGridReader(tgFile, DEFAULT_TEXTGRID_ENCODING);
+			retVal = reader.readTextGrid();
+			reader.close();
+		} catch (ParseException e) {
+			try {
+				TextGridReader reader = new TextGridReader(tgFile, ALTERNATE_TEXTGRID_ENCODING);
+				retVal = reader.readTextGrid();
+				reader.close();
+			} catch (ParseException e1) {
+				LOGGER.log(Level.WARNING, "Unable to reader TextGrid file '" + tgFile.getAbsolutePath() + "', unknown encoding.");
+			}
+		}
 		
 		return retVal;
 	}

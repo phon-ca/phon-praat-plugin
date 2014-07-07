@@ -37,8 +37,9 @@ public class TextGridScanner {
 	public Set<String> collectTierNames() {
 		final Set<String> retVal = new HashSet<String>();
 		for(File f:textGridFolder.listFiles(tgFilter)) {
+			TextGrid tg = null;
 			try {
-				final TextGrid tg = TextGridManager.loadTextGrid(f);
+				tg = TextGridManager.loadTextGrid(f);
 				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
 					final TextGridTier tgTier = tg.getTier(i);
 					retVal.add(tgTier.getTierName());
