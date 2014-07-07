@@ -1,0 +1,43 @@
+#*
+Velocity template for Praat scripts in Phon.
+
+Available variables in template:
+
+Variable Name:		Type:			Notes:
+---------------------------------------------------------------------------------------------------------------------------
+$session		ca.phon.session.Session		Current session
+$record		ca.phon.session.Record 		Current record
+$segment		ca.phon.session.MediaSegment		Media segment for current record
+$selection		ca.phon.session.MediaSegment		Selection in waveform view (if any)
+$audioPath		java.lang.String			Path to audio file for session
+$textGridPath		java.lang.String			Path to TextGrid for record
+$spectrogramSettings	ca.phon.plugins.praat.SpectrogramSettings	Current spectrogram settings
+$formantSettings	ca.phon.plugins.praat.FormantSettings	Current formant settings
+$pitchSettings		ca.phon.plugins.praat.PitchSettings	Current pitch settings
+$replyToPhon		java.lang.Boolean		true if 'Listen for response' is selected				
+$socket		java.lang.Integer			Socket number for reply (only if $replyToPhon is true)
+*#
+
+## Setup interval, Phon stores values in ms
+start = $segment.startValue / 1000.0
+end = $segment.endValue / 1000.0
+preserveTimes$ = "yes"
+
+## Load objects in Praat Object window
+snd = Open long sound file... $audioPath
+segment = Extract part... start end 'preserveTimes$'
+textGrid = Read from file... $textGridPath
+
+## Perform custom tasks in Praat here....
+
+
+#*
+If $replyToPhon is true, Phon will be expecting a reply on the
+provided $socket.  Use Praat's 'sendsocket' command to send
+results back to Phon.
+*#
+
+#if($replyToPhon)
+data$ = "Hello from Praat!"
+sendsocket localhost:$socket 'data$'
+#end
