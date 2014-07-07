@@ -8,11 +8,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
-
 /**
  * 
  */
@@ -43,34 +38,34 @@ public class PraatScriptParams {
 	public static List<PraatScriptParam> parseScriptParams(String json) {
 		final List<PraatScriptParam> retVal = new ArrayList<PraatScriptParam>();
 		
-		final JSONTokener tokenizer = new JSONTokener(json);
-		final JSONArray jsonArray = new JSONArray(tokenizer);
-		
-		for(int i = 0; i < jsonArray.length(); i++) {
-			final JSONObject jsonObj = jsonArray.getJSONObject(i);
-			
-			final String name = jsonObj.getString("name");
-			final String label = jsonObj.getString("label");
-			final String type = jsonObj.getString("type");
-			final String prompt = jsonObj.getString("prompt");
-			final Object defVal = jsonObj.get("default");
-			
-			
-			try {
-				final Class<?> clazz = Class.forName(type);
-				
-				final PraatScriptParam param = new PraatScriptParam();
-				param.setName(name);
-				param.setType(clazz);
-				param.setDescription(label);
-				param.setPrompt(prompt);
-				param.setDefaultValue(defVal);
-				retVal.add(param);
-			} catch (ClassNotFoundException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-			}
-		}
-		
+//		final JSONTokener tokenizer = new JSONTokener(json);
+//		final JSONArray jsonArray = new JSONArray(tokenizer);
+//		
+//		for(int i = 0; i < jsonArray.length(); i++) {
+//			final JSONObject jsonObj = jsonArray.getJSONObject(i);
+//			
+//			final String name = jsonObj.getString("name");
+//			final String label = jsonObj.getString("label");
+//			final String type = jsonObj.getString("type");
+//			final String prompt = jsonObj.getString("prompt");
+//			final Object defVal = jsonObj.get("default");
+//			
+//			
+//			try {
+//				final Class<?> clazz = Class.forName(type);
+//				
+//				final PraatScriptParam param = new PraatScriptParam();
+//				param.setName(name);
+//				param.setType(clazz);
+//				param.setDescription(label);
+//				param.setPrompt(prompt);
+//				param.setDefaultValue(defVal);
+//				retVal.add(param);
+//			} catch (ClassNotFoundException e) {
+//				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//			}
+//		}
+//		
 		return retVal;
 	}
 	
