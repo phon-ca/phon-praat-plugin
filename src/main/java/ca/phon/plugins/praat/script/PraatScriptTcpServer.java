@@ -124,4 +124,8 @@ public class PraatScriptTcpServer {
 		
 	};
 
+	public void stop() {
+		server.shutdown();
+	}
+
 }

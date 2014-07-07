@@ -2,11 +2,15 @@ package ca.phon.plugins.praat.script;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
+import org.apache.velocity.runtime.resource.loader.StringResourceLoader;
+import org.apache.velocity.runtime.resource.util.StringResourceRepository;
 
 
 /**
@@ -17,6 +21,8 @@ import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 public class PraatScript {
 	
 	private String scriptTemplate;
+	
+	private String scriptText;
 
 	/**
 	 * Constructor
@@ -26,9 +32,15 @@ public class PraatScript {
 		scriptTemplate = new String();
 	}
 	
-	public PraatScript(String script) {
+	public PraatScript(String scriptText) {
 		super();
-		this.scriptTemplate = script;
+		this.scriptText = scriptText;
+	}
+	
+	public PraatScript(String scriptText, String scriptTemplate) {
+		super();
+		this.scriptTemplate = scriptTemplate;
+		this.scriptText = scriptText;
 	}
 	
 	public String getScriptTemplate() {
@@ -39,6 +51,14 @@ public class PraatScript {
 		this.scriptTemplate = script;
 	}
 	
+	public String getScriptText() {
+		return scriptText;
+	}
+
+	public void setScriptText(String scriptText) {
+		this.scriptText = scriptText;
+	}
+
 	/**
 	 * Generate a script from the specified template
 	 * using the given object map.
@@ -52,9 +72,19 @@ public class PraatScript {
 	 */
 	public String generateScript(PraatScriptContext ctx) 
 		throws IOException {
+		final Properties p = new Properties();
+		p.setProperty(RuntimeConstants.RESOURCE_LOADER, "string");
+		p.setProperty("string.resource.loader.class", "org.apache.velocity.runtime.resource.loader.StringResourceLoader");
+	
 		final VelocityEngine ve = new VelocityEngine();
-		ve.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
-		ve.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
+		ve.init(p);
+		
+		if(scriptTemplate == null || scriptTemplate.length() == 0) {
+			// install string and set template name
+			scriptTemplate = UUID.randomUUID().toString();
+			StringResourceRepository repository = StringResourceLoader.getRepository();
+			repository.putStringResource(scriptTemplate, scriptText);
+		}
 		
 		// load template
 		final Template t = ve.getTemplate(getScriptTemplate());
