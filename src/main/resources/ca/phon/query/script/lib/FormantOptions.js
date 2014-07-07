@@ -14,7 +14,7 @@ exports.FormantOptions = function(id) {
 		"id": id+".windowLength",
 		"title": "",
 		"desc": "Window length (s)",
-		"def": "0.2"
+		"def": "0.025"
 	};
 	var windowLengthParam;
 	this.windowLength = windowLengthParamInfo.def;
@@ -23,7 +23,7 @@ exports.FormantOptions = function(id) {
 		"id": id+".maxFreq",
 		"title": "",
 		"desc": "Max freq (Hz)",
-		"def": "5000.0"
+		"def": "5500.0"
 	};
 	var maxFreqParam;
 	this.maxFreq = maxFreqParamInfo.def;
@@ -45,6 +45,18 @@ exports.FormantOptions = function(id) {
 	};
 	var preEmpParam;
 	this.preEmp = preEmpParamInfo.def;
+	
+	var tableOptsParamInfo = {
+        "id":[id + ".includeIntensity", id+ ".includeNumFormants", id + ".includeBandwidths"],
+        "title": "",
+        "desc":[ "Include intensity", "Include numbers of formants", "Include bandwidths"],
+        "def":[ true, true, true],
+        "numCols": 3
+    };
+    var tableOptsParam;
+    this.includeIntensity = tableOptsParamInfo.def[0];
+    this.includeNumFormants = tableOptsParamInfo.def[1];
+    this.includeBandwidths = tableOptsParamInfo.def[2];
 	
 	this.param_setup = function(params) {
 		maxFormantsParam = new StringScriptParam(
@@ -72,11 +84,19 @@ exports.FormantOptions = function(id) {
 			preEmpParamInfo.desc,
 			preEmpParamInfo.def);
 			
+		tableOptsParam = new MultiboolScriptParam(
+        tableOptsParamInfo.id,
+        tableOptsParamInfo.def,
+        tableOptsParamInfo.desc,
+        tableOptsParamInfo.title,
+        tableOptsParamInfo.numCols);
+			
 		params.add(maxFormantsParam);
 		params.add(windowLengthParam);
 		params.add(maxFreqParam);
 		params.add(timeStepParam);
 		params.add(preEmpParam);
+		params.add(tableOptsParam);
 	}
 
 }

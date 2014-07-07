@@ -83,6 +83,8 @@ var session;
 var textGridManager;
 var longSound;
 
+var printedTableHeader = false;
+
 function getMediaFile(s) {
 	
 		selectedMedia = 
@@ -122,8 +124,7 @@ function begin_search(s) {
 		// load our audio file
 		var mf = MelderFile.fromPath(wavPath);
 		longSound = LongSound.open(mf);
-	}	
-	out.println("\"Phone\",\"Time\",\"F1\",\"F2\",\"F3\",\"F4\",\"F5\""); 
+	}
 }
 
 function annotateRecord(r) {
@@ -136,7 +137,7 @@ function annotateRecord(r) {
 	tga.annotateRecord(tg, r);
 }
 
-function printFormantInfo(formants, ipa) {
+function listFormants(formants, ipa) {
 	tgi = ipa.textGridInterval;
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textGridInterval;
@@ -150,15 +151,36 @@ function printFormantInfo(formants, ipa) {
 		}
 	}
 	
-	for(x = tgi.start; x < tgi.end; x += formants.getDx()) {
-		out.print("\"" + ipa + "\",");
-		out.print("\"" + x + "\",");
-		for(i = 1; i <= formants.maxNumFormants; i++) {
-			v = formants.getValueAtTime(i, x, 0);
-			
-			out.print("\"" + v + "\"" + (i == formants.maxNumFormants ? "" : ","));
+	var formantTable = formants.downto_Table(
+		false, // never include frame numbers
+		true, // always include times
+		6,
+		filters.formantOpts.includeIntensity, 6,
+		filters.formantOpts.includeNumFormants, 6,
+		filters.formantOpts.includeBandwidths);
+	
+	if(serial == 1 && !printedTableHeader) {
+		printedTableHeader = true;
+		
+		// print ipa column
+		out.print("\"ipa\"");
+		
+		for(col = 1; col <= formantTable.getNcol(); col++) {
+			out.print(",\"" + formantTable.getColStr(col) + "\"");
 		}
 		out.println();
+	}
+	for(row = 1; row < formantTable.getNrow(); row++) {
+		// get time
+		rowTime = formantTable.getNumericValue_Assert(row, 1);
+		if(rowTime > tgi.end) break;
+		if(rowTime >= tgi.start) {
+			out.print("\"" + ipa.toString() + "\"");
+			for(col = 1; col <= formantTable.getNcol(); col++) {
+				out.print(",\"" + formantTable.getNumericValue_Assert(row, col) + "\"");
+			}
+			out.println();
+		}
 	}
 }
 
@@ -256,7 +278,7 @@ function query_record(recordIndex, record) {
 		    for(k = 0; k < matches.length; k++) {
     	        var match = matches[k];
     	        
-    	        printFormantInfo(formants, match.value);
+    	        listFormants(formants, match.value);
     	        
     			var result = factory.createResult();
     			// calculate start/end positions of data in text
