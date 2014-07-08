@@ -1,6 +1,7 @@
 package ca.phon.plugins.praat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -92,6 +93,8 @@ public class TextGridManager {
 			} catch (ParseException e1) {
 				LOGGER.log(Level.SEVERE, "Unable to read TextGrid file, unknown encoding.", e);
 			}
+		} catch(FileNotFoundException e) {
+			// ignore
 		} catch(IOException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}

@@ -46,7 +46,7 @@ public class PitchSettingsPanel extends JPanel {
 	
 	private JFormattedTextField voicingThresholdField;
 	
-	private JFormattedTextField ocatveCostField;
+	private JFormattedTextField octaveCostField;
 	
 	private JFormattedTextField octaveJumpCostField;
 	
@@ -151,16 +151,16 @@ setLayout(new BorderLayout());
 		builder.appendRow("3dlu");
 		rowIdx += 2;
 		
-		ocatveCostField = new JFormattedTextField(numberFormat);
+		octaveCostField = new JFormattedTextField(numberFormat);
 		builder.appendRow("pref");
-		builder.add(new JLabel("Ocatave cost"), cc.xy(1, rowIdx));
-		builder.add(ocatveCostField, cc.xy(3, rowIdx));
+		builder.add(new JLabel("Octave cost"), cc.xy(1, rowIdx));
+		builder.add(octaveCostField, cc.xy(3, rowIdx));
 		builder.appendRow("3dlu");
 		rowIdx += 2;
 		
 		octaveJumpCostField = new JFormattedTextField(numberFormat);
 		builder.appendRow("pref");
-		builder.add(new JLabel("Ocatave-jump cost"), cc.xy(1, rowIdx));
+		builder.add(new JLabel("Octave-jump cost"), cc.xy(1, rowIdx));
 		builder.add(octaveJumpCostField, cc.xy(3, rowIdx));
 		builder.appendRow("3dlu");
 		rowIdx += 2;
@@ -214,7 +214,7 @@ setLayout(new BorderLayout());
 		maxCandidatesField.setValue(settings.getMaxCandidates());
 		silenceThresholdField.setValue(settings.getSilenceThreshold());
 		voicingThresholdField.setValue(settings.getVoicingThreshold());
-		ocatveCostField.setValue(settings.getOctaveCost());
+		octaveCostField.setValue(settings.getOctaveCost());
 		octaveJumpCostField.setValue(settings.getOctaveJumpCost());
 		voicedUnvoicedCostField.setValue(settings.getVoicedUnvoicedCost());
 	}
@@ -250,7 +250,7 @@ setLayout(new BorderLayout());
 		final double voicingThreshold = ((Number)voicingThresholdField.getValue()).doubleValue();
 		retVal.setVoicingThreshold(voicingThreshold);
 		
-		final double octaveCost = ((Number)ocatveCostField.getValue()).doubleValue();
+		final double octaveCost = ((Number)octaveCostField.getValue()).doubleValue();
 		retVal.setOctaveCost(octaveCost);
 		
 		final double octaveJumpCost = ((Number)octaveJumpCostField.getValue()).doubleValue();

@@ -13,8 +13,11 @@ import java.awt.event.FocusListener;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -289,6 +292,22 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		return audioFile;
 	}
 	
+	private String loadTextGridTemplate() throws IOException {
+		final ClassLoader cl = getClass().getClassLoader();
+		final InputStream is = cl.getResourceAsStream(OPEN_TEXTGRID_TEMPLATE);
+		if(is == null) return new String();
+		
+		final StringBuilder sb = new StringBuilder();
+		final BufferedReader in = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+		String line = null;
+		while((line = in.readLine()) != null) {
+			sb.append(line + "\n");
+		}
+		is.close();
+		
+		return sb.toString();
+	}
+	
 	public void openTextGrid() {
 		File mediaFile =
 				getAudioFile();
@@ -309,8 +328,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("tgFile", tgPath);
 		map.put("interval", media);
 		
-		final PraatScript ps = new PraatScript(OPEN_TEXTGRID_TEMPLATE);
 		try {
+			final PraatScript ps = new PraatScript(loadTextGridTemplate());
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
 			if(err != null && err.length() > 0) {

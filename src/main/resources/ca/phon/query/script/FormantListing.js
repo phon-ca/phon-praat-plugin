@@ -227,6 +227,7 @@ function query_record(recordIndex, record) {
 	for(var i = 0; i < groups.length; i++)
 	{
 		var group = groups[i];
+		
 		var ipa = (searchTier == "IPA Target" ? group.IPATarget : group.IPAActual);
 		
 		var toSearch = new Array();
