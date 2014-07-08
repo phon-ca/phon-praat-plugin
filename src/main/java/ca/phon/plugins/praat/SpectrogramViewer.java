@@ -397,13 +397,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		if(pitch == null) return;
 		
 		final BufferWindow bw = BufferWindow.getInstance();
-		if(bw.isVisible()) {
-			bw.requestFocus();
-		} else {
-			bw.setSize(500, 600);
-			bw.centerWindow();
-			bw.setVisible(true);
-		}
+		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Formants (" + selStart + "-" + selEnd + ")");
 		final LogBuffer buffer = bufferPanel.getLogBuffer();
 		
@@ -481,13 +475,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				formantSettings.isIncludeIntensity(), 6, formantSettings.isIncludeNumFormants(), 6, formantSettings.isIncludeBandwidths());
 		
 		final BufferWindow bw = BufferWindow.getInstance();
-		if(bw.isVisible()) {
-			bw.requestFocus();
-		} else {
-			bw.setSize(500, 600);
-			bw.centerWindow();
-			bw.setVisible(true);
-		}
+		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Formants (" + selStart + "-" + selEnd + ")");
 		final LogBuffer buffer = bufferPanel.getLogBuffer();
 		

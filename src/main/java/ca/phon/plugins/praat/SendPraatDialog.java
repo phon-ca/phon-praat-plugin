@@ -139,13 +139,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 					@Override
 					public void run() {
 						final BufferWindow bw = BufferWindow.getInstance();
-						if (!bw.isVisible()) {
-							bw.setSize(500, 600);
-							bw.centerWindow();
-							bw.setVisible(true);
-						} else {
-							bw.requestFocus();
-						}
+						bw.showWindow();
 
 						final BufferPanel bp = bw.createBuffer("SendPraat");
 						final PrintWriter pw = new PrintWriter(bp
