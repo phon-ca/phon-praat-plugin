@@ -95,18 +95,18 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	private JPanel contentPane;
 	
-	private JPanel widgetPane;
+//	private JPanel widgetPane;
 	
 	/*
 	 * Play button shown when an interval is selected
 	 */
-	private JButton playIntervalButton;
+//	private JButton playIntervalButton;
 	
 	public TextGridViewer(WaveformEditorView parent) {
 		super();
 		setVisible(false);
 		setFocusable(true);
-		addFocusListener(focusListener);
+//		addFocusListener(focusListener);
 		
 		this.parent = parent;
 		this.calculator = parent.getCalculator();
@@ -117,22 +117,22 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		contentPane = new JPanel(new VerticalLayout(0));
 		layeredPane.add(contentPane, 0);
 		
-		widgetPane = new JPanel(null);
-		widgetPane.setOpaque(false);
-		widgetPane.setVisible(false);
-		layeredPane.add(widgetPane, 1);
+//		widgetPane = new JPanel(null);
+//		widgetPane.setOpaque(false);
+//		widgetPane.setVisible(false);
+//		layeredPane.add(widgetPane, 1);
 		
 		setLayout(new BorderLayout());
 		add(layeredPane, BorderLayout.CENTER);
 		
-		final ImageIcon icon = IconManager.getInstance().getIcon("actions/media-playback-start", IconSize.SMALL);
-		final PhonUIAction action = new PhonUIAction(this, "onPlayInterval");
-		action.putValue(PhonUIAction.SHORT_DESCRIPTION, "Play selected interval...");
-		action.putValue(PhonUIAction.SMALL_ICON, icon);
-		playIntervalButton = new JButton(action);
-		
-		playIntervalButton.setBounds(0, 0, 16, 16);
-		widgetPane.add(playIntervalButton);
+//		final ImageIcon icon = IconManager.getInstance().getIcon("actions/media-playback-start", IconSize.SMALL);
+//		final PhonUIAction action = new PhonUIAction(this, "onPlayInterval");
+//		action.putValue(PhonUIAction.SHORT_DESCRIPTION, "Play selected interval...");
+//		action.putValue(PhonUIAction.SMALL_ICON, icon);
+//		playIntervalButton = new JButton(action);
+//		
+//		playIntervalButton.setBounds(0, 0, 16, 16);
+//		widgetPane.add(playIntervalButton);
 		
 		this.parent.addComponentListener(resizeListener);
 		
@@ -212,7 +212,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		final Dimension prefSize = contentPane.getPreferredSize();
 		layeredPane.setPreferredSize(prefSize);
 		contentPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
-		widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
+//		widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
 	}
 	
 	public void onGenerateTextGrid() {
@@ -432,9 +432,9 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 					wavDisplay.repaint();
 					
 					final int btnx = locationForTime(interval.getEnd());
-					playIntervalButton.setLocation(btnx, selectedComponent.getLocation().y);
+//					playIntervalButton.setLocation(btnx, selectedComponent.getLocation().y);
 					
-					layeredPane.moveToFront(widgetPane);
+//					layeredPane.moveToFront(widgetPane);
 					requestFocus();
 				}
 			}
@@ -449,18 +449,18 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
-	private final FocusListener focusListener = new FocusListener() {
-		
-		@Override
-		public void focusLost(FocusEvent e) {
-			widgetPane.setVisible(false);
-		}
-		
-		@Override
-		public void focusGained(FocusEvent e) {
-			widgetPane.setVisible(true);
-		}
-	};
+//	private final FocusListener focusListener = new FocusListener() {
+//		
+//		@Override
+//		public void focusLost(FocusEvent e) {
+//			widgetPane.setVisible(false);
+//		}
+//		
+//		@Override
+//		public void focusGained(FocusEvent e) {
+//			widgetPane.setVisible(true);
+//		}
+//	};
 	
 	private final ComponentListener resizeListener = new ComponentListener() {
 		
@@ -474,7 +474,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			final int width = e.getComponent().getWidth();
 			layeredPane.setPreferredSize(prefSize);
 			contentPane.setBounds(0, 0, width, prefSize.height);
-			widgetPane.setBounds(0, 0, width, prefSize.height);
+//			widgetPane.setBounds(0, 0, width, prefSize.height);
 		}
 		
 		@Override
@@ -486,6 +486,11 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		}
 	};
 
+	@Override
+	public void onRefresh() {
+		update();
+	}
+	
 	@Override
 	public void addMenuItems(JMenu menu) {
 		JMenu praatMenu = null;

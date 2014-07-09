@@ -729,6 +729,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		public void componentHidden(ComponentEvent e) {
 		}
 	};
+	
+	@Override
+	public void onRefresh() {
+		update();
+	}
 
 	@Override
 	public void addMenuItems(JMenu menu) {
