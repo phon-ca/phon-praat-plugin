@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -372,14 +373,23 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final double formantStart = segment.getStartValue() / 1000.0;
 		final double formantEnd = segment.getEndValue() / 1000.0;
 		
-		final double selStart = 
+		double selStart = 
 				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
 						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
 						: segment.getStartValue()) / 1000.0;
-		final double selEnd = 
+		double selEnd = 
 				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
 						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
 						: segment.getEndValue()) / 1000.0;
+		
+		if(selEnd < selStart) {
+			double temp = selStart;
+			selStart = selEnd;
+			selEnd = temp;
+		}
+		
+		final NumberFormat format = NumberFormat.getNumberInstance();
+		format.setMaximumFractionDigits(6);
 		
 		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
 		final Sound sound = ls.extractPart(formantStart, formantEnd, 1);
@@ -398,7 +408,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		final BufferWindow bw = BufferWindow.getInstance();
 		bw.showWindow();
-		final BufferPanel bufferPanel = bw.createBuffer("Formants (" + selStart + "-" + selEnd + ")");
+		final BufferPanel bufferPanel = bw.createBuffer("Pitch (" + 
+				format.format(selStart) + "-" + format.format(selEnd) + ")");
 		final LogBuffer buffer = bufferPanel.getLogBuffer();
 		
 		final Pointer ixminPtr = new Memory(Native.getNativeSize(Long.TYPE));
@@ -415,11 +426,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			final StringBuilder sb = new StringBuilder();
 			final char qc = '\"';
 			final char sc = ',';
-			sb.append(qc).append("Time_s").append(qc);
-			sb.append(sc).append(qc).append("F0_");
+			sb.append(qc).append("Time(s)").append(qc);
+			sb.append(sc).append(qc).append("F0(");
 			final WString unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
 					pitchSettings.getUnits(), Function.UNIT_TEXT_SHORT);
-			sb.append(unitText.toString()).append(qc);
+			sb.append(unitText.toString()).append(')').append(qc);
 			out.println(sb.toString());
 			sb.setLength(0);
 			
@@ -427,8 +438,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				double t = pitch.indexToX(i);
 				double f0 = pitch.getValueAtSample(i, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
 				f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
-				sb.append(qc).append(t).append(qc);
-				sb.append(sc).append(qc).append(f0).append(qc);
+				sb.append(qc).append(format.format(t)).append(qc);
+				sb.append(sc).append(qc).append(format.format(f0)).append(qc);
 				out.println(sb.toString());
 				sb.setLength(0);
 			}
@@ -456,14 +467,22 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final double formantStart = segment.getStartValue() / 1000.0;
 		final double formantEnd = segment.getEndValue() / 1000.0;
 		
-		final double selStart = 
+		double selStart = 
 				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
 						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
 						: segment.getStartValue()) / 1000.0;
-		final double selEnd = 
+		double selEnd = 
 				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
 						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
 						: segment.getEndValue()) / 1000.0;
+		if(selEnd < selStart) {
+			double temp = selStart;
+			selStart = selEnd;
+			selEnd = temp;
+		}
+		
+		final NumberFormat format = NumberFormat.getNumberInstance();
+		format.setMaximumFractionDigits(6);
 		
 		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
 		final Sound sound = ls.extractPart(formantStart, formantEnd, 1);
@@ -476,7 +495,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		final BufferWindow bw = BufferWindow.getInstance();
 		bw.showWindow();
-		final BufferPanel bufferPanel = bw.createBuffer("Formants (" + selStart + "-" + selEnd + ")");
+		final BufferPanel bufferPanel = bw.createBuffer("Formants (" + 
+				format.format(selStart) + "-" + format.format(selEnd) + ")");
 		final LogBuffer buffer = bufferPanel.getLogBuffer();
 		
 		try {
@@ -505,7 +525,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 					for(int col = 1; col <= formantTable.getNcol(); col++) {
 						if(col > 1) sb.append(sc);
 						sb.append(qc);
-						sb.append(formantTable.getNumericValue_Assert(row, col));
+						sb.append(format.format(formantTable.getNumericValue_Assert(row, col)));
 						sb.append(qc);
 					}
 					out.println(sb.toString());
