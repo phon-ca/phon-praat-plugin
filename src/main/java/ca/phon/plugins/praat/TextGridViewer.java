@@ -374,7 +374,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	public void onSendPraat() {
 		final SendPraatDialog dlg = new SendPraatDialog(parent.getEditor());
 		dlg.pack();
-		dlg.setLocationRelativeTo(this);
+		
+		dlg.centerWindow();
 		dlg.setVisible(true);
 	}
 	
