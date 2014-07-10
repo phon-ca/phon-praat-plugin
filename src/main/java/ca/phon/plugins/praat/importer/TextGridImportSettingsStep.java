@@ -65,7 +65,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		folderSelectionField = new FileSelectionField();
 		folderSelectionField.setMode(ca.phon.ui.text.FileSelectionField.SelectionMode.FOLDERS);
-		folderSelectionField.setEditable(false);
+		folderSelectionField.getTextField().setEditable(false);
 		folderSelectionField.setBorder(BorderFactory.createTitledBorder("Select TextGrid folder:"));
 		folderSelectionField.addPropertyChangeListener(FileSelectionField.FILE_PROP, new PropertyChangeListener() {
 			
