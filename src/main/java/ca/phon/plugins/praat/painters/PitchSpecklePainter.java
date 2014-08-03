@@ -1,18 +1,22 @@
 package ca.phon.plugins.praat.painters;
 
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.NumberFormat;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.WString;
 
 import ca.hedlund.jpraat.binding.fon.Formant;
+import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.kPitch_unit;
 import ca.phon.plugins.praat.PitchSettings;
@@ -113,6 +117,41 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 			g2d.setColor(Color.blue);
 			g2d.fill(circle);
 		}
+	}
+
+	@Override
+	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
+		final Pitch pitch = getValue();
+		final WString unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
+				settings.getUnits(), Function.UNIT_TEXT_SHORT);
+		final double startValue = 
+				pitch.convertStandardToSpecialUnit(settings.getRangeStart(), Pitch.LEVEL_FREQUENCY, 
+						settings.getUnits().ordinal());
+		final double endValue =
+				pitch.convertStandardToSpecialUnit(settings.getRangeEnd(), Pitch.LEVEL_FREQUENCY,
+						settings.getUnits().ordinal());
+		
+		final NumberFormat nf = NumberFormat.getNumberInstance();
+		nf.setMinimumFractionDigits(1);
+		nf.setMaximumFractionDigits(1);
+		nf.setGroupingUsed(false);
+		
+		final FontMetrics fm = g2d.getFontMetrics();
+		
+		final String startTxt = nf.format(startValue) + " " + unitText.toString();
+		int y = 
+				(int)Math.round(
+						(bounds.getY() + bounds.getHeight()) - 1);
+		int x = (int)Math.round(bounds.getX());
+		g2d.setColor(Color.blue);
+		g2d.drawString(startTxt, x, y);
+		
+		final String endTxt = nf.format(endValue) + " " + unitText.toString();
+		final Rectangle2D endBounds = fm.getStringBounds(endTxt, g2d);
+		y = 
+				(int)Math.round(
+						(bounds.getY()) + endBounds.getHeight());
+		g2d.drawString(endTxt, x, y);
 	}
 	
 }

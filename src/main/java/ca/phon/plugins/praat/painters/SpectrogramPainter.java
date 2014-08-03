@@ -1,10 +1,15 @@
 package ca.phon.plugins.praat.painters;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.NumberFormat;
+
+import javax.swing.SwingConstants;
 
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 import ca.phon.plugins.praat.ColorMap;
@@ -147,6 +152,37 @@ public class SpectrogramPainter extends CachingPainter<Spectrogram> {
 	
 	private double dbValue(double preemphasis, double value) {
 		return (10.0/NUMln10) * Math.log((value + 1e-30) / 4.0e-10) + preemphasis;  // dB
+	}
+
+	@Override
+	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
+		final double startFreq = 0;
+		final double endFreq = settings.getMaxFrequency();
+		
+		// draw start freq
+		g2d.setColor(Color.black);
+		final FontMetrics fm = g2d.getFontMetrics();
+		
+		final NumberFormat nf = NumberFormat.getNumberInstance();
+		nf.setGroupingUsed(false);
+		nf.setMinimumFractionDigits(1);
+		nf.setMaximumFractionDigits(1);
+		
+		final String startFreqTxt = nf.format(startFreq) + " Hz";
+		final Rectangle2D startBounds = fm.getStringBounds(startFreqTxt, g2d);
+		int y = 
+				(int)Math.round((bounds.getY() + bounds.getHeight()) - 1);
+		int x = 
+				(int)Math.round((bounds.getX() + bounds.getWidth()) - startBounds.getWidth());
+		g2d.drawString(startFreqTxt, x, y);
+		
+		final String endFreqTxt = nf.format(endFreq) + " Hz";
+		final Rectangle2D endBounds = fm.getStringBounds(endFreqTxt, g2d);
+		y = 
+				(int)Math.round(bounds.getY() + endBounds.getHeight());
+		x = 
+				(int)Math.round((bounds.getX() + bounds.getWidth()) - endBounds.getWidth());
+		g2d.drawString(endFreqTxt, x, y);
 	}
 
 }

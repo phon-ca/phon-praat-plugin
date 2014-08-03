@@ -18,4 +18,13 @@ public interface Painter<T> {
 	 */
 	public void paintInside(Graphics2D g2d, Rectangle2D bounds);
 	
+	/** 
+	 * Paint garnish for the given 
+	 * 
+	 * @param g2d
+	 * @param bounds
+	 * @param location (SwingConstants left/right,top,bottom)
+	 */
+	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location);
+	
 }

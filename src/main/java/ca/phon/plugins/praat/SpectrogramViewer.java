@@ -31,6 +31,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import ca.hedlund.jpraat.binding.fon.Formant;
@@ -703,9 +704,22 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			g2.fill(selRect);
 		}
 		
-		g2.setColor(new Color(200, 200, 200, 100));
+		final Color sideColor = new Color(200,200,200,100);
+		g2.setColor(sideColor);
 		g2.fill(leftInsetRect);
+		if(spectrogram != null) {
+			updateLock.lock();
+			spectrogramPainter.paintGarnish(g2, leftInsetRect, SwingConstants.LEFT);
+			updateLock.unlock();
+		}
+
+		g2.setColor(sideColor);
 		g2.fill(rightInsetRect);
+		if(showPitch && pitch != null) {
+			updateLock.lock();
+			pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
+			updateLock.unlock();
+		}
 	}
 	
 	private final ComponentListener resizeListener = new ComponentListener() {

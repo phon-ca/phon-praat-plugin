@@ -124,5 +124,10 @@ public class FormantPainter extends CachingPainter<Formant> {
 	public void setMaxFrequency(double maxFrequency) {
 		this.maxFrequency = maxFrequency;
 	}
+
+	@Override
+	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
+		// don't paint formant garnish
+	}
 	
 }
