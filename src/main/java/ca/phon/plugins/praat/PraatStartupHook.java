@@ -3,12 +3,14 @@ package ca.phon.plugins.praat;
 import java.util.logging.Logger;
 
 import com.sun.jna.Native;
+import com.sun.jna.NativeLibrary;
 
 import ca.hedlund.jpraat.binding.Praat;
 import ca.phon.app.hooks.PhonStartupHook;
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
 import ca.phon.plugin.PluginException;
+import ca.phon.util.PrefHelper;
 
 /**
  * Init Praat library on startup.
@@ -19,14 +21,27 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 	private static final Logger LOGGER = Logger
 			.getLogger(PraatStartupHook.class.getName());
 	
+	public static final String PRAAT_SEARCH_FOLDER = PraatStartupHook.class.getName() + 
+			".praatSearchFolder";
+	
 	@Override
 	public void startup() throws PluginException {
 		LOGGER.info("Initializing Praat library");
 		
-		// try to prevent JVM crashing due to uncaught C++ exceptions
+		final String praatSearchFolder = 
+				PrefHelper.get(PRAAT_SEARCH_FOLDER, null);
+		if(praatSearchFolder != null) {
+			NativeLibrary.addSearchPath("praat", praatSearchFolder);
+		}
+		
+		// try to prevent JVM crashing
 		Native.setProtected(true);
 		
-		Praat.INSTANCE.praat_lib_init();
+		try {
+			Praat.INSTANCE.praat_lib_init();
+		} catch (UnsatisfiedLinkError e) {
+			throw new PluginException(e);
+		}
 	}
 
 	@Override
