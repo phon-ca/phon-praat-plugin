@@ -65,6 +65,8 @@ import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.export.TextGridExporter;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
+import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
+import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
@@ -246,6 +248,17 @@ public class TextGridPanel extends EditorView {
 		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 
 		final PraatScriptContext map = new PraatScriptContext();
+		final PraatScriptTcpServer server = new PraatScriptTcpServer();
+		server.setHandler(new PraatScriptTcpHandler() {
+			
+			@Override
+			public void praatScriptFinished(String data) {
+				System.out.println(data);
+			}
+			
+		});
+		map.put("replyToPhon", Boolean.TRUE);
+		map.put("socket", server.getPort());
 		map.put("soundFile", mediaFile.getAbsolutePath());
 		map.put("tgFile", tgPath);
 		map.put("interval", media);

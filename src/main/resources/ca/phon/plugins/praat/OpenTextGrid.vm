@@ -1,32 +1,21 @@
-# OpenTextGrid.vm
-#
-# Author: Greg J. Hedlund <ghedlund@mun.ca>
-#
-# Velocity template for opening a TextGrid in Praat
-#
-# Required Arguments:
-#  - recordId: The uuid of the phon record
-#  - soundFile: the wav file
-#  - tgFile: TextGrid file location
-#
-
-# sound and textgrid files
-recordId$ = "$recordId"
-sound$ = "$soundFile"
-textGrid$ = "$tgFile"
-
-# Setup interval
-start = $interval.startValue / 1000.0
-end = $interval.endValue / 1000.0
+## Setup interval, Phon stores values in ms
+start = $segment.startValue / 1000.0
+end = $segment.endValue / 1000.0
 preserveTimes$ = "yes"
 
-# Setup objects
-snd = Open long sound file... 'sound$'
+## Load objects in Praat Object window
+snd = Open long sound file... $audioPath
 segment = Extract part... start end 'preserveTimes$'
-tg = Read from file... 'textGrid$'
-select tg
+textGrid = Read from file... $textGridPath
 
-# Open TextGrid editor
-select segment
-plus tg
+## Perform custom tasks in Praat here....
+
+## E.g., View & Edit TextGrid (uncomment the block below)
+
+selectObject: textGrid, segment
+
+#if($replyToPhon)
+View & Edit with callback: "localhost:$socket"
+#else
 View & Edit
+#end

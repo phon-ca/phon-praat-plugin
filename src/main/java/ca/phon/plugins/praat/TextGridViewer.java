@@ -54,6 +54,8 @@ import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
+import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
+import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.RangeRecordFilter;
 import ca.phon.session.Record;
@@ -323,12 +325,23 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 		
 		final PraatScriptContext map = new PraatScriptContext();
-		map.put("recordId", model.currentRecord().getUuid().toString());
-		map.put("soundFile", mediaFile.getAbsolutePath());
-		map.put("tgFile", tgPath);
-		map.put("interval", media);
+		final PraatScriptTcpServer server = new PraatScriptTcpServer();
+		server.setHandler(new PraatScriptTcpHandler() {
+			
+			@Override
+			public void praatScriptFinished(String data) {
+				System.out.println(data);
+			}
+			
+		});
+		map.put("replyToPhon", Boolean.TRUE);
+		map.put("socket", server.getPort());
+		map.put("audioPath", mediaFile.getAbsolutePath());
+		map.put("textGridPath", tgPath);
+		map.put("segment", media);
 		
 		try {
+			server.startServer();
 			final PraatScript ps = new PraatScript(loadTextGridTemplate());
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
@@ -337,6 +350,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 				toast.start(this);
 			}
 		} catch (IOException e) {
+			server.stop();
 			ToastFactory.makeToast(e.getLocalizedMessage()).start();
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
