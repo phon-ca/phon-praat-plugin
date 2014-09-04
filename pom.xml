@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-praat-plugin</artifactId>
-  <version>1</version>
+  <version>2</version>
 
   <licenses>
     <license>
@@ -67,8 +67,8 @@
     <project.build.targetVersion>1.6</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.1</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>1.7.0beta1</ca.phon.phon-app.version>
+    <ca.hedlund.jpraat.version>0.2</ca.hedlund.jpraat.version>
+    <ca.phon.phon-app.version>1.7.0beta2</ca.phon.phon-app.version>
     <ca.phon.native-dialogs.version>3</ca.phon.native-dialogs.version>
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
