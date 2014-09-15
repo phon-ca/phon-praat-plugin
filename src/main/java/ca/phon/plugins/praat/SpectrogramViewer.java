@@ -2,6 +2,7 @@ package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -20,6 +21,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,7 @@ import javax.swing.SwingUtilities;
 
 import ca.hedlund.jpraat.binding.fon.Formant;
 import ca.hedlund.jpraat.binding.fon.Function;
+import ca.hedlund.jpraat.binding.fon.Intensity;
 import ca.hedlund.jpraat.binding.fon.LongSound;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.Sound;
@@ -55,7 +58,9 @@ import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
 import ca.phon.app.session.editor.view.waveform.WaveformTier;
 import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
 import ca.phon.media.wavdisplay.WavDisplay;
+import ca.phon.media.wavdisplay.WavDisplay.MouseTimeListener;
 import ca.phon.plugins.praat.painters.FormantPainter;
+import ca.phon.plugins.praat.painters.IntensityPainter;
 import ca.phon.plugins.praat.painters.PitchSpecklePainter;
 import ca.phon.plugins.praat.painters.SpectrogramPainter;
 import ca.phon.session.MediaSegment;
@@ -86,6 +91,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	private static final long serialVersionUID = -6963658315933818319L;
 
 	private final WaveformEditorView parent;
+	
+	public final static String SHOW_SPECTROGRAM_PROP = SpectrogramViewer.class.getName() + ".showSpectrogram";
+	private boolean showSpectrogram =
+			PrefHelper.getBoolean(SHOW_SPECTROGRAM_PROP, false);
 
 	private SpectrogramSettings spectrogramSettings = new SpectrogramSettings();
 	
@@ -112,10 +121,20 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	public final static String SHOW_PITCH_PROP = SpectrogramViewer.class.getName() + ".showPitch";
 	private boolean showPitch =
 			PrefHelper.getBoolean(SHOW_PITCH_PROP, false);
+
+	private Intensity intensity;
+	
+	private IntensitySettings intensitySettings = new IntensitySettings();
+	
+	private IntensityPainter intensityPainter = new IntensityPainter();
+	
+	public final static String SHOW_INTENSITY_PROP = SpectrogramViewer.class.getName() + ".showIntensity";
+	private boolean showIntensity =
+			PrefHelper.getBoolean(SHOW_INTENSITY_PROP, false);
 	
 	public SpectrogramViewer(WaveformEditorView p) {
 		super();
-		setVisible(false);
+		setVisible(showSpectrogram);
 		setBackground(Color.white);
 		this.parent = p;
 		this.parent.addComponentListener(resizeListener);
@@ -127,30 +146,16 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 			
 		});
-		parent.addComponentListener(new ComponentListener() {
-			
-			@Override
-			public void componentShown(ComponentEvent e) {
-				
-			}
-			
-			@Override
-			public void componentResized(ComponentEvent e) {
-				final Dimension newSize = new Dimension(parent.getWidth(), parent.getHeight() / 3);
-				setPreferredSize(newSize);
-			}
-			
-			@Override
-			public void componentMoved(ComponentEvent e) {
-				
-			}
-			
-			@Override
-			public void componentHidden(ComponentEvent e) {
-				
-			}
-		});
 		setLayout(null);
+		final Dimension newSize = new Dimension(
+				Math.max(parent.getWidth(), 1), (int)(spectrogramSettings.getMaxFrequency() / 20));
+		setPreferredSize(newSize);
+		
+		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
+		addMouseListener(mtl);
+		addMouseMotionListener(mtl);
+		
+		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		
 		update();
 		setupEditorEvents();
@@ -176,9 +181,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	public void onToggleSpectrogram() {
-		final boolean enabled = !SpectrogramViewer.this.isVisible();
-		SpectrogramViewer.this.setVisible(enabled);
-		if(enabled) update();
+		showSpectrogram = !showSpectrogram;
+		PrefHelper.getUserPreferences().putBoolean(SHOW_SPECTROGRAM_PROP, showSpectrogram);
+		SpectrogramViewer.this.setVisible(showSpectrogram);
+		if(showSpectrogram) update();
 	}
 	
 	public void onEditSettings() {
@@ -358,6 +364,67 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
+	public void onToggleIntensity() {
+		showIntensity = !showIntensity;
+		PrefHelper.getUserPreferences().putBoolean(SHOW_INTENSITY_PROP, showIntensity);
+		update();
+	}
+	
+	public void onEditIntensitySettings() {
+		final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame());
+		dialog.setModal(true);
+		
+		dialog.setLayout(new BorderLayout());
+		
+		final DialogHeader header = new DialogHeader("Intensity settings", "Edit intensity settings");
+		dialog.add(header, BorderLayout.NORTH);
+		
+		final IntensitySettingsPanel settingsPanel = new IntensitySettingsPanel();
+		settingsPanel.loadSettings(intensitySettings);
+		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		dialog.add(settingsPanel, BorderLayout.CENTER);
+		
+		final AtomicBoolean wasCanceled = new AtomicBoolean(false);
+		final JButton okButton = new JButton("Ok");
+		okButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				wasCanceled.getAndSet(false);
+				dialog.setVisible(false);
+			}
+			
+		});
+		final JButton cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				wasCanceled.getAndSet(true);
+				dialog.setVisible(false);
+			}
+		});
+		
+		dialog.getRootPane().setDefaultButton(okButton);
+		okButton.requestFocusInWindow();
+		
+		final ButtonBarBuilder builder = new ButtonBarBuilder();
+//		builder.setLeftToRight(false);
+		builder.addButton(okButton).addButton(cancelButton);
+		dialog.add(builder.build(), BorderLayout.SOUTH);
+		
+		dialog.pack();
+		dialog.setLocationRelativeTo(parent);
+		dialog.setVisible(true);
+		
+		// ... wait, it's modal
+		
+		if(!wasCanceled.get()) {
+			intensitySettings = settingsPanel.getSettings();
+			update();
+		}
+	}
+	
 	public void listPitch() {
 		// get selection from waveform view
 		final File wavFile = parent.getAudioFile();
@@ -413,12 +480,13 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				format.format(selStart) + "-" + format.format(selEnd) + ")");
 		final LogBuffer buffer = bufferPanel.getLogBuffer();
 		
-		final Pointer ixminPtr = new Memory(Native.getNativeSize(Long.TYPE));
-		final Pointer ixmaxPtr = new Memory(Native.getNativeSize(Long.TYPE));
+		final AtomicReference<Long> ixminPtr = new AtomicReference<Long>();
+		final AtomicReference<Long> ixmaxPtr = new AtomicReference<Long>();
+		
 		pitch.getWindowSamples(selStart, selEnd, ixminPtr, ixmaxPtr);
 		
-		final int xmin = (int)ixminPtr.getLong(0);
-		final int xmax = (int)ixmaxPtr.getLong(0);
+		final int xmin = ixminPtr.get().intValue();
+		final int xmax = ixmaxPtr.get().intValue();
 		
 		// print header
 		try {
@@ -541,6 +609,88 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 	}
 	
+	public void listIntensity() {
+		// get selection from waveform view
+		final File wavFile = parent.getAudioFile();
+		if(wavFile == null || !wavFile.exists()) return;
+		
+		final Record r = parent.getEditor().currentRecord();
+		final MediaSegment segment = 
+				(r.getSegment().numberOfGroups() > 0 ? r.getSegment().getGroup(0) : null);
+		if(segment == null ||
+				(segment.getEndValue() - segment.getStartValue()) <= 0) {
+			return;
+		}
+		
+		final double start = segment.getStartValue() / 1000.0;
+		final double end = segment.getEndValue() / 1000.0;
+		
+		double selStart = 
+				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
+						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
+						: segment.getStartValue()) / 1000.0;
+		double selEnd = 
+				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
+						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
+						: segment.getEndValue()) / 1000.0;
+		if(selEnd < selStart) {
+			double temp = selStart;
+			selStart = selEnd;
+			selEnd = temp;
+		}
+		
+		final NumberFormat format = NumberFormat.getNumberInstance();
+		format.setMaximumFractionDigits(6);
+		
+		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
+		final Sound sound = ls.extractPart(start, end, 1);
+		
+		final Intensity intensity = sound.to_Intensity(intensitySettings.getViewRangeMin(), 
+				0.0, intensitySettings.getSubtractMean() ? 1 : 0);
+		
+		final AtomicReference<Long> ixminRef = new AtomicReference<Long>();
+		final AtomicReference<Long> ixmaxRef = new AtomicReference<Long>();
+		
+		intensity.getWindowSamples(selStart, selEnd, ixminRef, ixmaxRef);
+		
+		final int ixmin = ixminRef.get().intValue();
+		final int ixmax = ixmaxRef.get().intValue();
+		
+		final BufferWindow bw = BufferWindow.getInstance();
+		bw.showWindow();
+		final BufferPanel bufferPanel = bw.createBuffer("Intensity (" + 
+				format.format(selStart) + "-" + format.format(selEnd) + ")");
+		final LogBuffer buffer = bufferPanel.getLogBuffer();
+		
+		try {
+			final PrintWriter out = 
+					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			final char qc = '\"';
+			final char sc = ',';
+			
+			final StringBuilder sb = new StringBuilder();
+			sb.append(qc).append("Time(s)").append(qc).append(sc);
+			sb.append(qc).append("Intensity(dB)").append(qc);
+			out.println(sb.toString());
+			sb.setLength(0);
+			
+			for(int i = ixmin; i < ixmax; i++) {
+				final double time = intensity.indexToX(i);
+				final double val = intensity.getValueAtSample(i, 1, Intensity.UNITS_DB);
+				
+				sb.append(qc).append(format.format(time)).append(qc).append(sc);
+				sb.append(qc).append(format.format(val)).append(qc);
+				out.println(sb.toString());
+				sb.setLength(0);
+			}
+			
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+	}
+	
 	private Spectrogram loadSpectrogram() {
 		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
 		// TODO check segment length
@@ -548,7 +698,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		if(audioFile == null) return null;
 		
 		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0,
+				(double)segment.getEndValue()/1000.0, 1);
 		final Spectrogram spectrogram = part.toSpectrogram(
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
 				spectrogramSettings.getTimeStep(), spectrogramSettings.getFrequencyStep(), 
@@ -587,6 +738,23 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		return formants;
 	}
 	
+	private Intensity loadIntensity() {
+		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
+		// TODO check segment length
+		final File audioFile = parent.getAudioFile();
+		if(audioFile == null) return null;
+		
+		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
+		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+		
+		final double windowLen = (segment.getEndValue() / 1000.0 - segment.getStartValue() / 1000.0) / 100.0;
+		final Intensity intensity =
+				part.to_Intensity(pitchSettings.getRangeStart(),
+						0.0,
+						(intensitySettings.getSubtractMean() ? 1 : 0));
+		return intensity;
+	}
+	
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
 		update();
@@ -618,13 +786,20 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			pitchPainter.setSettings(pitchSettings);
 			pitchPainter.setValue(pitch);
 		}
+		
+		if(showIntensity) {
+			intensity = loadIntensity();
+			intensityPainter.setSettings(intensitySettings);
+			intensityPainter.setValue(intensity);
+		}
 		updateLock.unlock();
+		
 		
 		final Runnable onEdt = new Runnable() {
 			
 			@Override
 			public void run() {
-				final Dimension newSize = new Dimension(parent.getWidth(), parent.getHeight() / 3);
+				final Dimension newSize = new Dimension(parent.getWidth(), (int)spectrogram.getNy() * 2);
 				setPreferredSize(newSize);
 				
 				revalidate();
@@ -663,6 +838,12 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		final Rectangle2D contentRect = new Rectangle2D.Double(
 				calculator.getSegmentRect().getX(), 0, calculator.getSegmentRect().getWidth(), getHeight());
+		
+		if((int)contentRect.getWidth() == 0
+				|| (int)contentRect.getHeight() == 0) {
+			return;
+		}
+		
 		if(spectrogram != null) {
 			updateLock.lock();
 			spectrogramPainter.paintInside(g2, contentRect);
@@ -678,6 +859,12 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		if(showPitch && pitch != null) {
 			updateLock.lock();
 			pitchPainter.paintInside(g2, contentRect);
+			updateLock.unlock();
+		}
+		
+		if(showIntensity && intensity != null) {
+			updateLock.lock();
+			intensityPainter.paintInside(g2, contentRect);
 			updateLock.unlock();
 		}
 		
@@ -827,6 +1014,23 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		listPitchAct.putValue(PhonUIAction.NAME, "Pitch listing");
 		listPitchAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List pitch for segment/selection");
 		praatMenu.add(listPitchAct);
+		
+		final PhonUIAction toggleIntensityAct = new PhonUIAction(this, "onToggleIntensity");
+		toggleIntensityAct.putValue(PhonUIAction.NAME, "Show intensity");
+		toggleIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show intensity");
+		final JCheckBoxMenuItem toggleIntensityItem = new JCheckBoxMenuItem(toggleIntensityAct);
+		toggleIntensityItem.setSelected(showIntensity);
+		praatMenu.add(toggleIntensityItem);
+		
+		final PhonUIAction intensitySettingsAct = new PhonUIAction(this, "onEditIntensitySettings");
+		intensitySettingsAct.putValue(PhonUIAction.NAME, "Intensity settings...");
+		intensitySettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit intensity settings...");
+		praatMenu.add(intensitySettingsAct);
+		
+		final PhonUIAction listIntensityAct = new PhonUIAction(this, "listIntensity");
+		listIntensityAct.putValue(PhonUIAction.NAME, "Intensity listing");
+		listIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List intensity for segment/selection");
+		praatMenu.add(listIntensityAct);
 	}
 	
 }
