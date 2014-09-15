@@ -9,6 +9,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -86,13 +87,13 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 		final double unitsPerPixel = range / bounds.getHeight();
 		final double pixelPerSec = bounds.getWidth() / len;
 		
-		final Pointer pimin =  new Memory(Native.getNativeSize(Long.TYPE));
-		final Pointer pimax =  new Memory(Native.getNativeSize(Long.TYPE));
+		final AtomicReference<Long> iminRef = new AtomicReference<Long>();
+		final AtomicReference<Long> imaxRef = new AtomicReference<Long>();
 		
-		pitch.getWindowSamples(tmin, tmax, pimin, pimax);
+		pitch.getWindowSamples(tmin, tmax, iminRef, imaxRef);
 		
-		final int firstFrame = (int)pimin.getLong(0);
-		final int lastFrame = (int)pimax.getLong(0);
+		final int firstFrame = iminRef.get().intValue();
+		final int lastFrame = imaxRef.get().intValue();
 		
 		final double radius =
 				Math.ceil(0.5 * settings.getDotSize() * Toolkit.getDefaultToolkit().getScreenResolution() / 25.4);

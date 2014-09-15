@@ -71,7 +71,7 @@ public class PitchSettingsPanel extends JPanel {
 	}
 	
 	private void init() {
-setLayout(new BorderLayout());
+		setLayout(new BorderLayout());
 		
 		final FormLayout formLayout = new FormLayout(
 				"right:pref, 3dlu, fill:pref:grow, pref", "");

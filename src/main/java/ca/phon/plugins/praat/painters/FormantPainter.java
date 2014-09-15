@@ -7,6 +7,7 @@ import java.awt.Toolkit;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.ImageIcon;
 
@@ -70,13 +71,13 @@ public class FormantPainter extends CachingPainter<Formant> {
 		final double pixelPerSec = bounds.getWidth() / len;
 		final double freqPerPixel = getMaxFrequency() / bounds.getHeight();
 	
-		final Pointer pimin =  new Memory(Native.getNativeSize(Long.TYPE));
-		final Pointer pimax =  new Memory(Native.getNativeSize(Long.TYPE));
+		final AtomicReference<Long> iminRef = new AtomicReference<Long>();
+		final AtomicReference<Long> imaxRef = new AtomicReference<Long>();
 		
-		formants.getWindowSamples(tmin, tmax, pimin, pimax);
+		formants.getWindowSamples(tmin, tmax, iminRef, imaxRef);
 		
-		final int firstFrame = (int)pimin.getLong(0);
-		final int lastFrame = (int)pimax.getLong(0);
+		final int firstFrame = iminRef.get().intValue();
+		final int lastFrame = imaxRef.get().intValue();
 		
 		double minIntensity = 0.0;
 		double maxIntensity = minIntensity;
