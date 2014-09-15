@@ -66,7 +66,9 @@ public class PraatScriptTcpServer {
 	 * 
 	 */
 	public void startServer() {
-		startServer(PhonWorker.getInstance());
+		final PhonWorker worker = PhonWorker.createWorker();
+		startServer(worker);
+		worker.start();
 	}
 	
 	/**
@@ -125,6 +127,11 @@ public class PraatScriptTcpServer {
 	};
 
 	public void stop() {
+		try {
+			serverSock.close();
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
 		server.shutdown();
 	}
 

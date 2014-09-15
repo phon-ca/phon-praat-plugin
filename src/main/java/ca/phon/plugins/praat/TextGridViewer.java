@@ -3,7 +3,10 @@ package ca.phon.plugins.praat;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -19,6 +22,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,10 +72,13 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.textgrid.TextGrid;
 import ca.phon.textgrid.TextGridInterval;
+import ca.phon.textgrid.TextGridReader;
 import ca.phon.textgrid.TextGridTier;
+import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
+import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
 
@@ -93,51 +104,26 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	// parent panel
 	private WaveformEditorView parent;
 	
-	private JLayeredPane layeredPane;
-	
 	private JPanel contentPane;
 	
-//	private JPanel widgetPane;
-	
-	/*
-	 * Play button shown when an interval is selected
-	 */
-//	private JButton playIntervalButton;
+	public final static String SHOW_TEXTGRID_PROP = TextGridViewer.class.getName() + ".showTextGrid";
+	private boolean showTextGrid = 
+			PrefHelper.getBoolean(SHOW_TEXTGRID_PROP, false);
 	
 	public TextGridViewer(WaveformEditorView parent) {
 		super();
-		setVisible(false);
+		setVisible(showTextGrid);
 		setFocusable(true);
-//		addFocusListener(focusListener);
 		
 		this.parent = parent;
 		this.calculator = parent.getCalculator();
 		
-		layeredPane = new JLayeredPane();
-		layeredPane.setLayout(null);
+		contentPane = new TextGridContentPanel();
 		
-		contentPane = new JPanel(new VerticalLayout(0));
-		layeredPane.add(contentPane, 0);
-		
-//		widgetPane = new JPanel(null);
-//		widgetPane.setOpaque(false);
-//		widgetPane.setVisible(false);
-//		layeredPane.add(widgetPane, 1);
+		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, tierUpdater);
 		
 		setLayout(new BorderLayout());
-		add(layeredPane, BorderLayout.CENTER);
-		
-//		final ImageIcon icon = IconManager.getInstance().getIcon("actions/media-playback-start", IconSize.SMALL);
-//		final PhonUIAction action = new PhonUIAction(this, "onPlayInterval");
-//		action.putValue(PhonUIAction.SHORT_DESCRIPTION, "Play selected interval...");
-//		action.putValue(PhonUIAction.SMALL_ICON, icon);
-//		playIntervalButton = new JButton(action);
-//		
-//		playIntervalButton.setBounds(0, 0, 16, 16);
-//		widgetPane.add(playIntervalButton);
-		
-		this.parent.addComponentListener(resizeListener);
-		
+		add(contentPane, BorderLayout.CENTER);
 		
 		// setup toolbar buttons
 		setupToolbar();
@@ -168,8 +154,20 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		return this.tg;
 	}
 	
+	private final List<TextGridTierComponent> tiers = 
+			Collections.synchronizedList(new ArrayList<TextGridTierComponent>());
+	
+	private final PropertyChangeListener tierUpdater = new PropertyChangeListener() {
+		
+		@Override
+		public void propertyChange(PropertyChangeEvent evt) {
+			repaint();
+		}
+	};
+	
 	private void setupTextGrid() {
 		contentPane.removeAll();
+		tiers.clear();
 		
 		if(tg != null) {
 			final Record currentRecord = parent.getEditor().currentRecord();
@@ -199,6 +197,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 					tierComp.setFont(getFont());
 					tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
 					contentPane.add(tierComp);
+					tiers.add(tierComp);
 				}
 			}
 		} else {
@@ -211,10 +210,18 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			contentPane.add(generateTextGridBtn);
 		}
 		
-		final Dimension prefSize = contentPane.getPreferredSize();
-		layeredPane.setPreferredSize(prefSize);
-		contentPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
-//		widgetPane.setBounds(0, 0, parent.getWidth(), prefSize.height);
+		contentPane.revalidate();
+		repaint();
+		
+	}
+	
+	
+	@Override
+	public void setEnabled(boolean enabled) {
+		for(TextGridTierComponent comp:tiers) {
+			comp.setEnabled(enabled);
+		}
+		super.setEnabled(enabled);
 	}
 	
 	public void onGenerateTextGrid() {
@@ -310,6 +317,11 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		return sb.toString();
 	}
 	
+	private final Map<PraatScriptTcpServer, Record> runningServers = 
+			Collections.synchronizedMap(new HashMap<PraatScriptTcpServer, Record>());
+	/**
+	 * Send TextGrid to Praat.
+	 */
 	public void openTextGrid() {
 		File mediaFile =
 				getAudioFile();
@@ -330,7 +342,44 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			
 			@Override
 			public void praatScriptFinished(String data) {
-				System.out.println(data);
+				final Record currentRecord = parent.getEditor().currentRecord();
+				final Record serverRecord = runningServers.remove(server);
+				if(currentRecord == serverRecord) {
+					unlock();
+					
+					// grab new TextGrid from default praat save location
+					final File tgFile = new File(
+							System.getProperty("user.home") + File.separator + 
+							"Praat" + File.separator + "praat_backToCaller.Data");
+					if(tgFile.exists() && tgFile.isFile()) {
+						TextGrid tg = null;
+						try {
+							TextGridReader reader = new TextGridReader(tgFile, "UTF-16");
+							tg = reader.readTextGrid();
+						} catch (IOException e) {
+							LOGGER.log(Level.SEVERE,
+									e.getLocalizedMessage(), e);
+						} catch (ParseException e) {
+							try {
+								TextGridReader reader = new TextGridReader(tgFile, "UTF-8");
+								tg = reader.readTextGrid();
+							} catch (IOException e1) {
+								LOGGER.log(Level.SEVERE,
+										e1.getLocalizedMessage(), e1);
+							} catch (ParseException e1) {
+								LOGGER.log(Level.SEVERE,
+										e1.getLocalizedMessage(), e1);
+							}
+						}
+						if(tg != null) {
+							final SessionEditor model = parent.getEditor();
+							final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
+							tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
+						}
+					}
+					
+					update();
+				}
 			}
 			
 		});
@@ -341,6 +390,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("segment", media);
 		
 		try {
+			runningServers.put(server, parent.getEditor().currentRecord());
+			lock(server);
 			server.startServer();
 			final PraatScript ps = new PraatScript(loadTextGridTemplate());
 			final String script = ps.generateScript(map);
@@ -354,6 +405,35 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			ToastFactory.makeToast(e.getLocalizedMessage()).start();
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
+	}
+	
+	private void lock(PraatScriptTcpServer server) {
+		setEnabled(false);
+		
+		final JButton forceUnlockBtn = new JButton();
+		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", server);
+		forceUnlockAct.putValue(PhonUIAction.NAME, "Unlock TextGrid");
+		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat, click to unlock.");
+		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
+		forceUnlockBtn.setAction(forceUnlockAct);
+		
+		contentPane.add(forceUnlockBtn);
+		contentPane.revalidate();
+	}
+	
+	public void onForceUnlock(PhonActionEvent pae) {
+		setEnabled(true);
+		
+		// stop server
+		final PraatScriptTcpServer server = (PraatScriptTcpServer)pae.getData();
+		server.stop();
+		
+		contentPane.remove((JButton)pae.getActionEvent().getSource());
+		contentPane.revalidate();
+	}
+	
+	private void unlock() {
+		setEnabled(true);
 	}
 	
 	private void update() {
@@ -394,8 +474,10 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	}
 	
 	public void onToggleTextGrid() {
-		final boolean enabled = !TextGridViewer.this.isVisible();
-		TextGridViewer.this.setVisible(enabled);
+		showTextGrid = !showTextGrid;
+		PrefHelper.getUserPreferences().putBoolean(SHOW_TEXTGRID_PROP, showTextGrid);
+		TextGridViewer.this.setVisible(showTextGrid);
+		if(showTextGrid) update();
 	}
 	
 	private final TextGridListener tgListener = new TextGridListener() {
@@ -464,43 +546,6 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
-//	private final FocusListener focusListener = new FocusListener() {
-//		
-//		@Override
-//		public void focusLost(FocusEvent e) {
-//			widgetPane.setVisible(false);
-//		}
-//		
-//		@Override
-//		public void focusGained(FocusEvent e) {
-//			widgetPane.setVisible(true);
-//		}
-//	};
-	
-	private final ComponentListener resizeListener = new ComponentListener() {
-		
-		@Override
-		public void componentShown(ComponentEvent e) {
-		}
-		
-		@Override
-		public void componentResized(ComponentEvent e) {
-			final Dimension prefSize = contentPane.getPreferredSize();
-			final int width = e.getComponent().getWidth();
-			layeredPane.setPreferredSize(prefSize);
-			contentPane.setBounds(0, 0, width, prefSize.height);
-//			widgetPane.setBounds(0, 0, width, prefSize.height);
-		}
-		
-		@Override
-		public void componentMoved(ComponentEvent e) {
-		}
-		
-		@Override
-		public void componentHidden(ComponentEvent e) {
-		}
-	};
-
 	@Override
 	public void onRefresh() {
 		update();
@@ -525,7 +570,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		}
 		
 		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleTextGrid");
-		toggleAct.putValue(PhonUIAction.NAME, "Toggle TextGrid");
+		toggleAct.putValue(PhonUIAction.NAME, "Show TextGrid");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, TextGridViewer.this.isVisible());
 		final JCheckBoxMenuItem toggleItem = new JCheckBoxMenuItem(toggleAct);
 		praatMenu.add(toggleItem);
@@ -547,4 +592,15 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Execute Praat script...");
 		praatMenu.add(sendPraatAct);
 	}
+
+	private class TextGridContentPanel extends JPanel {
+
+		private static final long serialVersionUID = 1370029937245278277L;
+		
+		public TextGridContentPanel() {
+			super(new VerticalLayout(0));
+		}
+		
+	}
+	
 }

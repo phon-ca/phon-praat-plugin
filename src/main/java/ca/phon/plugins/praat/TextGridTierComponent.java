@@ -11,6 +11,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 
 import javax.swing.JComponent;
@@ -18,6 +19,7 @@ import javax.swing.event.MouseInputAdapter;
 
 import ca.phon.app.session.editor.view.waveform.WaveformEditorViewCalculator;
 import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
+import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.textgrid.TextGridInterval;
 import ca.phon.textgrid.TextGridTier;
 import ca.phon.ui.PhonGuiConstants;
@@ -52,12 +54,12 @@ public class TextGridTierComponent extends JComponent {
 	 * @param time
 	 * @return x-value for the given time
 	 */
-	private int locationForTime(float time) {
+	private double locationForTime(float time) {
 		final Rectangle2D contentRect = calculator.getSegmentRect();
 		final float length = (getMaxTime() - getMinTime());
-		final float sPerPixel = length / (float)contentRect.getWidth();
+		final double sPerPixel = length / contentRect.getWidth();
 		
-		return (int)Math.round(contentRect.getX()) + (int)Math.round((time - getMinTime()) / sPerPixel);
+		return (contentRect.getX() + (time - getMinTime()) / sPerPixel);
 	}
 	
 	/**
@@ -71,8 +73,8 @@ public class TextGridTierComponent extends JComponent {
 		for(int i = 0; i < tier.getNumberOfIntervals(); i++) {
 			final TextGridInterval interval = tier.getIntervalAt(i);
 			
-			final int start = locationForTime(interval.getStart());
-			final int end = locationForTime(interval.getEnd());
+			final double start = locationForTime(interval.getStart());
+			final double end = locationForTime(interval.getEnd());
 			
 			if(x >= start && x < end) {
 				return interval;
@@ -113,27 +115,25 @@ public class TextGridTierComponent extends JComponent {
 		
 		// draw text grid
 		final FontMetrics fm = getFontMetrics(getFont());
-		int height = (int)getHeight();
-		int width = (int) getWidth();
-		int currentX = (int)contentRect.getX();
+		double height = getHeight();
+		double width = getWidth();
+		double currentX = contentRect.getX();
 		
 		g2.setColor(Color.white);
-		g2.fillRect(0, 0, width, height);
+		g2.fillRect(0, 0, (int)width, (int)height);
+		
+		final Rectangle2D selectionRect = calculator.getSelectionRect();
+		selectionRect.setRect(selectionRect.getX(), selectionRect.getY(), selectionRect.getWidth(), getHeight());
+		Color selColor = new Color(50, 125, 200, 100);
+		g2.setColor(selColor);
+		g2.fill(selectionRect);
 		
 		for(int i = 0; i < tier.getNumberOfIntervals(); i++) {
 			final TextGridInterval interval = tier.getIntervalAt(i);
-			int intervalEnd = locationForTime(interval.getEnd());
+			double intervalEnd = locationForTime(interval.getEnd());
 			
-			final Rectangle intervalRect = 
-					new Rectangle(currentX, 0, (intervalEnd - currentX), height);
-			
-			// draw bg
-			if(selectionPainted && selectedInterval == interval) {
-				g2.setColor(PhonGuiConstants.PHON_SELECTED);
-			} else {
-				g2.setColor(Color.white);
-			}
-			g2.fillRect(intervalRect.x, intervalRect.y, intervalRect.width, intervalRect.height);
+			final Rectangle2D intervalRect = 
+					new Rectangle2D.Double(currentX, 0.0, (intervalEnd - currentX), height);
 			
 			// draw text centered (if possible) inside interval rect
 			g2.setFont(getFont());
@@ -142,23 +142,25 @@ public class TextGridTierComponent extends JComponent {
 			final String txt = interval.getLabel();
 			final Rectangle2D txtRect = fm.getStringBounds(txt, g2);
 			
-			int fontX = 0;
-			if(txtRect.getWidth() > intervalRect.width) {
+			double fontX = 0;
+			if(txtRect.getWidth() > intervalRect.getWidth()) {
 				fontX = currentX;
 			} else {
-				fontX = intervalRect.x + (int)Math.round(intervalRect.width / 2) - (int)Math.round(txtRect.getCenterX());
+				fontX = (int)intervalRect.getX() + (int)Math.round(intervalRect.getWidth() / 2) - (int)Math.round(txtRect.getCenterX());
 			}
-			int fontY = intervalRect.y + ((intervalRect.height / 2) - (int)Math.round(txtRect.getCenterY()));
+			int fontY = (int)intervalRect.getY() + (int)((intervalRect.getHeight() / 2) - (int)Math.round(txtRect.getCenterY()));
 			
 			if(txt.equalsIgnoreCase("#")) {
 				g2.setColor(Color.lightGray);
 			}
-			g2.drawString(txt, fontX, fontY);
+			g2.drawString(txt, (int)fontX, (int)fontY);
 			
 			// draw end boundary
 			g2.setColor(Color.lightGray);
-			if(i < tier.getNumberOfIntervals()-1)
-				g2.drawLine(intervalEnd, 0, intervalEnd, height);
+			if(i < tier.getNumberOfIntervals()-1) {
+				final Line2D line = new Line2D.Double(intervalEnd, 0.0, intervalEnd, height);
+				g2.draw(line);
+			}
 			currentX = intervalEnd+1;
 		}
 		
@@ -180,6 +182,12 @@ public class TextGridTierComponent extends JComponent {
 					leftInsetRect.getX(), 0.0, 
 					leftInsetRect.getWidth() + contentRect.getWidth() + rightInsetRect.getWidth(), height);
 			g2.draw(focusRect);
+		}
+		
+		if(!isEnabled()) {
+			final Color overlay = new Color(1.0f, 1.0f, 1.0f, 0.75f);
+			g2.setColor(overlay);
+			g2.fillRect(0, 0, (int)width, (int)height);
 		}
 	}
 	
