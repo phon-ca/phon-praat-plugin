@@ -469,7 +469,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
 					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
 		} else {
-			// TODO
+			pitch = sound.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+					pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
 		}
 		
 		if(pitch == null) return;
@@ -715,10 +718,19 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
 		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
-		final Pitch pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+		
+		Pitch pitch = null;
+		if(pitchSettings.isAutoCorrelate()) {
+			pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
 				pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
 				pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
 				pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+		} else {
+			pitch = part.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+				pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+				pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+				pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+		}
 
 		return pitch;
 	}
@@ -907,6 +919,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
 			updateLock.unlock();
 		}
+		
+		
 	}
 	
 	private final ComponentListener resizeListener = new ComponentListener() {

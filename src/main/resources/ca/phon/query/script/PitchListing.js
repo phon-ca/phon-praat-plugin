@@ -3,8 +3,9 @@ params =
 		{enum, searchTier, "IPA Target"|"IPA Actual", 1, "<html><b>Search Tier</b></html>"}
 	;
 */
+importClass(java.util.concurrent.atomic.AtomicReference)
 
-var FormantOptions = require("lib/FormantOptions").FormantOptions;
+var PitchOptions = require("lib/PitchOptions").PitchOptions;
 var GroupFilter = require("lib/GroupFilter").GroupFilter;
 var AlignedGroupFilter = require("lib/TierFilter").TierFilter;
 var WordFilter = require("lib/WordFilter").WordFilter;
@@ -20,7 +21,7 @@ var PatternType = require("lib/PatternFilter").PatternType;
 
 var filters = {
     "primary": new PatternFilter("filters.primary"),
-    "formantOpts": new FormantOptions("filters.formantOpts"),
+    "pitchOpts": new PitchOptions("filters.pitchOpts"),
     "group": new GroupFilter("filters.group"),
     "groupPattern": new PatternFilter("filters.groupPattern"),
     "alignedGroup": new AlignedGroupFilter("filters.alignedGroup"),
@@ -36,9 +37,9 @@ function setup_params(params) {
 	filters.primary.setSelectedPatternType(PatternType.PHONEX);
 	filters.primary.param_setup(params);
 
-	var formantSep = new SeparatorScriptParam("Formant Options", false);
-	params.add(formantSep);
-	filters.formantOpts.param_setup(params);
+	var pitchSep = new SeparatorScriptParam("Pitch Options", false);
+	params.add(pitchSep);
+	filters.pitchOpts.param_setup(params);
 	
 	filters.group.param_setup(params);
 	filters.groupPattern.param_setup(params);
@@ -137,7 +138,7 @@ function annotateRecord(r) {
 	tga.annotateRecord(tg, r);
 }
 
-function listFormants(formants, ipa) {
+function listPitch(pitch, ipa) {
 	tgi = ipa.textGridInterval;
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textGridInterval;
@@ -151,37 +152,42 @@ function listFormants(formants, ipa) {
 		}
 	}
 	
-	var formantTable = formants.downto_Table(
-		false, // never include frame numbers
-		true, // always include times
-		6,
-		filters.formantOpts.includeIntensity, 6,
-		filters.formantOpts.includeNumFormants, 6,
-		filters.formantOpts.includeBandwidths);
+	var ixminPtr = new AtomicReference(new java.lang.Long(0));
+	var ixmaxPtr = new AtomicReference(new java.lang.Long(0));
 	
-	if(serial == 1 && !printedTableHeader) {
-		printedTableHeader = true;
-		
-		// print ipa column
-		out.print("\"ipa\"");
-		
-		for(col = 1; col <= formantTable.getNcol(); col++) {
-			out.print(",\"" + formantTable.getColStr(col) + "\"");
-		}
-		out.println();
+	pitch.getWindowSamples(tgi.start, tgi.end, ixminPtr, ixmaxPtr);
+	
+	var xmin = ixminPtr.get().intValue();
+	var xmax = ixmaxPtr.get().intValue();
+	
+	var pitchUnit = kPitch_unit.fromString(filters.pitchOpts.unitType);
+	var unitTxt = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchUnit,
+	    Packages.ca.hedlund.jpraat.binding.fon.Function.UNIT_TEXT_SHORT);
+	
+	var nf = java.text.NumberFormat.getNumberInstance();
+	nf.setMaximumFractionDigits(6);
+	
+	// print header
+	if(!printedTableHeader) {
+	    out.println("\"ipa\",\"Time(s)\",\"F0(" + unitTxt + ")\"");
+	    printedTableHeader = true;
 	}
-	for(row = 1; row < formantTable.getNrow(); row++) {
-		// get time
-		rowTime = formantTable.getNumericValue_Assert(row, 1);
-		if(rowTime > tgi.end) break;
-		if(rowTime >= tgi.start) {
-			out.print("\"" + ipa.toString() + "\"");
-			for(col = 1; col <= formantTable.getNcol(); col++) {
-				out.print(",\"" + formantTable.getNumericValue_Assert(row, col) + "\"");
-			}
-			out.println();
-		}
-	}
+	
+    for(i = xmin; i <= xmax; i++) {
+        var t = pitch.indexToX(i);
+        var f0 = pitch.getValueAtSample(i, Pitch.LEVEL_FREQUENCY, pitchUnit.ordinal());
+        f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchUnit.ordinal());
+        
+        if(i == xmin) {
+            out.print("\"" + ipa + "\",");
+        } else {
+            out.print("\"\",");
+        }
+       
+        out.print("\"" + nf.format(t) + "\",");
+        out.print("\"" + nf.format(f0) + "\"\n");
+    }
+    out.flush();
 }
 
 function query_record(recordIndex, record) {
@@ -204,22 +210,29 @@ function query_record(recordIndex, record) {
 	
 	// get formant information
 	segment = (record.segment.numberOfGroups() == 1 ? record.segment.getGroup(0) : null);
-	var formants = null;
+	var pitch = null;
 	if(segment) {
 		sound = longSound.extractPart(segment.startValue / 1000.0, segment.endValue / 1000.0, 1);
-		formants = sound.to_Formant_burg(
-			filters.formantOpts.timeStep,
-			filters.formantOpts.maxFormants,
-			filters.formantOpts.maxFreq,
-			filters.formantOpts.windowLength,
-			filters.formantOpts.preEmp);
+		if(filters.pitchOpts.corType.index == 0) {
+		    // auto-correlate
+		    pitch = sound.to_Pitch_ac(filters.pitchOpts.timeStep, filters.pitchOpts.rangeStart, 3.0, 
+					filters.pitchOpts.maxCandidates, (filters.pitchOpts.veryAccurate ? 1 : 0), filters.pitchOpts.silenceThreshold, 
+					filters.pitchOpts.voicingThreshold, filters.pitchOpts.octaveCost, 
+					filters.pitchOpts.octaveJumpCost, filters.pitchOpts.vUnvCost, filters.pitchOpts.rangeEnd);
+		} else {
+		    // cross-correlate
+		    pitch = sound.to_Pitch_cc(filters.pitchOpts.timeStep, filters.pitchOpts.rangeStart, 3.0, 
+				filters.pitchOpts.maxCandidates, (filters.pitchOpts.veryAccurate ? 1 : 0), filters.pitchOpts.silenceThreshold, 
+				filters.pitchOpts.voicingThreshold, filters.pitchOpts.octaveCost, 
+				filters.pitchOpts.octaveJumpCost, filters.pitchOpts.vUnvCost, filters.pitchOpts.rangeEnd);
+		}
 	} else {
 		err.println("Record " + recordIndex + " does not have segment information.");
 		return;
 	}
 	
-	if(formants == null) {
-		err.println("Unable to load formant information for record " + recordIndex);
+	if(pitch == null) {
+		err.println("Unable to load pitch information for record " + recordIndex);
 		return;
 	}
 
@@ -279,7 +292,7 @@ function query_record(recordIndex, record) {
 		    for(k = 0; k < matches.length; k++) {
     	        var match = matches[k];
     	        
-    	        listFormants(formants, match.value);
+    	        listPitch(pitch, match.value);
     	        
     			var result = factory.createResult();
     			// calculate start/end positions of data in text
