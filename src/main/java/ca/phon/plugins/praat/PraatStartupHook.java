@@ -6,6 +6,7 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 
 import ca.hedlund.jpraat.binding.Praat;
+import ca.hedlund.jpraat.binding.sys.PraatVersion;
 import ca.phon.app.hooks.PhonStartupHook;
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
@@ -39,6 +40,13 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 		
 		try {
 			Praat.INSTANCE.praat_lib_init();
+			
+			final PraatVersion praatVersion = PraatVersion.getVersion();
+			// print version information to log
+			final StringBuilder sb = new StringBuilder();
+			sb.append("Praat version: ").append(praatVersion.versionStr);
+			sb.append(" ").append(praatVersion.day).append('-').append(praatVersion.month).append('-').append(praatVersion.year);
+			LOGGER.info(sb.toString());
 		} catch (UnsatisfiedLinkError e) {
 			throw new PluginException(e);
 		}
