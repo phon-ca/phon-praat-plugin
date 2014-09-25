@@ -58,6 +58,7 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 	private void paintIntensity(Graphics2D g2d, Rectangle2D bounds) {
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 		
 		final Intensity intensity = getValue();
 		if(intensity == null) return;
