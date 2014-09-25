@@ -70,9 +70,14 @@ import ca.phon.textgrid.TextGridInterval;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.toast.Toast;
+import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
+import ca.phon.worker.PhonTask;
+import ca.phon.worker.PhonTaskListener;
+import ca.phon.worker.PhonTask.TaskStatus;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.sun.jna.Memory;
@@ -188,58 +193,86 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	public void onEditSettings() {
-		final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame());
-		dialog.setModal(true);
-		
-		dialog.setLayout(new BorderLayout());
-		
-		final DialogHeader header = new DialogHeader("Spectrogram settings", "Edit spectrogram settings");
-		dialog.add(header, BorderLayout.NORTH);
-		
-		final SpectrogramSettingsPanel settingsPanel = new SpectrogramSettingsPanel();
-		settingsPanel.loadSettings(spectrogramSettings);
-		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		dialog.add(settingsPanel, BorderLayout.CENTER);
-		
 		final AtomicBoolean wasCanceled = new AtomicBoolean(false);
-		final JButton okButton = new JButton("Ok");
-		okButton.addActionListener(new ActionListener() {
+		final PhonTask onEDT = new PhonTask() {
 			
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				wasCanceled.getAndSet(false);
-				dialog.setVisible(false);
-			}
-			
-		});
-		final JButton cancelButton = new JButton("Cancel");
-		cancelButton.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				wasCanceled.getAndSet(true);
-				dialog.setVisible(false);
-			}
-		});
-		
-		dialog.getRootPane().setDefaultButton(okButton);
-		okButton.requestFocusInWindow();
-		
-		final ButtonBarBuilder builder = new ButtonBarBuilder();
+			public void performTask() {
+				setStatus(TaskStatus.RUNNING);
+				
+				final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame());
+				dialog.setModal(true);
+				
+				dialog.setLayout(new BorderLayout());
+				
+				final DialogHeader header = new DialogHeader("Spectrogram settings", "Edit spectrogram settings");
+				dialog.add(header, BorderLayout.NORTH);
+				
+				final SpectrogramSettingsPanel settingsPanel = new SpectrogramSettingsPanel();
+				settingsPanel.loadSettings(spectrogramSettings);
+				settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+				dialog.add(settingsPanel, BorderLayout.CENTER);
+				
+				final JButton okButton = new JButton("Ok");
+				okButton.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						wasCanceled.getAndSet(false);
+						dialog.setVisible(false);
+					}
+					
+				});
+				final JButton cancelButton = new JButton("Cancel");
+				cancelButton.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						wasCanceled.getAndSet(true);
+						dialog.setVisible(false);
+					}
+				});
+				
+				dialog.getRootPane().setDefaultButton(okButton);
+				okButton.requestFocusInWindow();
+				
+				final ButtonBarBuilder builder = new ButtonBarBuilder();
 //		builder.setLeftToRight(false);
-		builder.addButton(okButton).addButton(cancelButton);
-		dialog.add(builder.build(), BorderLayout.SOUTH);
-		
-		dialog.pack();
-		dialog.setLocationRelativeTo(parent);
-		dialog.setVisible(true);
-		
-		// ... wait, it's modal
-		
-		if(!wasCanceled.get()) {
-			spectrogramSettings = settingsPanel.getSettings();
-			update();
-		}
+				builder.addButton(okButton).addButton(cancelButton);
+				dialog.add(builder.build(), BorderLayout.SOUTH);
+				
+				dialog.pack();
+				dialog.setLocationRelativeTo(parent);
+				dialog.setVisible(true);
+				
+				if(!wasCanceled.get()) {
+					spectrogramSettings = settingsPanel.getSettings();
+				}
+				
+				setStatus(TaskStatus.FINISHED);
+			}
+		};
+		onEDT.addTaskListener(new PhonTaskListener() {
+			
+			@Override
+			public void statusChanged(PhonTask task, TaskStatus oldStatus,
+					TaskStatus newStatus) {
+				if(newStatus != TaskStatus.RUNNING) {
+					if(!wasCanceled.get()) {
+						update();
+					}
+				}
+			}
+			
+			@Override
+			public void propertyChanged(PhonTask task, String property,
+					Object oldValue, Object newValue) {
+			}
+		});
+		if(SwingUtilities.isEventDispatchThread())
+			onEDT.run();
+		else
+			SwingUtilities.invokeLater(onEDT);
 	}
 	
 	public void onToggleFormants() {
@@ -703,6 +736,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
 		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0,
 				(double)segment.getEndValue()/1000.0, 1);
+		
 		final Spectrogram spectrogram = part.toSpectrogram(
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
 				spectrogramSettings.getTimeStep(), spectrogramSettings.getFrequencyStep(), 
@@ -778,29 +812,66 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			update();
 	}
 	
+	private void showErrorMessge(String title, String msg) {
+//		final StringBuilder sb = new StringBuilder();
+//		sb.append("<html><b>").append(title).append("</b><br/>").append(msg);
+//		sb.append("<br/>Click to close this message.");
+//		sb.append("</html>");
+//		final Toast t = ToastFactory.makeToast(sb.toString());
+//		t.setMessageBackground(Color.red);
+//		t.setDisplayTime(-1L);
+//		t.setFinishOnClink(true);
+//		t.start((JComponent)getParent());
+	}
+	
 	private final ReentrantLock updateLock = new ReentrantLock();
 	public void update() {
 		if(!isVisible()) return;
 		updateLock.lock();
-		spectrogram = loadSpectrogram();
+		
+		try {
+			spectrogram = loadSpectrogram();
+		} catch (IllegalArgumentException e) {
+			spectrogram = null;
+			
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
 		spectrogramPainter.setSettings(spectrogramSettings);
 		spectrogramPainter.setValue(spectrogram);
 		
 		if(showFormants) {
-			formants = loadFormants();
+			try {
+				formants = loadFormants();
+			} catch (IllegalArgumentException e) {
+				formants = null;
+				
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			}
 			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			formantPainter.setSettings(formantSettings);
 			formantPainter.setValue(formants);
 		}
 		
 		if(showPitch) {
-			pitch = loadPitch();
+			try {
+				pitch = loadPitch();
+			} catch (IllegalArgumentException e) {
+				pitch = null;
+				
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			}
 			pitchPainter.setSettings(pitchSettings);
 			pitchPainter.setValue(pitch);
 		}
 		
 		if(showIntensity) {
-			intensity = loadIntensity();
+			try {
+				intensity = loadIntensity();
+			} catch (IllegalArgumentException e) {
+				intensity = null;
+				
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			}
 			intensityPainter.setSettings(intensitySettings);
 			intensityPainter.setValue(intensity);
 		}
@@ -815,7 +886,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				setPreferredSize(newSize);
 				
 				revalidate();
-				repaint();
 			}
 			
 		};
@@ -989,6 +1059,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		}
 		
 		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleSpectrogram");
+		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show spectrogram");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, SpectrogramViewer.this.isVisible());
 		praatMenu.add(new JCheckBoxMenuItem(toggleAct));
