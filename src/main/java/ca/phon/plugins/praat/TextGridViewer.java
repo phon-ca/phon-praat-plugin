@@ -46,6 +46,7 @@ import javax.swing.MenuElement;
 import org.jdesktop.swingx.VerticalLayout;
 
 import ca.hedlund.jpraat.binding.Praat;
+import ca.hedlund.jpraat.binding.sys.PraatDir;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
@@ -353,8 +354,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 					
 					// grab new TextGrid from default praat save location
 					final File tgFile = new File(
-							System.getProperty("user.home") + File.separator + 
-							"Praat" + File.separator + "praat_backToCaller.Data");
+							PraatDir.getPath() + File.separator + "praat_backToCaller.Data");
 					if(tgFile.exists() && tgFile.isFile()) {
 						TextGrid tg = null;
 						try {
