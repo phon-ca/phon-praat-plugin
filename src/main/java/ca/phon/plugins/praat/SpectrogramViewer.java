@@ -152,9 +152,9 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			
 		});
 		setLayout(null);
-		final Dimension newSize = new Dimension(
-				Math.max(parent.getWidth(), 1), (int)(spectrogramSettings.getMaxFrequency() / 20));
-		setPreferredSize(newSize);
+//		final Dimension newSize = new Dimension(
+//				Math.max(parent.getWidth(), 1), (int)(spectrogramSettings.getMaxFrequency() / 20));
+//		setPreferredSize(newSize);
 		
 		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
 		addMouseListener(mtl);
@@ -162,9 +162,14 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		
-		update();
 		setupEditorEvents();
 		setupToolbar();
+	}
+	
+	@Override
+	public void addNotify() {
+		super.addNotify();
+		update();
 	}
 
 	private void setupEditorEvents() {
@@ -803,25 +808,15 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
+		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(WaveformEditorView.VIEW_TITLE)) return;
 		update();
 	}
 	
 	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
+		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(WaveformEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName()))
 			update();
-	}
-	
-	private void showErrorMessge(String title, String msg) {
-//		final StringBuilder sb = new StringBuilder();
-//		sb.append("<html><b>").append(title).append("</b><br/>").append(msg);
-//		sb.append("<br/>Click to close this message.");
-//		sb.append("</html>");
-//		final Toast t = ToastFactory.makeToast(sb.toString());
-//		t.setMessageBackground(Color.red);
-//		t.setDisplayTime(-1L);
-//		t.setFinishOnClink(true);
-//		t.start((JComponent)getParent());
 	}
 	
 	private final ReentrantLock updateLock = new ReentrantLock();
@@ -882,8 +877,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			
 			@Override
 			public void run() {
-				final Dimension newSize = new Dimension(parent.getWidth(), (int)spectrogram.getNy() * 2);
-				setPreferredSize(newSize);
+				if(spectrogram != null) {
+					final Dimension newSize = new Dimension(parent.getWidth(), (int)spectrogram.getNy() * 2);
+					setPreferredSize(newSize);
+				}
 				
 				revalidate();
 			}

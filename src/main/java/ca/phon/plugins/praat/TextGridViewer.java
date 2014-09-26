@@ -129,7 +129,11 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		setupToolbar();
 		
 		setupEditorActions();
-		
+	}
+	
+	@Override
+	public void addNotify() {
+		super.addNotify();
 		update();
 	}
 	
