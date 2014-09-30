@@ -43,7 +43,6 @@ import ca.hedlund.jpraat.binding.fon.LongSound;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.Sound;
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
-import ca.hedlund.jpraat.binding.fon.kPitch_unit;
 import ca.hedlund.jpraat.binding.stat.Table;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.phon.app.log.BufferPanel;
@@ -66,12 +65,10 @@ import ca.phon.plugins.praat.painters.SpectrogramPainter;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Record;
 import ca.phon.session.SystemTierType;
-import ca.phon.textgrid.TextGridInterval;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.toast.Toast;
-import ca.phon.ui.toast.ToastFactory;
+import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
@@ -79,10 +76,6 @@ import ca.phon.worker.PhonTask;
 import ca.phon.worker.PhonTaskListener;
 import ca.phon.worker.PhonTask.TaskStatus;
 
-import com.jgoodies.forms.builder.ButtonBarBuilder;
-import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 
 /**
@@ -241,10 +234,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				dialog.getRootPane().setDefaultButton(okButton);
 				okButton.requestFocusInWindow();
 				
-				final ButtonBarBuilder builder = new ButtonBarBuilder();
-//		builder.setLeftToRight(false);
-				builder.addButton(okButton).addButton(cancelButton);
-				dialog.add(builder.build(), BorderLayout.SOUTH);
+				dialog.add(ButtonBarBuilder.buildOkCancelBar(okButton, cancelButton), 
+						BorderLayout.SOUTH);
 				
 				dialog.pack();
 				dialog.setLocationRelativeTo(parent);
@@ -324,10 +315,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		dialog.getRootPane().setDefaultButton(okButton);
 		okButton.requestFocusInWindow();
 		
-		final ButtonBarBuilder builder = new ButtonBarBuilder();
-//		builder.setLeftToRight(false);
-		builder.addButton(okButton).addButton(cancelButton);
-		dialog.add(builder.build(), BorderLayout.SOUTH);
+		dialog.add(ButtonBarBuilder.buildOkCancelBar(okButton, cancelButton), 
+				BorderLayout.SOUTH);
 		
 		dialog.pack();
 		dialog.setLocationRelativeTo(parent);
@@ -385,10 +374,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		dialog.getRootPane().setDefaultButton(okButton);
 		okButton.requestFocusInWindow();
 		
-		final ButtonBarBuilder builder = new ButtonBarBuilder();
-//		builder.setLeftToRight(false);
-		builder.addButton(okButton).addButton(cancelButton);
-		dialog.add(builder.build(), BorderLayout.SOUTH);
+		dialog.add(ButtonBarBuilder.buildOkCancelBar(okButton, cancelButton), 
+				BorderLayout.SOUTH);
 		
 		dialog.pack();
 		dialog.setLocationRelativeTo(parent);
@@ -446,10 +433,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		dialog.getRootPane().setDefaultButton(okButton);
 		okButton.requestFocusInWindow();
 		
-		final ButtonBarBuilder builder = new ButtonBarBuilder();
-//		builder.setLeftToRight(false);
-		builder.addButton(okButton).addButton(cancelButton);
-		dialog.add(builder.build(), BorderLayout.SOUTH);
+		dialog.add(ButtonBarBuilder.buildOkCancelBar(okButton, cancelButton), 
+				BorderLayout.SOUTH);
 		
 		dialog.pack();
 		dialog.setLocationRelativeTo(parent);
