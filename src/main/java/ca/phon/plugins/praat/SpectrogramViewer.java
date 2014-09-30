@@ -65,6 +65,7 @@ import ca.phon.plugins.praat.painters.SpectrogramPainter;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Record;
 import ca.phon.session.SystemTierType;
+import ca.phon.session.Tier;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
@@ -717,9 +718,16 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		}
 	}
 	
+	private MediaSegment getSegment() {
+		final Tier<MediaSegment> segTier = parent.getEditor().currentRecord().getSegment();
+		return (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
+	}
+	
 	private Spectrogram loadSpectrogram() {
-		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
-		// TODO check segment length
+		final MediaSegment segment = getSegment();
+		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
+			return null;
+		}
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
@@ -735,8 +743,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	private Pitch loadPitch() {
-		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
-		// TODO check segment length
+		final MediaSegment segment = getSegment();
+		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
+			return null;
+		}
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
@@ -760,8 +770,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	private Formant loadFormants() {
-		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
-		// TODO check segment length
+		final MediaSegment segment = getSegment();
+		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
+			return null;
+		}
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
@@ -775,8 +787,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	private Intensity loadIntensity() {
-		final MediaSegment segment = parent.getEditor().currentRecord().getSegment().getGroup(0);
-		// TODO check segment length
+		final MediaSegment segment = getSegment();
+		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
+			return null;
+		}
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
