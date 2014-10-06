@@ -142,6 +142,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		// setup editor actions
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
 		
 		final EditorAction textGridChangedAct = new DelegateEditorAction(this, "onTextGridChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(TEXT_GRID_CHANGED_EVENT, textGridChangedAct);

@@ -136,7 +136,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		setVisible(showSpectrogram);
 		setBackground(Color.white);
 		this.parent = p;
-		this.parent.addComponentListener(resizeListener);
 		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, new PropertyChangeListener() {
 			
 			@Override
@@ -146,9 +145,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			
 		});
 		setLayout(null);
-//		final Dimension newSize = new Dimension(
-//				Math.max(parent.getWidth(), 1), (int)(spectrogramSettings.getMaxFrequency() / 20));
-//		setPreferredSize(newSize);
+		setPreferredSize(new Dimension(Integer.MAX_VALUE, (int)(spectrogramSettings.getMaxFrequency() / 20)));
 		
 		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
 		addMouseListener(mtl);
@@ -169,6 +166,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	private void setupEditorEvents() {
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
 		
 		final EditorAction segmentChangedAct = new DelegateEditorAction(this, "onSegmentChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGE_EVT, segmentChangedAct);
@@ -541,6 +539,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 			
 			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
+			out.flush();
 			out.close();
 		} catch(IOException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -629,6 +629,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 			
 			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
+			out.flush();
 			out.close();
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -711,6 +713,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				sb.setLength(0);
 			}
 			
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
 			out.flush();
 			out.close();
 		} catch (IOException e) {
@@ -877,7 +881,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			@Override
 			public void run() {
 				if(spectrogram != null) {
-					final Dimension newSize = new Dimension(parent.getWidth(), (int)spectrogram.getNy() * 2);
+					final Dimension newSize = new Dimension(
+							parent.getWidth(), (int)spectrogram.getNy() * 2);
 					setPreferredSize(newSize);
 				}
 				
@@ -988,48 +993,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		
 		
 	}
-	
-	private final ComponentListener resizeListener = new ComponentListener() {
-		
-		@Override
-		public void componentShown(ComponentEvent e) {
-		}
-		
-		@Override
-		public void componentResized(ComponentEvent e) {
-//			if(spectrogramPanel == null) return;
-//			final WaveformViewCalculator calculator = parent.getCalculator();
-//			
-//			final Rectangle2D segRect = calculator.getSegmentRect();
-//			
-//			int x = (segRect.getX() != Float.POSITIVE_INFINITY ? (int)segRect.getX() : 0);
-//			int y = 0;
-//			
-//			float hscale = 1.0f;
-//			float vscale = 1.0f;
-//			
-//			if(segRect.getWidth() > 0) {
-//				hscale = (float)(segRect.getWidth() / (float)spectrogramPanel.getDataWidth());
-//				spectrogramPanel.setZoom(hscale, vscale);
-//			}
-//			
-//			spectrogramPanel.setBounds(
-//					x, y,
-//					spectrogramPanel.getPreferredSize().width, spectrogramPanel.getPreferredSize().height);
-//			setPreferredSize(
-//					new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
-//			setSize(new Dimension(parent.getWidth(), spectrogramPanel.getPreferredSize().height));
-//			revalidate();repaint();
-		}
-		
-		@Override
-		public void componentMoved(ComponentEvent e) {
-		}
-		
-		@Override
-		public void componentHidden(ComponentEvent e) {
-		}
-	};
 	
 	@Override
 	public void onRefresh() {
