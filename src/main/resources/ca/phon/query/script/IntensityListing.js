@@ -115,6 +115,7 @@ function getMediaFile(s) {
 
 function begin_search(s) {
 	session = s;
+	printedTableHeader = false;
 	
 	textGridManager = TextGridManager.getInstance(project);
 	
@@ -138,7 +139,7 @@ function annotateRecord(r) {
 	tga.annotateRecord(tg, r);
 }
 
-function listIntensity(intensity, ipa) {
+function listIntensity(recordIndex, groupIndex, intensity, ipa) {
 	tgi = ipa.textGridInterval;
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textGridInterval;
@@ -165,7 +166,7 @@ function listIntensity(intensity, ipa) {
 	
 	// print header
 	if(!printedTableHeader) {
-	    out.println("\"ipa\",\"Time(s)\",\"Intensity(dB)\"");
+	    out.println("\"record\",\"group\",\"ipa\",\"Time(s)\",\"Intensity(dB)\"");
 	    printedTableHeader = true;
 	}
 	
@@ -174,11 +175,14 @@ function listIntensity(intensity, ipa) {
         var val = intensity.getValueAtSample(i, 1, Intensity.UNITS_DB);
         
         if(i == xmin) {
-            out.print("\"" + ipa + "\",");
+            out.print("\"" + (recordIndex+1) + "\",");
+            out.print("\"" + (groupIndex+1) + "\",");
         } else {
+            out.print("\"\",");
             out.print("\"\",");
         }
        
+        out.print("\"" + ipa + "\",");
         out.print("\"" + nf.format(t) + "\",");
         out.print("\"" + nf.format(val) + "\"\n");
     }
@@ -278,7 +282,7 @@ function query_record(recordIndex, record) {
 		    for(k = 0; k < matches.length; k++) {
     	        var match = matches[k];
     	        
-    	        listIntensity(intensity, match.value);
+    	        listIntensity(recordIndex, i, intensity, match.value);
     	        
     			var result = factory.createResult();
     			// calculate start/end positions of data in text

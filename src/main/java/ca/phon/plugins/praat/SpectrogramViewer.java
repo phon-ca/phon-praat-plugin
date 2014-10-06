@@ -517,6 +517,9 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		try {
 			final PrintWriter out = 
 					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY);
+			out.flush();
 			final StringBuilder sb = new StringBuilder();
 			final char qc = '\"';
 			final char sc = ',';
@@ -538,6 +541,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				sb.setLength(0);
 			}
 			
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY);
 			out.flush();
 			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
 			out.flush();
@@ -598,6 +603,9 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		try {
 			final PrintWriter out = 
 					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY);
+			out.flush();
 			final char qc = '\"';
 			final char sc = ',';
 			
@@ -628,6 +636,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				}
 			}
 			
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY);
 			out.flush();
 			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
 			out.flush();
@@ -694,6 +704,9 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		try {
 			final PrintWriter out = 
 					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY);
+			out.flush();
 			final char qc = '\"';
 			final char sc = ',';
 			
@@ -713,6 +726,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				sb.setLength(0);
 			}
 			
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY);
 			out.flush();
 			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
 			out.flush();

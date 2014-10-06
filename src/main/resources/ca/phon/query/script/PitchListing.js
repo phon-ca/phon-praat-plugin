@@ -115,6 +115,7 @@ function getMediaFile(s) {
 
 function begin_search(s) {
 	session = s;
+	printedTableHeader = false;
 	
 	textGridManager = TextGridManager.getInstance(project);
 	
@@ -138,7 +139,7 @@ function annotateRecord(r) {
 	tga.annotateRecord(tg, r);
 }
 
-function listPitch(pitch, ipa) {
+function listPitch(recordIndex, groupIndex, pitch, ipa) {
 	tgi = ipa.textGridInterval;
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textGridInterval;
@@ -169,7 +170,7 @@ function listPitch(pitch, ipa) {
 	
 	// print header
 	if(!printedTableHeader) {
-	    out.println("\"ipa\",\"Time(s)\",\"F0(" + unitTxt + ")\"");
+	    out.println("\"record\",\"group\",\"ipa\",\"Time(s)\",\"F0(" + unitTxt + ")\"");
 	    printedTableHeader = true;
 	}
 	
@@ -179,11 +180,14 @@ function listPitch(pitch, ipa) {
         f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchUnit.ordinal());
         
         if(i == xmin) {
-            out.print("\"" + ipa + "\",");
+            out.print("\"" + (recordIndex+1) + "\",");
+            out.print("\"" + (groupIndex+1) + "\",");
         } else {
+            out.print("\"\",");
             out.print("\"\",");
         }
        
+        out.print("\"" + ipa + "\",");
         out.print("\"" + nf.format(t) + "\",");
         out.print("\"" + nf.format(f0) + "\"\n");
     }
@@ -292,7 +296,7 @@ function query_record(recordIndex, record) {
 		    for(k = 0; k < matches.length; k++) {
     	        var match = matches[k];
     	        
-    	        listPitch(pitch, match.value);
+    	        listPitch(recordIndex, i, pitch, match.value);
     	        
     			var result = factory.createResult();
     			// calculate start/end positions of data in text

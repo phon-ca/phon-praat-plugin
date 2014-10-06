@@ -114,6 +114,7 @@ function getMediaFile(s) {
 
 function begin_search(s) {
 	session = s;
+	printedTableHeader = false;
 	
 	textGridManager = TextGridManager.getInstance(project);
 	
@@ -137,7 +138,7 @@ function annotateRecord(r) {
 	tga.annotateRecord(tg, r);
 }
 
-function listFormants(formants, ipa) {
+function listFormants(recordIndex, groupIndex, formants, ipa) {
 	tgi = ipa.textGridInterval;
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textGridInterval;
@@ -163,18 +164,27 @@ function listFormants(formants, ipa) {
 		printedTableHeader = true;
 		
 		// print ipa column
-		out.print("\"ipa\"");
+		out.print("\"record\",\"group\",\"ipa\"");
 		
 		for(col = 1; col <= formantTable.getNcol(); col++) {
 			out.print(",\"" + formantTable.getColStr(col) + "\"");
 		}
 		out.println();
 	}
+	var printedPrefix = false;
 	for(row = 1; row < formantTable.getNrow(); row++) {
 		// get time
 		rowTime = formantTable.getNumericValue_Assert(row, 1);
 		if(rowTime > tgi.end) break;
 		if(rowTime >= tgi.start) {
+		    if(!printedPrefix) {
+		        out.print("\"" + (recordIndex+1) + "\",");
+		        out.print("\"" + (groupIndex+1) + "\",");
+		        printedPrefix = true;
+		    } else {
+		        out.print("\"\",");
+		        out.print("\"\",");
+		    }
 			out.print("\"" + ipa.toString() + "\"");
 			for(col = 1; col <= formantTable.getNcol(); col++) {
 				out.print(",\"" + formantTable.getNumericValue_Assert(row, col) + "\"");
@@ -279,7 +289,7 @@ function query_record(recordIndex, record) {
 		    for(k = 0; k < matches.length; k++) {
     	        var match = matches[k];
     	        
-    	        listFormants(formants, match.value);
+    	        listFormants(recordIndex, i, formants, match.value);
     	        
     			var result = factory.createResult();
     			// calculate start/end positions of data in text
