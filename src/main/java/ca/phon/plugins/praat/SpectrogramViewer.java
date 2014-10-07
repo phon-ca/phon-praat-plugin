@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -33,6 +35,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -91,6 +94,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 
 	private final WaveformEditorView parent;
 	
+	private SpectrogramPanel contentPane;
+	
 	public final static String SHOW_SPECTROGRAM_PROP = SpectrogramViewer.class.getName() + ".showSpectrogram";
 	private boolean showSpectrogram =
 			PrefHelper.getBoolean(SHOW_SPECTROGRAM_PROP, false);
@@ -144,8 +149,35 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 			
 		});
-		setLayout(null);
-		setPreferredSize(new Dimension(Integer.MAX_VALUE, (int)(spectrogramSettings.getMaxFrequency() / 20)));
+		setLayout(new BorderLayout());
+		contentPane = new SpectrogramPanel();
+		add(contentPane, BorderLayout.CENTER);
+		final JComponent sizer = new JSeparator(SwingConstants.HORIZONTAL);
+		
+		sizer.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
+		sizer.setPreferredSize(new Dimension(0, 5));
+		sizer.addMouseMotionListener(new MouseAdapter() {
+
+			boolean changingSize = false;
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				final Dimension currentSize = contentPane.getSize();
+				final Dimension prefSize = contentPane.getPreferredSize();
+				prefSize.height = currentSize.height + e.getY();
+				contentPane.setPreferredSize(prefSize);
+				revalidate();
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+		});
+		add(sizer, BorderLayout.SOUTH);
 		
 		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
 		addMouseListener(mtl);
@@ -898,10 +930,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				if(spectrogram != null) {
 					final Dimension newSize = new Dimension(
 							parent.getWidth(), (int)spectrogram.getNy() * 2);
-					setPreferredSize(newSize);
+					contentPane.setPreferredSize(newSize);
 				}
 				
 				revalidate();
+				repaint();
 			}
 			
 		};
@@ -916,97 +949,99 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		return this;
 	}
 	
-	@Override
-	public void paintComponent(Graphics g) {
-		final Graphics2D g2 = (Graphics2D)g;
-		
-		super.paintComponent(g2);
-		
-		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-		
-		final WaveformViewCalculator calculator = parent.getCalculator();
-		final int height = getHeight();
-		final Rectangle2D leftInsetRect = calculator.getLeftInsetRect();
-		leftInsetRect.setRect(
-				leftInsetRect.getX(), 0.0, leftInsetRect.getWidth(), height);
-		final Rectangle2D rightInsetRect = calculator.getRightInsetRect();
-		rightInsetRect.setRect(
-				rightInsetRect.getX(), 0.0, rightInsetRect.getWidth(), height);
-		
-		final Rectangle2D contentRect = new Rectangle2D.Double(
-				calculator.getSegmentRect().getX(), 0, calculator.getSegmentRect().getWidth(), getHeight());
-		
-		if((int)contentRect.getWidth() == 0
-				|| (int)contentRect.getHeight() == 0) {
-			return;
-		}
-		
-		if(spectrogram != null) {
-			updateLock.lock();
-			spectrogramPainter.paintInside(g2, contentRect);
-			updateLock.unlock();
-		}
-		
-		if(showFormants && formants != null) {
-			updateLock.lock();
-			formantPainter.paintInside(g2, contentRect);
-			updateLock.unlock();
-		}
-		
-		if(showPitch && pitch != null) {
-			updateLock.lock();
-			pitchPainter.paintInside(g2, contentRect);
-			updateLock.unlock();
-		}
-		
-		if(showIntensity && intensity != null) {
-			updateLock.lock();
-			intensityPainter.paintInside(g2, contentRect);
-			updateLock.unlock();
-		}
-		
-		final WavDisplay wavDisplay = parent.getWavDisplay();
-		if(wavDisplay.get_selectionStart() >= 0
-				&& wavDisplay.get_selectionEnd() >= 0) {
-			Color selColor = new Color(50, 125, 200, 100);
-			g2.setColor(selColor);
+	private class SpectrogramPanel extends JPanel {
+		@Override
+		public void paintComponent(Graphics g) {
+			final Graphics2D g2 = (Graphics2D)g;
 			
-			double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
-					(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
+			super.paintComponent(g2);
 			
-			// convert time values to x positions
-			double startXPos = wavDisplay.get_selectionStart() / msPerPixel;
-			double endXPos = wavDisplay.get_selectionEnd() / msPerPixel;
-			double xPos = 
-				Math.min(startXPos, endXPos) + WavDisplay._TIME_INSETS_;
-			double rectLen = 
-				Math.abs(endXPos - startXPos);
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 			
-			Rectangle2D selRect =
-				new Rectangle2D.Double(xPos, 0,
-						rectLen, getHeight());
-			g2.fill(selRect);
+			final WaveformViewCalculator calculator = parent.getCalculator();
+			final int height = getHeight();
+			final Rectangle2D leftInsetRect = calculator.getLeftInsetRect();
+			leftInsetRect.setRect(
+					leftInsetRect.getX(), 0.0, leftInsetRect.getWidth(), height);
+			final Rectangle2D rightInsetRect = calculator.getRightInsetRect();
+			rightInsetRect.setRect(
+					rightInsetRect.getX(), 0.0, rightInsetRect.getWidth(), height);
+			
+			final Rectangle2D contentRect = new Rectangle2D.Double(
+					calculator.getSegmentRect().getX(), 0, calculator.getSegmentRect().getWidth(), getHeight());
+			
+			if((int)contentRect.getWidth() == 0
+					|| (int)contentRect.getHeight() == 0) {
+				return;
+			}
+			
+			if(spectrogram != null) {
+				updateLock.lock();
+				spectrogramPainter.paintInside(g2, contentRect);
+				updateLock.unlock();
+			}
+			
+			if(showFormants && formants != null) {
+				updateLock.lock();
+				formantPainter.paintInside(g2, contentRect);
+				updateLock.unlock();
+			}
+			
+			if(showPitch && pitch != null) {
+				updateLock.lock();
+				pitchPainter.paintInside(g2, contentRect);
+				updateLock.unlock();
+			}
+			
+			if(showIntensity && intensity != null) {
+				updateLock.lock();
+				intensityPainter.paintInside(g2, contentRect);
+				updateLock.unlock();
+			}
+			
+			final WavDisplay wavDisplay = parent.getWavDisplay();
+			if(wavDisplay.get_selectionStart() >= 0
+					&& wavDisplay.get_selectionEnd() >= 0) {
+				Color selColor = new Color(50, 125, 200, 100);
+				g2.setColor(selColor);
+				
+				double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
+						(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
+				
+				// convert time values to x positions
+				double startXPos = wavDisplay.get_selectionStart() / msPerPixel;
+				double endXPos = wavDisplay.get_selectionEnd() / msPerPixel;
+				double xPos = 
+					Math.min(startXPos, endXPos) + WavDisplay._TIME_INSETS_;
+				double rectLen = 
+					Math.abs(endXPos - startXPos);
+				
+				Rectangle2D selRect =
+					new Rectangle2D.Double(xPos, 0,
+							rectLen, getHeight());
+				g2.fill(selRect);
+			}
+			
+			final Color sideColor = new Color(200,200,200,100);
+			g2.setColor(sideColor);
+			g2.fill(leftInsetRect);
+			if(spectrogram != null) {
+				updateLock.lock();
+				spectrogramPainter.paintGarnish(g2, leftInsetRect, SwingConstants.LEFT);
+				updateLock.unlock();
+			}
+	
+			g2.setColor(sideColor);
+			g2.fill(rightInsetRect);
+			if(showPitch && pitch != null) {
+				updateLock.lock();
+				pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
+				updateLock.unlock();
+			}
+			
+			
 		}
-		
-		final Color sideColor = new Color(200,200,200,100);
-		g2.setColor(sideColor);
-		g2.fill(leftInsetRect);
-		if(spectrogram != null) {
-			updateLock.lock();
-			spectrogramPainter.paintGarnish(g2, leftInsetRect, SwingConstants.LEFT);
-			updateLock.unlock();
-		}
-
-		g2.setColor(sideColor);
-		g2.fill(rightInsetRect);
-		if(showPitch && pitch != null) {
-			updateLock.lock();
-			pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
-			updateLock.unlock();
-		}
-		
-		
 	}
 	
 	@Override
