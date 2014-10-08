@@ -107,6 +107,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	
 	private JPanel contentPane;
 	
+	private JPanel buttonPane;
+	
 	public final static String SHOW_TEXTGRID_PROP = TextGridViewer.class.getName() + ".showTextGrid";
 	private boolean showTextGrid = 
 			PrefHelper.getBoolean(SHOW_TEXTGRID_PROP, false);
@@ -119,11 +121,13 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		this.parent = parent;
 		this.calculator = parent.getCalculator();
 		
+		buttonPane = new JPanel(new VerticalLayout());
 		contentPane = new TextGridContentPanel();
 		
 		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, tierUpdater);
 		
 		setLayout(new BorderLayout());
+		add(buttonPane, BorderLayout.NORTH);
 		add(contentPane, BorderLayout.CENTER);
 		
 		// setup toolbar buttons
@@ -200,6 +204,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
 					final TextGridTier tier = tg.getTier(i);
 					final TextGridTierComponent tierComp = new TextGridTierComponent(tier, calculator);
+					tierComp.setEnabled(isEnabled());
 					tierComp.setFont(getFont());
 					tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
 					contentPane.add(tierComp);
@@ -323,8 +328,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		return sb.toString();
 	}
 	
-	private final Map<PraatScriptTcpServer, Record> runningServers = 
-			Collections.synchronizedMap(new HashMap<PraatScriptTcpServer, Record>());
+	private final Map<Record, PraatScriptTcpServer> serverMap = 
+			Collections.synchronizedMap(new HashMap<Record, PraatScriptTcpServer>());
 	/**
 	 * Send TextGrid to Praat.
 	 */
@@ -344,50 +349,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		
 		final PraatScriptContext map = new PraatScriptContext();
 		final PraatScriptTcpServer server = new PraatScriptTcpServer();
-		server.setHandler(new PraatScriptTcpHandler() {
-			
-			@Override
-			public void praatScriptFinished(String data) {
-				final Record currentRecord = parent.getEditor().currentRecord();
-				final Record serverRecord = runningServers.remove(server);
-				if(currentRecord == serverRecord) {
-					unlock();
-					
-					// grab new TextGrid from default praat save location
-					final File tgFile = new File(
-							PraatDir.getPath() + File.separator + "praat_backToCaller.Data");
-					if(tgFile.exists() && tgFile.isFile()) {
-						TextGrid tg = null;
-						try {
-							TextGridReader reader = new TextGridReader(tgFile, "UTF-16");
-							tg = reader.readTextGrid();
-						} catch (IOException e) {
-							LOGGER.log(Level.SEVERE,
-									e.getLocalizedMessage(), e);
-						} catch (ParseException e) {
-							try {
-								TextGridReader reader = new TextGridReader(tgFile, "UTF-8");
-								tg = reader.readTextGrid();
-							} catch (IOException e1) {
-								LOGGER.log(Level.SEVERE,
-										e1.getLocalizedMessage(), e1);
-							} catch (ParseException e1) {
-								LOGGER.log(Level.SEVERE,
-										e1.getLocalizedMessage(), e1);
-							}
-						}
-						if(tg != null) {
-							final SessionEditor model = parent.getEditor();
-							final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
-							tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
-						}
-					}
-					
-					update();
-				}
-			}
-			
-		});
+		server.setHandler(new TextGridTcpHandler(model.currentRecord()));
+		
 		map.put("replyToPhon", Boolean.TRUE);
 		map.put("socket", server.getPort());
 		map.put("audioPath", mediaFile.getAbsolutePath());
@@ -395,7 +358,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		map.put("segment", media);
 		
 		try {
-			runningServers.put(server, parent.getEditor().currentRecord());
+			serverMap.put(parent.getEditor().currentRecord(), server);
 			lock(server);
 			server.startServer();
 			final PraatScript ps = new PraatScript(loadTextGridTemplate());
@@ -418,12 +381,12 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		final JButton forceUnlockBtn = new JButton();
 		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", server);
 		forceUnlockAct.putValue(PhonUIAction.NAME, "Unlock TextGrid");
-		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat, click to unlock.");
+		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
 		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
 		forceUnlockBtn.setAction(forceUnlockAct);
 		
-		contentPane.add(forceUnlockBtn);
-		contentPane.revalidate();
+		buttonPane.add(forceUnlockBtn);
+		buttonPane.revalidate();
 	}
 	
 	public void onForceUnlock(PhonActionEvent pae) {
@@ -433,18 +396,29 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 		final PraatScriptTcpServer server = (PraatScriptTcpServer)pae.getData();
 		server.stop();
 		
-		contentPane.remove((JButton)pae.getActionEvent().getSource());
-		contentPane.revalidate();
+		serverMap.remove(parent.getEditor().currentRecord());
+		
+		buttonPane.remove((JButton)pae.getActionEvent().getSource());
+		buttonPane.revalidate();
 	}
 	
 	private void unlock() {
 		setEnabled(true);
+		buttonPane.removeAll();
 	}
 	
 	private void update() {
 		final SessionEditor model = parent.getEditor();
 		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		tgManager.addTextGridListener(tgListener);
+		buttonPane.removeAll();
+		
+		if(serverMap.get(model.currentRecord()) != null) {
+			lock(serverMap.get(model.currentRecord()));
+		} else {
+			setEnabled(true);
+		}
+		
 		final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
 		setTextGrid(tg);
 	}
@@ -606,6 +580,56 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			super(new VerticalLayout(0));
 		}
 		
+	}
+	
+	private class TextGridTcpHandler implements PraatScriptTcpHandler {
+		
+		private Record record;
+		
+		public TextGridTcpHandler(Record record) {
+			this.record = record;
+		}
+		
+		@Override
+		public void praatScriptFinished(String data) {
+			final Record currentRecord = parent.getEditor().currentRecord();
+			serverMap.remove(record);
+			if(currentRecord == record) {
+				unlock();
+				
+				// grab new TextGrid from default praat save location
+				final File tgFile = new File(
+						PraatDir.getPath() + File.separator + "praat_backToCaller.Data");
+				if(tgFile.exists() && tgFile.isFile()) {
+					TextGrid tg = null;
+					try {
+						TextGridReader reader = new TextGridReader(tgFile, "UTF-16");
+						tg = reader.readTextGrid();
+					} catch (IOException e) {
+						LOGGER.log(Level.SEVERE,
+								e.getLocalizedMessage(), e);
+					} catch (ParseException e) {
+						try {
+							TextGridReader reader = new TextGridReader(tgFile, "UTF-8");
+							tg = reader.readTextGrid();
+						} catch (IOException e1) {
+							LOGGER.log(Level.SEVERE,
+									e1.getLocalizedMessage(), e1);
+						} catch (ParseException e1) {
+							LOGGER.log(Level.SEVERE,
+									e1.getLocalizedMessage(), e1);
+						}
+					}
+					if(tg != null) {
+						final SessionEditor model = parent.getEditor();
+						final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
+						tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
+					}
+				}
+				
+				update();
+			}
+		}
 	}
 	
 }
