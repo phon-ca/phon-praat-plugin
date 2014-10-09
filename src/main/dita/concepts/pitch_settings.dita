@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="concept_zqx_bnx_qp">
+ <title>Pitch Settings</title>
+ <shortdesc>Configuring the pitch contour.</shortdesc>
+ <conbody>
+  <p> The settings that control the recruitment of the candidates are:</p>
+  <dl>
+   <dlentry>
+    <dt><b>Time step (s)</b> (standard value: 0.0) </dt>
+    <dd> the measurement interval (frame duration), in seconds. If you supply 0, Praat will use a
+     time step of 0.75 / (<i>pitch floor</i>), e.g. 0.01 seconds if the pitch floor is 75 Hz; in
+     this example, Praat computes 100 pitch values per second. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Pitch floor (Hz)</b> (standard value: 75 Hz) </dt>
+    <dd> candidates below this frequency will not be recruited. This parameter determines the
+     effective length of the analysis window: it will be 3 longest periods long, i.e., if the pitch
+     floor is 75 Hz, the window will be effectively 3/75 = 0.04 seconds long. </dd>
+   </dlentry>
+  </dl>
+  <p> Note that if you set the time step to zero, the analysis windows for consecutive measurements
+   will overlap appreciably: Praat will always compute 4 pitch values within one window length,
+   i.e., the degree of <i>oversampling</i> is 4.</p>
+  <dl>
+   <dlentry>
+    <dt><b>Very accurate</b> (standard value: <i>off</i>) </dt>
+    <dd> if <i>off</i>, the window is a Hanning window with a physical length of 3 / (<i>pitch
+      floor</i>). If <i>on</i>, the window is a Gaussian window with a physical length of 6 /
+      (<i>pitch floor</i>), i.e. twice the effective length. </dd>
+   </dlentry>
+  </dl>
+  <p> A post-processing algorithm seeks the cheapest path through the candidates. The settings that
+   determine the cheapest path are:</p>
+  <dl>
+   <dlentry>
+    <dt><b>Pitch ceiling (Hz)</b> (standard value: 600 Hz) </dt>
+    <dd> candidates above this frequency will be ignored. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Silence threshold</b> (standard value: 0.03) </dt>
+    <dd> frames that do not contain amplitudes above this threshold (relative to the global maximum
+     amplitude), are probably silent. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Voicing threshold</b> (standard value: 0.45) </dt>
+    <dd> the strength of the unvoiced candidate, relative to the maximum possible autocorrelation.
+     To increase the number of unvoiced decisions, increase this value. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Octave cost</b> (standard value: 0.01 per octave) </dt>
+    <dd> degree of favouring of high-frequency candidates, relative to the maximum possible
+     autocorrelation. This is necessary because even (or: especially) in the case of a perfectly
+     periodic signal, all undertones of <i>F</i>0 are equally strong candidates as <i>F</i>0 itself.
+     To more strongly favour recruitment of high-frequency candidates, increase this value. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Octave-jump cost</b> (standard value: 0.35) </dt>
+    <dd> degree of disfavouring of pitch changes, relative to the maximum possible autocorrelation.
+     To decrease the number of large frequency jumps, increase this value. In contrast with what is
+     described in the article, this value will be corrected for the time step: multiply by 0.01 s /
+      <i>TimeStep</i> to get the value in the way it is used in the formulas in the article. </dd>
+   </dlentry>
+   <dlentry>
+    <dt><b>Voiced / unvoiced cost</b> (standard value: 0.14) </dt>
+    <dd> degree of disfavouring of voiced/unvoiced transitions, relative to the maximum possible
+     autocorrelation. To decrease the number of voiced/unvoiced transitions, increase this value. In
+     contrast with what is described in the article, this value will be corrected for the time step:
+     multiply by 0.01 s / <i>TimeStep</i> to get the value in the way it is used in the formulas in
+     the article. </dd>
+   </dlentry>
+  </dl>
+ </conbody>
+ <related-links>
+  <link href="http://www.fon.hum.uva.nl/praat/manual/Sound__To_Pitch___.html" format="html"
+   scope="external"/>
+ </related-links>
+</concept>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="concept_crs_fmx_qp">
+ <title>Spectrogram View</title>
+ <conbody>
+  <p>The Spectrogram View for Phon allows for visualization of the segment spectrogram, formants,
+   pitch, and intensity from within Phon's Session Editor window.</p>
+ </conbody>
+</concept>

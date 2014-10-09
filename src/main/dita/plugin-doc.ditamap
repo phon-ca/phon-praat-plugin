@@ -2,4 +2,27 @@
 <!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
 <map>
  <title>Praat Plug-in for Phon</title>
+ <topichead navtitle="TextGrids">
+  <topicref href="tasks/import_textgrids.dita"/>
+  <topicref href="tasks/generate_textgrids.dita"/>
+  <topicref href="concepts/textgrid_viewer.dita"/>
+  <topicref href="tasks/open_textgrid_in_praat.dita"/>
+ </topichead>
+ <topichead navtitle="Spectrogram">
+  <topicref href="concepts/spectrogram_viewer.dita"/>
+  <topicref href="concepts/spectrogram_settings.dita"/>
+  <topicref href="concepts/formant_settings.dita"/>
+  <topicref href="concepts/pitch_settings.dita"/>
+  <topicref href="concepts/intensity_settings.dita"/>
+ </topichead>
+ <topichead navtitle="Listings">
+  <topicref href="tasks/formant_listing.dita"/>
+  <topicref href="tasks/pitch_listing.dita"/>
+  <topicref href="tasks/intensity_listing.dita"/>
+ </topichead>
+ <topichead navtitle="Queries">
+  <topicref href="tasks/formant_listing_query.dita"/>
+  <topicref href="tasks/pitch_listing_query.dita"/>
+  <topicref href="tasks/intensity_listing_query.dita"/>
+ </topichead>
 </map>

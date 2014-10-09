@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="concept_dj5_xmx_qp">
+ <title>TextGrid View</title>
+ <shortdesc>The TextGrid viewer in Phon displays basic TextGrid information about the TextGrid
+  assigned to the current record.</shortdesc>
+ <conbody>
+  <p/>
+ </conbody>
+</concept>
