@@ -67,7 +67,7 @@
 
     <!-- Dependency versions -->
     <ca.hedlund.jpraat.version>0.3</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>2.0beta3</ca.phon.phon-app.version>
+    <ca.phon.phon-app.version>2.0beta4</ca.phon.phon-app.version>
     <ca.phon.native-dialogs.version>3</ca.phon.native-dialogs.version>
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
