@@ -151,6 +151,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		});
 		setLayout(new BorderLayout());
 		contentPane = new SpectrogramPanel();
+		contentPane.setPreferredSize(new Dimension(
+				parent.getWidth(),  (int)(spectrogramSettings.getMaxFrequency() / 20)));
 		add(contentPane, BorderLayout.CENTER);
 		final JComponent sizer = new JSeparator(SwingConstants.HORIZONTAL);
 		
@@ -927,11 +929,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			
 			@Override
 			public void run() {
-				if(spectrogram != null) {
-					final Dimension newSize = new Dimension(
-							parent.getWidth(), (int)spectrogram.getNy() * 2);
-					contentPane.setPreferredSize(newSize);
-				}
+//				if(spectrogram != null) {
+//					final Dimension newSize = new Dimension(
+//							parent.getWidth(), (int)spectrogram.getNy() * 2);
+//					contentPane.setPreferredSize(newSize);
+//				}
 				
 				revalidate();
 				repaint();

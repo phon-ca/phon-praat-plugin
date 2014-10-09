@@ -221,9 +221,8 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 			contentPane.add(generateTextGridBtn);
 		}
 		
-		contentPane.revalidate();
+		revalidate();
 		repaint();
-		
 	}
 	
 	
