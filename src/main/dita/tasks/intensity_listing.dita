@@ -23,7 +23,7 @@
             </step>
             <step>
                 <note>Options for intensity listings can be changed through the <uicontrol>Intensity
-                        Settings</uicontrol> window.</note>
+                        settings</uicontrol> window.</note>
                 <cmd>The list of formants will be displayed in a new <wintitle>Buffers</wintitle>
                     window for the audio segment/selection.</cmd>
             </step>

@@ -21,7 +21,7 @@
             </step>
             <step>
                 <note>Options for pitch listings can be changed through the <uicontrol>Pitch
-                        Settings</uicontrol> window.</note>
+                        settings</uicontrol> window.</note>
                 <cmd>The list of pitch values will be displayed in a new
                         <wintitle>Buffers</wintitle> window for the audio segment/selection.</cmd>
             </step>

@@ -3,16 +3,22 @@
 <concept id="concept_uwj_cnx_qp">
  <title>Formant Settings</title>
  <shortdesc>Settings for Formant analysis.</shortdesc>
+ <prolog>
+  <source>http://www.fon.hum.uva.nl/praat/manual/Sound__To_Formant__burg____.html</source>
+ </prolog>
  <conbody>
+  <p>Adapted from <xref
+    href="http://www.fon.hum.uva.nl/praat/manual/Sound__To_Formant__burg____.html" format="html"
+    scope="external"/></p>
+  <p>The <wintitle>Formant settings</wintitle> window can be opened by choosing <uicontrol>Formant
+    settings...</uicontrol> from the <uicontrol>Praat</uicontrol> menu in the <uicontrol>Speech
+    Analysis</uicontrol> view of the <wintitle>Session Editor</wintitle> window.</p>
   <p>
    <dl>
     <dlentry>
      <dt><b>Time step (s)</b></dt>
      <dd> the time between the centres of consecutive analysis frames. If the sound is 2 seconds
-      long, and the time step is 0.01 seconds, there will be approximately 200 analysis frames. The
-      actual number is somewhat lower (usually 195), because we cannot measure very well near the
-      edges. If you set the time step to 0.0 (the standard), Praat will use a time step that is
-      equal to 25 percent of the analysis window length (see below). </dd>
+      long, and the time step is 0.01 seconds, there will be approximately 200 analysis frames.</dd>
     </dlentry>
     <dlentry>
      <dt><b>Maximum number of formants</b></dt>
@@ -20,8 +26,7 @@
       combination with the <b>Maximum formant</b> setting, is the only way in which this procedure
       will give you results compatible with how people tend to interpret formants for vowels, i.e.
       in terms of vowel height (F1) and vowel place (F2). Otherwise, the <b>Maximum number of
-       formants</b> can be any multiple of 0.5, you can choose 4, 4.5, 5, 5.5, 6, and so on (see
-      below). </dd>
+       formants</b> can be any multiple of 0.5, you can choose 4, 4.5, 5, 5.5, 6, and so on.</dd>
     </dlentry>
     <dlentry>
      <dt><b>Maximum formant (Hz)</b></dt>
@@ -54,18 +59,9 @@
       amplified by 6 dB, frequencies around 200 Hz are amplified by 12 dB, and so forth. The point
       of this is that vowel spectra tend to fall by 6 dB per octave; the pre-emphasis creates a
       flatter spectrum, which is better for formant analysis because we want our formants to match
-      the local peaks, not the global spectral slope. See the <xref
-       href="http://www.fon.hum.uva.nl/praat/manual/Source-filter_synthesis.html" format="html"
-       scope="external">source-filter synthesis</xref> tutorial for a technical explanation, and
-       <xref href="http://www.fon.hum.uva.nl/praat/manual/Sound__Pre-emphasize__in-line____.html"
-       format="html" scope="external">Sound: Pre-emphasize (in-line)...</xref> for the algorithm.
-     </dd>
+      the local peaks, not the global spectral slope.</dd>
     </dlentry>
    </dl>
   </p>
  </conbody>
- <related-links>
-  <link href="http://www.fon.hum.uva.nl/praat/manual/Sound__To_Formant__burg____.html" format="html"
-   scope="external"/>
- </related-links>
 </concept>

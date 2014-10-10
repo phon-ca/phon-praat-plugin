@@ -1,0 +1,16 @@
+concepts/spectrogram_settings.dita
+tasks/generate_textgrids.dita
+tasks/intensity_listing.dita
+concepts/spectrogram_viewer.dita
+tasks/formant_listing.dita
+concepts/intensity_settings.dita
+concepts/formant_settings.dita
+tasks/pitch_listing.dita
+concepts/pitch_settings.dita
+tasks/pitch_listing_query.dita
+tasks/open_textgrid_in_praat.dita
+tasks/intensity_listing_query.dita
+tasks/formant_listing_query.dita
+tasks/import_textgrids.dita
+concepts/textgrid_viewer.dita
+plugin-doc.ditamap
