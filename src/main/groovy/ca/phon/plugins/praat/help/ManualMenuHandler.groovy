@@ -33,7 +33,7 @@ class ManualMenuHandler implements IPluginMenuFilter {
 		assert menu != null;
 		
 		PhonUIAction action = new PhonUIAction(this, "onShowManual", APP_MANUAL);
-		action.putValue(PhonUIAction.NAME, "User Manual");
+		action.putValue(PhonUIAction.NAME, "Praat Plug-in Manual");
 		JMenuItem manualItem = new JMenuItem(action);
 		
 		menu.add(manualItem, 0);
