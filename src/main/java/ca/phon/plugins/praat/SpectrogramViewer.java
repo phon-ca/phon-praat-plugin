@@ -952,6 +952,14 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	}
 	
 	private class SpectrogramPanel extends JPanel {
+		
+		private static final long serialVersionUID = 7940163213370438304L;
+
+		public SpectrogramPanel() {
+			super();
+			setBackground(Color.white);
+		}
+		
 		@Override
 		public void paintComponent(Graphics g) {
 			final Graphics2D g2 = (Graphics2D)g;
