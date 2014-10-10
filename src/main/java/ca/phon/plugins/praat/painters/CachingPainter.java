@@ -17,6 +17,8 @@ public abstract class CachingPainter<T> implements Painter<T> {
 	
 	private final AtomicReference<BufferedImage> imgRef = new AtomicReference<BufferedImage>();
 	
+	private final AtomicReference<Image> scaledImgRef = new AtomicReference<Image>();
+	
 	private AtomicReference<Rectangle2D> boundsRef = new AtomicReference<Rectangle2D>();
 	
 	@Override
@@ -38,6 +40,33 @@ public abstract class CachingPainter<T> implements Painter<T> {
 		imgRef.getAndSet(img);
 	}
 	
+	protected Image getScaledImage(Rectangle2D bounds) {
+		boolean create = scaledImgRef.get() == null;
+		Rectangle2D lastBounds = boundsRef.get();
+		
+		if(lastBounds == null || lastBounds.getWidth() != bounds.getWidth()
+				|| lastBounds.getHeight() != bounds.getHeight()) {
+			create = true;
+		}
+		
+		if(create) {
+			final BufferedImage img = getImage();
+			if(img == null) return null;
+			
+			final ImageFilter filter = new ReplicateScaleFilter((int)bounds.getWidth(), (int)bounds.getHeight());
+			final FilteredImageSource src = new FilteredImageSource(img.getSource(), filter);
+			final Image scaledImg = Toolkit.getDefaultToolkit().createImage(src);
+			setScaledImage(bounds, scaledImg);
+		}
+		
+		return scaledImgRef.get();
+	}
+	
+	protected void setScaledImage(Rectangle2D bounds, Image image) {
+		boundsRef.set(bounds);
+		scaledImgRef.set(image);
+	}
+	
 	/**
 	 * Create the buffered image.
 	 * 
@@ -51,24 +80,15 @@ public abstract class CachingPainter<T> implements Painter<T> {
 		boolean createImage = false;
 		if(img == null) {
 			createImage = true;
-		} else {
-			final Rectangle2D lastBounds = boundsRef.get();
-			if(lastBounds.getWidth() != bounds.getWidth()
-					|| lastBounds.getHeight() != bounds.getHeight()) {
-				createImage = true;
-			}
 		}
 		if(createImage) {
 			img = createImage(bounds.getWidth(), bounds.getHeight());
 			setImage(img);
-			boundsRef.set(bounds);
 		}
 		// bail if still no image
 		if(img == null) return;
 		
-		final ImageFilter filter = new ReplicateScaleFilter((int)bounds.getWidth(), (int)bounds.getHeight());
-		final FilteredImageSource src = new FilteredImageSource(img.getSource(), filter);
-		final Image scaledImg = Toolkit.getDefaultToolkit().createImage(src);
+		final Image scaledImg = getScaledImage(bounds);
 		
 		if(scaledImg != null) {
             g2d.drawImage(scaledImg, (int)bounds.getX(), (int)bounds.getY(), (ImageObserver) null);
