@@ -32,7 +32,7 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 	
 	public void setSettings(PitchSettings settings) {
 		this.settings = settings;
-		setImage(null);
+		setImage(null, null);
 	}
 	
 	public PitchSettings getSettings() {

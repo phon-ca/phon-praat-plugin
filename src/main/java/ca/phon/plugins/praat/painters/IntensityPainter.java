@@ -25,7 +25,7 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 	
 	public void setSettings(IntensitySettings settings) {
 		this.settings = settings;
-		setImage(null);
+		setImage(null, null);
 	}
 	
 	public IntensitySettings getSettings() {

@@ -52,7 +52,7 @@ public class FormantPainter extends CachingPainter<Formant> {
 	
 	public void setSettings(FormantSettings settings) {
 		this.settings = settings;
-		setImage(null);
+		setImage(null, null);
 	}
 	
 	private void paintFormants(Graphics2D g2d, Rectangle2D bounds) {

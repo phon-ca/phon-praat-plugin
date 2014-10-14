@@ -4,10 +4,17 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageObserver;
+import java.awt.image.ReplicateScaleFilter;
 import java.text.NumberFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.SwingConstants;
 
@@ -28,8 +35,18 @@ public class SpectrogramPainter extends CachingPainter<Spectrogram> {
 	
 	private ColorMap colorMap = ColorMap.getGreyscale(255);
 	
+	private AtomicReference<Image> scaledImgRef = new AtomicReference<Image>();
+	
+	private AtomicReference<Rectangle2D> boundsRef = new AtomicReference<Rectangle2D>();
+	
 	public SpectrogramPainter() {
 		this(new SpectrogramSettings());
+	}
+	
+	@Override
+	public void setValue(Spectrogram obj) {
+		super.setValue(obj);
+		setScaledImage(null, null);
 	}
 	
 	public SpectrogramPainter(SpectrogramSettings settings) {
@@ -184,5 +201,44 @@ public class SpectrogramPainter extends CachingPainter<Spectrogram> {
 				(int)Math.round((bounds.getX() + bounds.getWidth()) - endBounds.getWidth());
 		g2d.drawString(endFreqTxt, x, y);
 	}
+	
+	public Image getScaledImage(Image img, Rectangle2D bounds) {
+		boolean create = scaledImgRef.get() == null;
+		Rectangle2D lastBounds = boundsRef.get();
+		
+		if(lastBounds == null || lastBounds.getWidth() != bounds.getWidth()
+				|| lastBounds.getHeight() != bounds.getHeight()) {
+			create = true;
+		}
+		
+		if(create) {
+			final ImageFilter filter = new ReplicateScaleFilter((int)bounds.getWidth(), (int)bounds.getHeight());
+			final FilteredImageSource src = new FilteredImageSource(img.getSource(), filter);
+			final Image scaledImg = Toolkit.getDefaultToolkit().createImage(src);
+			setScaledImage(scaledImg, bounds);
+		}
+		return scaledImgRef.get();
+	}
+	
+	public void setScaledImage(Image img, Rectangle2D bounds) {
+		boundsRef.set(bounds);
+		scaledImgRef.set(img);
+	}
 
+	@Override
+	public void paintInside(Graphics2D g2, Rectangle2D bounds) {
+		final Spectrogram spectrogram = getValue();
+		if(spectrogram == null) return;
+		
+		final Rectangle2D spectrogramBounds = 
+				new Rectangle2D.Double(bounds.getX(), bounds.getY(), (double)spectrogram.getNx(), (double)spectrogram.getNy());
+		final Image spectrogramImage = getImage(spectrogramBounds);
+		if(spectrogramImage == null) return;
+		
+		final Image scaledImage = getScaledImage(spectrogramImage, bounds);
+		if(scaledImage != null) {
+			g2.drawImage(scaledImage, (int)bounds.getX(), (int)bounds.getY(), (ImageObserver) null);
+		}
+	}
+	
 }
