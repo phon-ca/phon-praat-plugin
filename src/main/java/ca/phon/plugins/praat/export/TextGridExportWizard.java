@@ -38,6 +38,7 @@ import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.text.FileSelectionField;
 import ca.phon.ui.text.FileSelectionField.SelectionMode;
+import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardFrame;
 import ca.phon.ui.wizard.WizardStep;
 import ca.phon.worker.PhonTask;
@@ -150,9 +151,9 @@ public class TextGridExportWizard extends WizardFrame {
 	private WizardStep setupSessionsStep() {
 		final WizardStep retVal = new WizardStep();
 		
-		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select session.");
+		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select a single session.");
 		sessionSelector = new SessionSelector(getProject());
-		sessionSelector.getCheckingModel().setCheckingMode(CheckingMode.SIMPLE);
+		sessionSelector.getCheckingModel().setCheckingMode(CheckingMode.SINGLE);
 		
 		final JScrollPane sp = new JScrollPane(sessionSelector);
 		
@@ -289,6 +290,11 @@ public class TextGridExportWizard extends WizardFrame {
 			}
 		} else if(getCurrentStep() == selectSessionStep) {
 			if(recordFilterPanel.getSession() == null) {
+				final Session session = getSession();
+				if(session == null) {
+					ToastFactory.makeToast("Please select a single session").start(sessionSelector);
+					return;
+				}
 				recordFilterPanel.setSession(getSession());
 			}
 		}
