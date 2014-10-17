@@ -100,5 +100,11 @@
      the article. </dd>
    </dlentry>
   </dl>
+    <p>Display settings:<dl>
+        <dlentry>
+          <dt>Dot size</dt>
+          <dd>Size of pitch dots in display.</dd>
+        </dlentry>
+      </dl></p>
  </conbody>
 </concept>

@@ -18,8 +18,8 @@
                     </menucascade> from the window menu.</cmd>
             </step>
             <step>
-                <cmd>In the wizard window, select the sessions for which TextGrids will be
-                    generated.  Click <uicontrol>Next</uicontrol>.</cmd>
+                <cmd>In the wizard window, select a single session for which TextGrids will be
+                    generated. Click <uicontrol>Next</uicontrol>.</cmd>
             </step>
             <step>
                 <cmd>Choose the records that will be processed.  Click

@@ -61,7 +61,27 @@
       flatter spectrum, which is better for formant analysis because we want our formants to match
       the local peaks, not the global spectral slope.</dd>
     </dlentry>
+     <dlentry>
+       <dt><b>Dot size</b></dt>
+       <dd> Size of formant dots in the display.  Use increments of .5 (e.g., 1.5, 2, 2.5,
+            etc.).</dd>
+     </dlentry>
    </dl>
   </p>
+    <p>Settings for formant listings:</p>
+    <dl>
+      <dlentry>
+        <dt>Include num formants</dt>
+        <dd>Include number of formants column</dd>
+      </dlentry>
+      <dlentry>
+        <dt>Include intensity</dt>
+        <dd>Include intensity column</dd>
+      </dlentry>
+      <dlentry>
+        <dt>Include bandwidths</dt>
+        <dd>Include a bandwidth column for each formant</dd>
+      </dlentry>
+    </dl>
  </conbody>
 </concept>
