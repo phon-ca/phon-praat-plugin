@@ -160,7 +160,7 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 		filters.formantOpts.includeNumFormants, 6,
 		filters.formantOpts.includeBandwidths);
 	
-	if(serial == 1 && !printedTableHeader) {
+	if(!printedTableHeader) {
 		printedTableHeader = true;
 		
 		// print ipa column
