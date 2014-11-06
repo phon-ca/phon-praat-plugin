@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.orthography.OrthoElement;
 import ca.phon.plugins.praat.Segmentation;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.script.PraatScript;
@@ -141,7 +142,11 @@ public class TextGridExporter {
 					String data = "";
 					if(systemTier != null) {
 						if(systemTier == SystemTierType.Orthography) {
-							data = group.getOrthography().toString();
+							data = "";
+							for(int wIdx = 0; wIdx < group.getAlignedWordCount(); wIdx++) {
+								final String orthoWord = group.getAlignedWord(wIdx).getOrthography().toString();
+								data += (data.length() > 0 ? " " : "") + orthoWord;
+							}
 						} else if(systemTier == SystemTierType.IPATarget) {
 							data = group.getIPATarget().toString();
 						} else if(systemTier == SystemTierType.IPAActual) {
