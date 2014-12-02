@@ -91,17 +91,17 @@ public class IntensitySettingsPanel extends JPanel {
 		meanDbBox = new JRadioButton("mean dB");
 		btnGrp.add(meanDbBox);
 		
-//		builder.appendRow("pref");
-//		builder.add(new JLabel("Averaging method"), cc.xy(1, rowIdx));
-//		builder.add(medianBox, cc.xy(3, rowIdx++));
-//		builder.appendRow("pref");
-//		builder.add(meanEnergyBox, cc.xy(3, rowIdx++));
-//		builder.appendRow("pref");
-//		builder.add(meanSonesBox, cc.xy(3, rowIdx++));
-//		builder.appendRow("pref");
-//		builder.add(meanDbBox, cc.xy(3, rowIdx++));
-//		builder.appendRow("3dlu");
-//		rowIdx++;
+		builder.appendRow("pref");
+		builder.add(new JLabel("Averaging method"), cc.xy(1, rowIdx));
+		builder.add(medianBox, cc.xy(3, rowIdx++));
+		builder.appendRow("pref");
+		builder.add(meanEnergyBox, cc.xy(3, rowIdx++));
+		builder.appendRow("pref");
+		builder.add(meanSonesBox, cc.xy(3, rowIdx++));
+		builder.appendRow("pref");
+		builder.add(meanDbBox, cc.xy(3, rowIdx++));
+		builder.appendRow("3dlu");
+		rowIdx++;
 		
 		subtractMeanBox = new JCheckBox("Subtract mean pressure");
 		
