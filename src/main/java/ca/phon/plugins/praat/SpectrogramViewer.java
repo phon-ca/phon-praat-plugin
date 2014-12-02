@@ -1,18 +1,24 @@
 package ca.phon.plugins.praat;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -38,6 +44,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputAdapter;
 
 import ca.hedlund.jpraat.binding.fon.Formant;
 import ca.hedlund.jpraat.binding.fon.Function;
@@ -136,6 +143,8 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	private boolean showIntensity =
 			PrefHelper.getBoolean(SHOW_INTENSITY_PROP, false);
 	
+	private Point currentPoint = null;
+	
 	public SpectrogramViewer(WaveformEditorView p) {
 		super();
 		setVisible(showSpectrogram);
@@ -184,6 +193,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
 		addMouseListener(mtl);
 		addMouseMotionListener(mtl);
+		addMouseListener(pointListener);
 		
 		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		
@@ -929,12 +939,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			
 			@Override
 			public void run() {
-//				if(spectrogram != null) {
-//					final Dimension newSize = new Dimension(
-//							parent.getWidth(), (int)spectrogram.getNy() * 2);
-//					contentPane.setPreferredSize(newSize);
-//				}
-				
 				revalidate();
 				repaint();
 			}
@@ -964,9 +968,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		public void paintComponent(Graphics g) {
 			final Graphics2D g2 = (Graphics2D)g;
 			
-			super.paintComponent(g2);
-			
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 			
 			final WaveformViewCalculator calculator = parent.getCalculator();
@@ -1011,14 +1012,87 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			}
 			
 			final WavDisplay wavDisplay = parent.getWavDisplay();
+			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2}, 0);
+			final double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
+					(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
+			final NumberFormat nf = NumberFormat.getNumberInstance();
+			nf.setMaximumFractionDigits(2);
+			nf.setGroupingUsed(false);
+			
+			double selStart = (wavDisplay.get_selectionStart() > 0 ? 
+				(wavDisplay.get_dipslayOffset() + wavDisplay.get_selectionStart())/1000.0 : -1);
+			double selEnd = (wavDisplay.get_selectionEnd() > 0 ? 
+				(wavDisplay.get_dipslayOffset() +wavDisplay.get_selectionEnd())/1000.0 : -1 );
+			
+			if(wavDisplay.get_selectionStart() >= 0) {
+				double startXPos = wavDisplay.get_selectionStart() / msPerPixel + WavDisplay._TIME_INSETS_;
+				final Line2D line = new Line2D.Double(startXPos, contentRect.getY(), 
+						startXPos, contentRect.getY() + contentRect.getHeight());
+				
+				g2.setStroke(dashed);
+				g2.setXORMode(Color.black);
+				g2.setColor(Color.white);
+				g2.draw(line);
+				g2.setPaintMode();
+				
+				if(pitch != null && wavDisplay.get_selectionEnd() < 0) {
+					// get pitch at current x
+					double pitchVal = pitch.getValueAtX(selStart, Pitch.LEVEL_FREQUENCY,
+							pitchSettings.getUnits().ordinal(), 1);
+					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
+						final double hzPerPixel = 
+								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();
+						final double yPos = 
+								getHeight() - ((pitchVal - pitchSettings.getRangeStart()) / hzPerPixel);
+						pitchVal = pitch.convertStandardToSpecialUnit(pitchVal, Pitch.LEVEL_FREQUENCY,
+								pitchSettings.getUnits().ordinal());
+						final String pitchUnitStr = 
+								pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal(), 
+										Function.UNIT_TEXT_SHORT).toString();
+						
+						final String pitchStr = 
+								nf.format(pitchVal) + " " + pitchUnitStr;
+						
+						g2.setColor(Color.blue);
+						g2.drawString(pitchStr, (float)rightInsetRect.getX(), (float)yPos);
+					}
+				}
+				
+				if(intensity != null && wavDisplay.get_selectionEnd() < 0) {
+					double intensityVal = intensity.getValueAtX(selStart, 1, Intensity.UNITS_DB, 1);
+					
+					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
+						final double dbPerPixel = 
+								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();
+						final double yPos = 
+								getHeight() - ((intensityVal - intensitySettings.getViewRangeMin()) / dbPerPixel);
+						final String intensityUnitStr = "dB";
+						final String intensityStr =
+								nf.format(intensityVal) + " " + intensityUnitStr;
+						final Rectangle2D intensityRect = 
+								g2.getFontMetrics().getStringBounds(intensityStr, g2);
+						final double intensityX = rightInsetRect.getX() - intensityRect.getWidth();
+						
+						g2.setColor(Color.yellow);
+						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
+					}
+				}
+			}
+			
+			if(wavDisplay.get_selectionEnd() >= 0) {
+				double endXPos = wavDisplay.get_selectionEnd() / msPerPixel + WavDisplay._TIME_INSETS_;
+				final Line2D line =  new Line2D.Double(endXPos, contentRect.getY(), 
+						endXPos, contentRect.getY() + contentRect.getHeight());
+				
+				g2.setStroke(dashed);
+				g2.setXORMode(Color.black);
+				g2.setColor(Color.white);
+				g2.draw(line);
+				g2.setPaintMode();
+			}
+			
 			if(wavDisplay.get_selectionStart() >= 0
 					&& wavDisplay.get_selectionEnd() >= 0) {
-				Color selColor = new Color(50, 125, 200, 100);
-				g2.setColor(selColor);
-				
-				double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
-						(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
-				
 				// convert time values to x positions
 				double startXPos = wavDisplay.get_selectionStart() / msPerPixel;
 				double endXPos = wavDisplay.get_selectionEnd() / msPerPixel;
@@ -1030,7 +1104,87 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				Rectangle2D selRect =
 					new Rectangle2D.Double(xPos, 0,
 							rectLen, getHeight());
+				
+				g2.setXORMode(Color.white);
+				g2.setColor(Color.black);
 				g2.fill(selRect);
+				g2.setPaintMode();
+				
+				double max = Math.max(selStart, selEnd);
+				selStart = Math.min(selStart, selEnd);
+				selEnd = max;
+				
+				if(pitch != null) {
+					// draw avg pitch
+					double pitchVal = pitch.getMean(selStart, selEnd, Pitch.LEVEL_FREQUENCY,
+							pitchSettings.getUnits().ordinal(), 1);
+					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
+						final double hzPerPixel = 
+								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();
+						final double yPos = 
+								getHeight() - ((pitchVal - pitchSettings.getRangeStart()) / hzPerPixel);
+						pitchVal = pitch.convertStandardToSpecialUnit(pitchVal, Pitch.LEVEL_FREQUENCY,
+								pitchSettings.getUnits().ordinal());
+						final String pitchUnitStr = 
+								pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal(), 
+										Function.UNIT_TEXT_SHORT).toString();
+						
+						final String pitchStr = 
+								nf.format(pitchVal) + " " + pitchUnitStr;
+						g2.setColor(Color.blue);
+						
+						g2.drawString(pitchStr, (float)rightInsetRect.getX(), (float)yPos);
+					}
+				}
+				
+				if(intensity != null) {
+					double intensityVal = intensity.getAverage(selStart, selEnd, intensitySettings.getAveraging());
+					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
+						final double dbPerPixel = 
+								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();
+						final double yPos = 
+								getHeight() - ((intensityVal - intensitySettings.getViewRangeMin()) / dbPerPixel);
+						final String intensityUnitStr = "dB";
+						final String intensityStr =
+								nf.format(intensityVal) + " " + intensityUnitStr;
+						final Rectangle2D intensityRect = 
+								g2.getFontMetrics().getStringBounds(intensityStr, g2);
+						final double intensityX = rightInsetRect.getX() - intensityRect.getWidth();
+						
+						g2.setColor(Color.yellow);
+						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
+					}
+				}
+			}
+			
+			if(currentPoint != null && contentRect.contains(currentPoint)) {
+				// draw dotted lines intersecting our point
+				g2.setStroke(dashed);
+				g2.setXORMode(Color.black);
+				g2.setColor(Color.white);
+				g2.drawLine((int)contentRect.getX(), currentPoint.y, 
+						(int)contentRect.getX()+(int)contentRect.getWidth(), currentPoint.y );
+				
+				g2.setPaintMode();
+				
+				// draw frequency at point
+				if(spectrogram != null) {
+					// convert y to a frequency bin
+					final int bin = (int)Math.round(
+							((contentRect.getHeight()-currentPoint.y)/contentRect.getHeight()) * spectrogram.getNy() );
+					final float freq = bin * (float)spectrogram.getDy();
+
+					final String freqTxt = nf.format(freq) + " Hz";
+							
+					final FontMetrics fm = g2.getFontMetrics();
+					final Rectangle2D bounds = fm.getStringBounds(freqTxt, g2);
+					
+					g2.setColor(Color.red);
+					g2.drawString(freqTxt, 
+							(float)((leftInsetRect.getX() + leftInsetRect.getWidth()) - bounds.getWidth()),
+							(float)(currentPoint.y + (bounds.getHeight()/4)));
+				
+				}
 			}
 			
 			final Color sideColor = new Color(200,200,200,100);
@@ -1137,4 +1291,15 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		praatMenu.add(listIntensityAct);
 	}
 	
+	private final MouseInputAdapter pointListener = new MouseInputAdapter() {
+
+		@Override
+		public void mousePressed(MouseEvent me) {
+			if(me.getButton() == MouseEvent.BUTTON1) {
+				currentPoint = me.getPoint();
+				repaint();
+			}
+		}
+		
+	};
 }

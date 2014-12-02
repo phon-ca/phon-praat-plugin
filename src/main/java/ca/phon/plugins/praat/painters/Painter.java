@@ -24,6 +24,7 @@ public interface Painter<T> {
 	 * @param g2d
 	 * @param bounds
 	 * @param location (SwingConstants left/right,top,bottom)
+	 * 
 	 */
 	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location);
 	

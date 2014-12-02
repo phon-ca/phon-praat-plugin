@@ -128,7 +128,8 @@ public class FormantPainter extends CachingPainter<Formant> {
 
 	@Override
 	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
-		// don't paint formant garnish
+		// paint formant values in red along the left edge of the bounds
+		
 	}
 	
 }
