@@ -184,7 +184,16 @@ public class TextGridImportWizard extends WizardFrame {
 				} catch (IOException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				} catch (ParseException e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					try {
+						final TextGridReader reader = new TextGridReader(f, "UTF-8");
+						final TextGrid tg = reader.readTextGrid();
+						
+						importer.importTextGrid(project, session, tg, tierMap, step1.getMarkerMap());
+					} catch (IOException ex) {
+						LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
+					} catch (ParseException ex) {
+						LOGGER.log(Level.SEVERE, "Unable to read TextGrid", ex);
+					}
 				}
 			}
 			

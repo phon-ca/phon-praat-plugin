@@ -77,7 +77,18 @@ public class TextGridImporter {
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			} catch (ParseException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				try {
+					final TextGridReader reader = new TextGridReader(f, "UTF-8");
+					final TextGrid tg = reader.readTextGrid();
+					for(int i = 0; i < tg.getNumberOfTiers(); i++) {
+						final TextGridTier tier = tg.getTier(i);
+						retVal.add(tier.getTierName());
+					}
+				} catch (IOException ex) {
+					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), ex);
+				} catch (ParseException ex) {
+					LOGGER.log(Level.SEVERE, "Unable to read TextGrid", ex);
+				}
 			}
 		}
 		return retVal;
