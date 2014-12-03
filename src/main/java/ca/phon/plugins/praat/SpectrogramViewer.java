@@ -969,6 +969,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			final Graphics2D g2 = (Graphics2D)g;
 			
 			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 			
 			final WaveformViewCalculator calculator = parent.getCalculator();
 			final int height = getHeight();
@@ -1035,7 +1036,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				g2.draw(line);
 				g2.setPaintMode();
 				
-				if(pitch != null && wavDisplay.get_selectionEnd() < 0) {
+				if(showPitch && pitch != null && wavDisplay.get_selectionEnd() < 0) {
 					// get pitch at current x
 					double pitchVal = pitch.getValueAtX(selStart, Pitch.LEVEL_FREQUENCY,
 							pitchSettings.getUnits().ordinal(), 1);
@@ -1058,7 +1059,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 					}
 				}
 				
-				if(intensity != null && wavDisplay.get_selectionEnd() < 0) {
+				if(showIntensity && intensity != null && wavDisplay.get_selectionEnd() < 0) {
 					double intensityVal = intensity.getValueAtX(selStart, 1, Intensity.UNITS_DB, 1);
 					
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
@@ -1114,7 +1115,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				selStart = Math.min(selStart, selEnd);
 				selEnd = max;
 				
-				if(pitch != null) {
+				if(showPitch && pitch != null) {
 					// draw avg pitch
 					double pitchVal = pitch.getMean(selStart, selEnd, Pitch.LEVEL_FREQUENCY,
 							pitchSettings.getUnits().ordinal(), 1);
@@ -1137,7 +1138,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 					}
 				}
 				
-				if(intensity != null) {
+				if(showIntensity && intensity != null) {
 					double intensityVal = intensity.getAverage(selStart, selEnd, intensitySettings.getAveraging());
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel = 
@@ -1204,6 +1205,11 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				updateLock.unlock();
 			}
 			
+			if(showIntensity && intensity != null) {
+				updateLock.lock();
+				intensityPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
+				updateLock.unlock();
+			}
 			
 		}
 	}

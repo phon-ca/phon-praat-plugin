@@ -6,6 +6,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.codehaus.groovy.tools.shell.commands.SetCommand;
@@ -34,6 +35,29 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 	
 	@Override
 	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
+		final Intensity intensity = getValue();
+		if(intensity == null) return;
+		
+		final NumberFormat nf = NumberFormat.getNumberInstance();
+		nf.setMaximumFractionDigits(2);
+		
+		final double minIntensity = getSettings().getViewRangeMin();
+		final double maxIntensity = getSettings().getViewRangeMax();
+		final String suffix = " dB";
+		final String minStr = nf.format(minIntensity) + suffix;
+		final Rectangle2D minBounds = g2d.getFontMetrics().getStringBounds(minStr, g2d);
+		final String maxStr = nf.format(maxIntensity) + suffix;
+		final Rectangle2D maxBounds = g2d.getFontMetrics().getStringBounds(maxStr, g2d);
+		
+		int y = 
+				(int)Math.round(
+						(bounds.getY() + bounds.getHeight()) - 1);
+		g2d.setColor(intensityColor);
+		g2d.drawString(minStr, (float)(bounds.getX() - minBounds.getWidth()),
+				(float)(y));
+		
+		g2d.drawString(maxStr, (float)(bounds.getX() - maxBounds.getWidth()),
+				(float)(bounds.getY() + maxBounds.getHeight()));
 	}
 
 	@Override
