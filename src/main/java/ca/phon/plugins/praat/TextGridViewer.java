@@ -54,9 +54,9 @@ import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
-import ca.phon.app.session.editor.view.waveform.WaveformTier;
-import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
+import ca.phon.app.session.editor.view.speech_analysis.WaveformViewCalculator;
 import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.WavDisplay;
@@ -86,7 +86,7 @@ import ca.phon.util.icons.IconSize;
 /**
  * Display a TextGrid as a vertical list of tiers.
  */
-public class TextGridViewer extends JPanel implements WaveformTier {
+public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	public static final String TEXT_GRID_CHANGED_EVENT = 
 			TextGridViewer.class.getName() + ".textGridChangedEvent";
@@ -103,7 +103,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	private WaveformViewCalculator calculator;
 	
 	// parent panel
-	private WaveformEditorView parent;
+	private SpeechAnalysisEditorView parent;
 	
 	private JPanel contentPane;
 	
@@ -113,7 +113,7 @@ public class TextGridViewer extends JPanel implements WaveformTier {
 	private boolean showTextGrid = 
 			PrefHelper.getBoolean(SHOW_TEXTGRID_PROP, false);
 	
-	public TextGridViewer(WaveformEditorView parent) {
+	public TextGridViewer(SpeechAnalysisEditorView parent) {
 		super();
 		setVisible(showTextGrid);
 		setFocusable(true);

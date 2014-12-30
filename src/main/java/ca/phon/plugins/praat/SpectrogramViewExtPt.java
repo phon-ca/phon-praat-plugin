@@ -1,29 +1,29 @@
 package ca.phon.plugins.praat;
 
-import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
-import ca.phon.app.session.editor.view.waveform.WaveformTier;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
 import ca.phon.plugin.PhonPlugin;
 
 @PhonPlugin(name="Spectrogram",version="0.1",minPhonVersion="1.7.0")
-public class SpectrogramViewExtPt implements IPluginExtensionPoint<WaveformTier> {
+public class SpectrogramViewExtPt implements IPluginExtensionPoint<SpeechAnalysisTier> {
 
 	@Override
 	public Class<?> getExtensionType() {
-		return WaveformTier.class;
+		return SpeechAnalysisTier.class;
 	}
 
 	@Override
-	public IPluginExtensionFactory<WaveformTier> getFactory() {
+	public IPluginExtensionFactory<SpeechAnalysisTier> getFactory() {
 		return factory;
 	}
 
-	private final IPluginExtensionFactory<WaveformTier> factory = new IPluginExtensionFactory<WaveformTier>() {
+	private final IPluginExtensionFactory<SpeechAnalysisTier> factory = new IPluginExtensionFactory<SpeechAnalysisTier>() {
 		
 		@Override
-		public WaveformTier createObject(Object... args) {
-			final WaveformEditorView parent = WaveformEditorView.class.cast(args[0]);
+		public SpeechAnalysisTier createObject(Object... args) {
+			final SpeechAnalysisEditorView parent = SpeechAnalysisEditorView.class.cast(args[0]);
 			return new SpectrogramViewer(parent);
 		}
 		

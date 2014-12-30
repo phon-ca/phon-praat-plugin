@@ -30,12 +30,13 @@ import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.phon.app.log.BufferPanel;
 import ca.phon.app.log.BufferWindow;
 import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
 import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
+import ca.phon.session.MediaUnit;
 import ca.phon.session.Record;
 import ca.phon.session.SessionFactory;
 import ca.phon.ui.CommonModuleFrame;
@@ -235,24 +236,25 @@ public class SendPraatDialog extends CommonModuleFrame {
 		context.put("record", r);
 		context.put("segment", seg);
 
-		final WaveformEditorView waveformView = (editor.getViewModel()
-				.isShowing(WaveformEditorView.VIEW_TITLE) ? (WaveformEditorView) editor
-				.getViewModel().getView(WaveformEditorView.VIEW_TITLE) : null);
+		final SpeechAnalysisEditorView waveformView = (editor.getViewModel()
+				.isShowing(SpeechAnalysisEditorView.VIEW_TITLE) ? (SpeechAnalysisEditorView) editor
+				.getViewModel().getView(SpeechAnalysisEditorView.VIEW_TITLE) : null);
 		if (waveformView != null) {
 			final File audioFile = waveformView.getAudioFile();
 			if (audioFile != null) {
 				context.put("audioPath", audioFile.getAbsolutePath());
 			}
 
-			final double selStart = waveformView.getWavDisplay()
-					.get_selectionStart();
-			final double selEnd = waveformView.getWavDisplay()
-					.get_selectionEnd();
+			final float selStart = waveformView.getWavDisplay()
+					.getSelectionStart();
+			final float selEnd = waveformView.getWavDisplay()
+					.getSelectionStart() + waveformView.getWavDisplay().getSelectionLength();
 			if (selStart >= 0 && selEnd > selStart) {
 				final MediaSegment sel = (SessionFactory.newFactory()
 						.createMediaSegment());
 				sel.setStartValue((float) selStart);
 				sel.setEndValue((float) selEnd);
+				sel.setUnitType(MediaUnit.Second);
 				context.put("selection", sel);
 			}
 		}

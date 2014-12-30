@@ -4,8 +4,8 @@ import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
-import ca.phon.app.session.editor.view.waveform.WaveformTier;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.util.icons.IconSize;
 import ca.phon.util.icons.IconManager;
@@ -14,9 +14,9 @@ public class PraatMenuButton extends JButton {
 
 	private static final long serialVersionUID = 1347432616845351664L;
 	
-	private final WaveformEditorView parent;
+	private final SpeechAnalysisEditorView parent;
 	
-	public PraatMenuButton(WaveformEditorView parent) {
+	public PraatMenuButton(SpeechAnalysisEditorView parent) {
 		super();
 		
 		this.parent = parent;
@@ -35,7 +35,7 @@ public class PraatMenuButton extends JButton {
 	public JPopupMenu getMenu() {
 		final JMenu menu = new JMenu();
 		
-		for(WaveformTier tier:parent.getPluginTiers()) {
+		for(SpeechAnalysisTier tier:parent.getPluginTiers()) {
 			tier.addMenuItems(menu);
 		}
 		

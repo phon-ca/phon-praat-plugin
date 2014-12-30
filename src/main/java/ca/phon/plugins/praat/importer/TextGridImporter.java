@@ -225,8 +225,12 @@ public class TextGridImporter {
 			if(SystemTierType.isSystemTier(td.getName())) {
 				final SystemTierType systemTier = SystemTierType.tierFromString(td.getName());
 				if(systemTier == SystemTierType.Orthography) {
-					final Orthography ortho = Orthography.parseOrthography(grpVal);
-					grp.setOrthography(ortho);
+					try {
+						final Orthography ortho = Orthography.parseOrthography(grpVal);
+						grp.setOrthography(ortho);
+					} catch (ParseException pe) {
+						LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+					}
 				} else if(systemTier == SystemTierType.IPATarget) {
 					try {
 						final IPATranscript ipa = IPATranscript.parseIPATranscript(grpVal);

@@ -63,9 +63,9 @@ import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.RunInBackground;
-import ca.phon.app.session.editor.view.waveform.WaveformEditorView;
-import ca.phon.app.session.editor.view.waveform.WaveformTier;
-import ca.phon.app.session.editor.view.waveform.WaveformViewCalculator;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
+import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.media.wavdisplay.WavDisplay.MouseTimeListener;
 import ca.phon.plugins.praat.painters.FormantPainter;
@@ -92,14 +92,14 @@ import com.sun.jna.WString;
 /**
  * Adds a spectrogram tier to the waveform editor view.
  */
-public class SpectrogramViewer extends JPanel implements WaveformTier {
+public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private static final Logger LOGGER = Logger
 			.getLogger(SpectrogramViewer.class.getName());
 	
 	private static final long serialVersionUID = -6963658315933818319L;
 
-	private final WaveformEditorView parent;
+	private final SpeechAnalysisEditorView parent;
 	
 	private SpectrogramPanel contentPane;
 	
@@ -145,7 +145,7 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	
 	private Point currentPoint = null;
 	
-	public SpectrogramViewer(WaveformEditorView p) {
+	public SpectrogramViewer(SpeechAnalysisEditorView p) {
 		super();
 		setVisible(showSpectrogram);
 		setBackground(Color.white);
@@ -190,9 +190,9 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		});
 		add(sizer, BorderLayout.SOUTH);
 		
-		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
-		addMouseListener(mtl);
-		addMouseMotionListener(mtl);
+//		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
+//		addMouseListener(mtl);
+//		addMouseMotionListener(mtl);
 		addMouseListener(pointListener);
 		
 		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
@@ -508,13 +508,13 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final double formantEnd = segment.getEndValue() / 1000.0;
 		
 		double selStart = 
-				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
-						: segment.getStartValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						parent.getWavDisplay().getSelectionStart()
+						: segment.getStartValue() / 1000.0);
 		double selEnd = 
-				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
-						: segment.getEndValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						selStart + parent.getWavDisplay().getSelectionLength()
+						: segment.getEndValue() / 1000.0);
 		
 		if(selEnd < selStart) {
 			double temp = selStart;
@@ -613,13 +613,13 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final double formantEnd = segment.getEndValue() / 1000.0;
 		
 		double selStart = 
-				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
-						: segment.getStartValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						parent.getWavDisplay().getSelectionStart()
+						: segment.getStartValue() / 1000.0);
 		double selEnd = 
-				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
-						: segment.getEndValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						selStart + parent.getWavDisplay().getSelectionLength()
+						: segment.getEndValue() / 1000.0);
 		if(selEnd < selStart) {
 			double temp = selStart;
 			selStart = selEnd;
@@ -709,13 +709,13 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 		final double end = segment.getEndValue() / 1000.0;
 		
 		double selStart = 
-				(parent.getWavDisplay().get_selectionStart() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() + parent.getWavDisplay().get_selectionStart()
-						: segment.getStartValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						parent.getWavDisplay().getSelectionStart()
+						: segment.getStartValue() / 1000.0);
 		double selEnd = 
-				(parent.getWavDisplay().get_selectionEnd() >= 0 ? 
-						parent.getWavDisplay().get_dipslayOffset() +parent.getWavDisplay().get_selectionEnd() 
-						: segment.getEndValue()) / 1000.0;
+				(parent.getWavDisplay().hasSelection() ? 
+						selStart + parent.getWavDisplay().getSelectionLength()
+						: segment.getEndValue() / 1000.0);
 		if(selEnd < selStart) {
 			double temp = selStart;
 			selStart = selEnd;
@@ -870,13 +870,13 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 	
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
-		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(WaveformEditorView.VIEW_TITLE)) return;
+		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
 	}
 	
 	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
-		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(WaveformEditorView.VIEW_TITLE)) return;
+		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName()))
 			update();
 	}
@@ -971,8 +971,10 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 			g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 			
-			final WaveformViewCalculator calculator = parent.getCalculator();
+			final PCMSegmentView wavDisplay = parent.getWavDisplay();
 			final int height = getHeight();
+			
+			
 			final Rectangle2D leftInsetRect = calculator.getLeftInsetRect();
 			leftInsetRect.setRect(
 					leftInsetRect.getX(), 0.0, leftInsetRect.getWidth(), height);
@@ -1012,7 +1014,6 @@ public class SpectrogramViewer extends JPanel implements WaveformTier {
 				updateLock.unlock();
 			}
 			
-			final WavDisplay wavDisplay = parent.getWavDisplay();
 			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2}, 0);
 			final double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
 					(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
