@@ -15,9 +15,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -80,6 +82,7 @@ import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.layout.ButtonBarBuilder;
+import ca.phon.ui.nativedialogs.OSInfo;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
@@ -150,14 +153,19 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		setVisible(showSpectrogram);
 		setBackground(Color.white);
 		this.parent = p;
-		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, new PropertyChangeListener() {
+		
+		final PropertyChangeListener displayListener = new PropertyChangeListener() {
 			
 			@Override
-			public void propertyChange(PropertyChangeEvent arg0) {
+			public void propertyChange(PropertyChangeEvent evt) {
 				repaint();
 			}
-			
-		});
+		};
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_START_PROT, displayListener);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_LENGTH_PROP, displayListener);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.CURSOR_LOCATION_PROP, displayListener);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.SELECTION_LENGTH_PROP, displayListener);
+		
 		setLayout(new BorderLayout());
 		contentPane = new SpectrogramPanel();
 		contentPane.setPreferredSize(new Dimension(
@@ -191,8 +199,8 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		add(sizer, BorderLayout.SOUTH);
 		
 //		final MouseTimeListener mtl = p.getWavDisplay().createMouseTimeListener();
-//		addMouseListener(mtl);
-//		addMouseMotionListener(mtl);
+		addMouseListener(selectionListener);
+		addMouseMotionListener(selectionListener);
 		addMouseListener(pointListener);
 		
 		setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
@@ -961,11 +969,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 
 		public SpectrogramPanel() {
 			super();
-			setBackground(Color.white);
+			setBackground(parent.getWavDisplay().getExcludedColor());
+			setOpaque(true);
 		}
 		
 		@Override
 		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			
 			final Graphics2D g2 = (Graphics2D)g;
 			
 			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -974,19 +985,15 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			final PCMSegmentView wavDisplay = parent.getWavDisplay();
 			final int height = getHeight();
 			
-			
-			final Rectangle2D leftInsetRect = calculator.getLeftInsetRect();
-			leftInsetRect.setRect(
-					leftInsetRect.getX(), 0.0, leftInsetRect.getWidth(), height);
-			final Rectangle2D rightInsetRect = calculator.getRightInsetRect();
-			rightInsetRect.setRect(
-					rightInsetRect.getX(), 0.0, rightInsetRect.getWidth(), height);
+			final double segX1 = wavDisplay.modelToView(wavDisplay.getSegmentStart());
+			final double segX2 = 
+							wavDisplay.modelToView(wavDisplay.getSegmentStart()+wavDisplay.getSegmentLength());
 			
 			final Rectangle2D contentRect = new Rectangle2D.Double(
-					calculator.getSegmentRect().getX(), 0, calculator.getSegmentRect().getWidth(), getHeight());
+					segX1, 0, segX2-segX1, height);
 			
-			if((int)contentRect.getWidth() == 0
-					|| (int)contentRect.getHeight() == 0) {
+			if((int)contentRect.getWidth() <= 0
+					|| (int)contentRect.getHeight() <= 0) {
 				return;
 			}
 			
@@ -1015,31 +1022,22 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			}
 			
 			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2}, 0);
-			final double msPerPixel = (wavDisplay.get_timeBar().getEndMs() - wavDisplay.get_timeBar().getStartMs()) / 
-					(double)(getWidth() - 2 * WavDisplay._TIME_INSETS_);
 			final NumberFormat nf = NumberFormat.getNumberInstance();
 			nf.setMaximumFractionDigits(2);
 			nf.setGroupingUsed(false);
 			
-			double selStart = (wavDisplay.get_selectionStart() > 0 ? 
-				(wavDisplay.get_dipslayOffset() + wavDisplay.get_selectionStart())/1000.0 : -1);
-			double selEnd = (wavDisplay.get_selectionEnd() > 0 ? 
-				(wavDisplay.get_dipslayOffset() +wavDisplay.get_selectionEnd())/1000.0 : -1 );
-			
-			if(wavDisplay.get_selectionStart() >= 0) {
-				double startXPos = wavDisplay.get_selectionStart() / msPerPixel + WavDisplay._TIME_INSETS_;
-				final Line2D line = new Line2D.Double(startXPos, contentRect.getY(), 
-						startXPos, contentRect.getY() + contentRect.getHeight());
+			if(wavDisplay.getCursorPosition() >= 0 && contentRect.contains(wavDisplay.getCursorPosition(), contentRect.getY())) {
+				final Line2D line = new Line2D.Double(wavDisplay.getCursorPosition(), contentRect.getY(), 
+						wavDisplay.getCursorPosition(), contentRect.getY() + contentRect.getHeight());
+				float time = wavDisplay.viewToModel(wavDisplay.getCursorPosition());
 				
 				g2.setStroke(dashed);
-				g2.setXORMode(Color.black);
-				g2.setColor(Color.white);
+				g2.setColor(Color.WHITE);
 				g2.draw(line);
-				g2.setPaintMode();
 				
-				if(showPitch && pitch != null && wavDisplay.get_selectionEnd() < 0) {
+				if(showPitch && pitch != null && !wavDisplay.hasSelection()) {
 					// get pitch at current x
-					double pitchVal = pitch.getValueAtX(selStart, Pitch.LEVEL_FREQUENCY,
+					double pitchVal = pitch.getValueAtX(time, Pitch.LEVEL_FREQUENCY,
 							pitchSettings.getUnits().ordinal(), 1);
 					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
 						final double hzPerPixel = 
@@ -1056,12 +1054,12 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 								nf.format(pitchVal) + " " + pitchUnitStr;
 						
 						g2.setColor(Color.blue);
-						g2.drawString(pitchStr, (float)rightInsetRect.getX(), (float)yPos);
+						g2.drawString(pitchStr, (float)contentRect.getX() + (float)contentRect.getWidth(), (float)yPos);
 					}
 				}
 				
-				if(showIntensity && intensity != null && wavDisplay.get_selectionEnd() < 0) {
-					double intensityVal = intensity.getValueAtX(selStart, 1, Intensity.UNITS_DB, 1);
+				if(showIntensity && intensity != null && !wavDisplay.hasSelection()) {
+					double intensityVal = intensity.getValueAtX(time, 1, Intensity.UNITS_DB, 1);
 					
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel = 
@@ -1073,7 +1071,8 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 								nf.format(intensityVal) + " " + intensityUnitStr;
 						final Rectangle2D intensityRect = 
 								g2.getFontMetrics().getStringBounds(intensityStr, g2);
-						final double intensityX = rightInsetRect.getX() - intensityRect.getWidth();
+						final double intensityX = (contentRect.getX() + contentRect.getWidth()) -
+								intensityRect.getWidth();
 						
 						g2.setColor(Color.yellow);
 						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
@@ -1081,44 +1080,29 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				}
 			}
 			
-			if(wavDisplay.get_selectionEnd() >= 0) {
-				double endXPos = wavDisplay.get_selectionEnd() / msPerPixel + WavDisplay._TIME_INSETS_;
-				final Line2D line =  new Line2D.Double(endXPos, contentRect.getY(), 
-						endXPos, contentRect.getY() + contentRect.getHeight());
+			if(wavDisplay.hasSelection()) {
+				double x1 = wavDisplay.modelToView(wavDisplay.getSelectionStart());
+				double x2 = wavDisplay.modelToView(wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength());
+				final Line2D line =  new Line2D.Double(x1, contentRect.getY(), 
+						x1, contentRect.getY() + contentRect.getHeight());
 				
 				g2.setStroke(dashed);
-				g2.setXORMode(Color.black);
 				g2.setColor(Color.white);
 				g2.draw(line);
-				g2.setPaintMode();
-			}
-			
-			if(wavDisplay.get_selectionStart() >= 0
-					&& wavDisplay.get_selectionEnd() >= 0) {
-				// convert time values to x positions
-				double startXPos = wavDisplay.get_selectionStart() / msPerPixel;
-				double endXPos = wavDisplay.get_selectionEnd() / msPerPixel;
-				double xPos = 
-					Math.min(startXPos, endXPos) + WavDisplay._TIME_INSETS_;
-				double rectLen = 
-					Math.abs(endXPos - startXPos);
 				
-				Rectangle2D selRect =
-					new Rectangle2D.Double(xPos, 0,
-							rectLen, getHeight());
+				line.setLine(x2, contentRect.getY(), x2, contentRect.getY() + contentRect.getHeight());
+				g2.draw(line);
 				
-				g2.setXORMode(Color.white);
-				g2.setColor(Color.black);
+				Rectangle2D selRect = new Rectangle2D.Double(x1, contentRect.getY(), x2-x1, 
+								contentRect.getHeight());
+				
+				g2.setColor(parent.getWavDisplay().getSelectionColor());
 				g2.fill(selRect);
-				g2.setPaintMode();
-				
-				double max = Math.max(selStart, selEnd);
-				selStart = Math.min(selStart, selEnd);
-				selEnd = max;
 				
 				if(showPitch && pitch != null) {
 					// draw avg pitch
-					double pitchVal = pitch.getMean(selStart, selEnd, Pitch.LEVEL_FREQUENCY,
+					double pitchVal = pitch.getMean(wavDisplay.getSelectionStart(), 
+							wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength(), Pitch.LEVEL_FREQUENCY,
 							pitchSettings.getUnits().ordinal(), 1);
 					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
 						final double hzPerPixel = 
@@ -1135,12 +1119,13 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 								nf.format(pitchVal) + " " + pitchUnitStr;
 						g2.setColor(Color.blue);
 						
-						g2.drawString(pitchStr, (float)rightInsetRect.getX(), (float)yPos);
+						g2.drawString(pitchStr, (float)contentRect.getX()+(float)contentRect.getWidth(), (float)yPos);
 					}
 				}
 				
 				if(showIntensity && intensity != null) {
-					double intensityVal = intensity.getAverage(selStart, selEnd, intensitySettings.getAveraging());
+					double intensityVal = intensity.getAverage(wavDisplay.getSelectionStart(), 
+							wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength(), intensitySettings.getAveraging());
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel = 
 								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();
@@ -1151,7 +1136,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 								nf.format(intensityVal) + " " + intensityUnitStr;
 						final Rectangle2D intensityRect = 
 								g2.getFontMetrics().getStringBounds(intensityStr, g2);
-						final double intensityX = rightInsetRect.getX() - intensityRect.getWidth();
+						final double intensityX = (contentRect.getX()+contentRect.getWidth()) - intensityRect.getWidth();
 						
 						g2.setColor(Color.yellow);
 						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
@@ -1159,15 +1144,12 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				}
 			}
 			
-			if(currentPoint != null && contentRect.contains(currentPoint)) {
+			if(currentPoint != null) {
 				// draw dotted lines intersecting our point
 				g2.setStroke(dashed);
-				g2.setXORMode(Color.black);
 				g2.setColor(Color.white);
 				g2.drawLine((int)contentRect.getX(), currentPoint.y, 
 						(int)contentRect.getX()+(int)contentRect.getWidth(), currentPoint.y );
-				
-				g2.setPaintMode();
 				
 				// draw frequency at point
 				if(spectrogram != null) {
@@ -1183,23 +1165,24 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					
 					g2.setColor(Color.red);
 					g2.drawString(freqTxt, 
-							(float)((leftInsetRect.getX() + leftInsetRect.getWidth()) - bounds.getWidth()),
+							(float)(contentRect.getX() - bounds.getWidth()),
 							(float)(currentPoint.y + (bounds.getHeight()/4)));
 				
 				}
 			}
 			
-			final Color sideColor = new Color(200,200,200,100);
-			g2.setColor(sideColor);
-			g2.fill(leftInsetRect);
+			final Rectangle2D leftInsetRect = new Rectangle2D.Double(
+					contentRect.getX() - 100.0, contentRect.getY(),
+					100.0, contentRect.getHeight());
+			final Rectangle2D rightInsetRect = new Rectangle2D.Double(
+					contentRect.getX()+contentRect.getWidth(), contentRect.getY(),
+					100.0, contentRect.getHeight());
 			if(spectrogram != null) {
 				updateLock.lock();
 				spectrogramPainter.paintGarnish(g2, leftInsetRect, SwingConstants.LEFT);
 				updateLock.unlock();
 			}
 	
-			g2.setColor(sideColor);
-			g2.fill(rightInsetRect);
 			if(showPitch && pitch != null) {
 				updateLock.lock();
 				pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
@@ -1211,7 +1194,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				intensityPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
 				updateLock.unlock();
 			}
-			
 		}
 	}
 	
@@ -1305,6 +1287,85 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			if(me.getButton() == MouseEvent.BUTTON1) {
 				currentPoint = me.getPoint();
 				repaint();
+			}
+		}
+		
+	};
+	
+	private final MouseInputAdapter selectionListener = new MouseInputAdapter() {
+		
+		private boolean isDraggingSelection = false;
+		
+		private int dragStartX = 0;
+		
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// clear cursor position
+			parent.getWavDisplay().setCursorPosition(-1);
+		}
+		
+		@Override
+		public void mouseMoved(MouseEvent e) {
+			if(!isDraggingSelection) {
+				parent.getWavDisplay().setCursorPosition(e.getX());
+			}
+		}
+		
+		@Override
+		public void mousePressed(MouseEvent e) {
+			parent.getWavDisplay().requestFocus();
+			if(e.getButton() != MouseEvent.BUTTON1) return;
+			dragStartX = e.getX();
+
+			final int x = e.getX();
+			final float time = parent.getWavDisplay().viewToModel(x);
+			parent.getWavDisplay().setValuesAdusting(true);
+			parent.getWavDisplay().setSelectionStart(time);
+			parent.getWavDisplay().setValuesAdusting(false);
+			parent.getWavDisplay().setSelectionLength(0.0f);
+			parent.getWavDisplay().setCursorPosition(-1);
+			isDraggingSelection = true;
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			isDraggingSelection = false;
+		}
+
+		@Override
+		public void mouseDragged(MouseEvent e) {
+			if(isDraggingSelection) {
+				final int x = e.getX();
+				final float time = parent.getWavDisplay().viewToModel(x);
+				final float dragStartTime = parent.getWavDisplay().viewToModel(dragStartX);
+				
+				final float startValue = 
+						Math.min(time, dragStartTime);
+				final float endValue = 
+						Math.max(time, dragStartTime);
+				final float len = endValue - startValue;
+				
+				parent.getWavDisplay().setValuesAdusting(true);
+				parent.getWavDisplay().setSelectionStart(startValue);
+				parent.getWavDisplay().setValuesAdusting(false);
+				parent.getWavDisplay().setSelectionLength(len);
+			}
+		}
+
+		@Override
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			if((e.getModifiers() & KeyEvent.CTRL_MASK) > 0) {
+				final int numTicks = e.getWheelRotation();
+				
+				final float zoomAmount = 0.25f * numTicks;
+				float windowLength = parent.getWavDisplay().getWindowLength() + zoomAmount;
+				
+				if(windowLength < 0.1f) {
+					windowLength = 0.1f;
+				} else if(windowLength > parent.getWavDisplay().getSampled().getLength()) {
+					windowLength = parent.getWavDisplay().getSampled().getLength();
+				}
+				parent.getWavDisplay().setWindowLength(windowLength);
 			}
 		}
 		
