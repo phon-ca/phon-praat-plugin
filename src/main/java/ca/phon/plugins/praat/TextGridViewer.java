@@ -56,8 +56,8 @@ import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
-import ca.phon.app.session.editor.view.speech_analysis.WaveformViewCalculator;
 import ca.phon.media.exceptions.PhonMediaException;
+import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
@@ -100,8 +100,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private TextGrid tg;
 	
-	private WaveformViewCalculator calculator;
-	
 	// parent panel
 	private SpeechAnalysisEditorView parent;
 	
@@ -119,7 +117,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		setFocusable(true);
 		
 		this.parent = parent;
-		this.calculator = parent.getCalculator();
 		
 		buttonPane = new JPanel(new VerticalLayout());
 		contentPane = new TextGridContentPanel();
@@ -203,7 +200,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			} else {
 				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
 					final TextGridTier tier = tg.getTier(i);
-					final TextGridTierComponent tierComp = new TextGridTierComponent(tier, calculator);
+					final TextGridTierComponent tierComp = new TextGridTierComponent(tier, parent.getWavDisplay());
 					tierComp.setEnabled(isEnabled());
 					tierComp.setFont(getFont());
 					tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
@@ -250,20 +247,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	@Override
 	public JComponent getTierComponent() {
 		return this;
-	}
-	
-	/**
-	 * Convert a time value (in seconds) to an x-value.
-	 * 
-	 * @param time
-	 * @return x-value for the given time
-	 */
-	private int locationForTime(float time) {
-		final Rectangle2D contentRect = calculator.getSegmentRect();
-		final float length = (tg.getMax() - tg.getMin());
-		final float sPerPixel = length / (float)contentRect.getWidth();
-		
-		return (int)Math.round(contentRect.getX()) + (int)Math.round((time - tg.getMin()) / sPerPixel);
 	}
 	
 	/**
@@ -501,12 +484,12 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					final int start = Math.round(interval.getStart() * 1000.0f);
 					final int end = Math.round(interval.getEnd() * 1000.0f);
 					
-					final WavDisplay wavDisplay = parent.getWavDisplay();
-					wavDisplay.set_selectionStart(start - (int)wavDisplay.get_dipslayOffset());
-					wavDisplay.set_selectionEnd(end - (int)wavDisplay.get_dipslayOffset());
+					final PCMSegmentView wavDisplay = parent.getWavDisplay();
+					wavDisplay.setSelectionStart(start);
+					wavDisplay.setSelectionLength(end - start);
 					wavDisplay.repaint();
 					
-					final int btnx = locationForTime(interval.getEnd());
+					final double btnx = wavDisplay.modelToView(interval.getEnd());
 //					playIntervalButton.setLocation(btnx, selectedComponent.getLocation().y);
 					
 //					layeredPane.moveToFront(widgetPane);
@@ -517,11 +500,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	};
 	
 	public void onPlayInterval() {
-		try {
-			parent.getWavDisplay().play();
-		} catch (PhonMediaException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
+		parent.getWavDisplay().play();
 	}
 	
 	@Override
