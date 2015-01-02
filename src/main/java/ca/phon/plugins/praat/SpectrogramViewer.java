@@ -151,8 +151,8 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	public SpectrogramViewer(SpeechAnalysisEditorView p) {
 		super();
 		setVisible(showSpectrogram);
-		setBackground(Color.white);
 		this.parent = p;
+		setBackground(parent.getWavDisplay().getExcludedColor());
 		
 		final PropertyChangeListener displayListener = new PropertyChangeListener() {
 			
@@ -969,15 +969,16 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 
 		public SpectrogramPanel() {
 			super();
-			setBackground(parent.getWavDisplay().getExcludedColor());
-			setOpaque(true);
 		}
 		
 		@Override
 		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			
 			final Graphics2D g2 = (Graphics2D)g;
+			
+			g2.setColor(parent.getWavDisplay().getBackground());
+			g2.fillRect(0, 0, getWidth(), getHeight());
+			g2.setColor(parent.getWavDisplay().getExcludedColor());
+			g2.fillRect(0, 0, getWidth(), getHeight());
 			
 			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 			g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);

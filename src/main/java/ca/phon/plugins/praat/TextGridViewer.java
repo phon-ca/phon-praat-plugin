@@ -121,7 +121,9 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		buttonPane = new JPanel(new VerticalLayout());
 		contentPane = new TextGridContentPanel();
 		
-		parent.getWavDisplay().addPropertyChangeListener(WavDisplay._SELECTION_PROP_, tierUpdater);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.SELECTION_LENGTH_PROP, tierUpdater);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_START_PROT, tierUpdater);
+		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_LENGTH_PROP, tierUpdater);
 		
 		setLayout(new BorderLayout());
 		add(buttonPane, BorderLayout.NORTH);
@@ -481,18 +483,12 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				
 				final TextGridInterval interval = selectedComponent.getSelectedInterval();
 				if(interval != null) {
-					final int start = Math.round(interval.getStart() * 1000.0f);
-					final int end = Math.round(interval.getEnd() * 1000.0f);
-					
 					final PCMSegmentView wavDisplay = parent.getWavDisplay();
-					wavDisplay.setSelectionStart(start);
-					wavDisplay.setSelectionLength(end - start);
-					wavDisplay.repaint();
-					
-					final double btnx = wavDisplay.modelToView(interval.getEnd());
-//					playIntervalButton.setLocation(btnx, selectedComponent.getLocation().y);
-					
-//					layeredPane.moveToFront(widgetPane);
+					wavDisplay.setValuesAdusting(true);
+					wavDisplay.setSelectionStart(interval.getStart());
+					wavDisplay.setSelectionLength(0.0f);
+					wavDisplay.setValuesAdusting(false);
+					wavDisplay.setSelectionLength(interval.getEnd()-interval.getStart());
 					requestFocus();
 				}
 			}
