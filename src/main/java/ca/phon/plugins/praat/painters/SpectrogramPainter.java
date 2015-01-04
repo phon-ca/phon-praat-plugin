@@ -188,7 +188,7 @@ public class SpectrogramPainter extends CachingPainter<Spectrogram> {
 		final String startFreqTxt = nf.format(startFreq) + " Hz";
 		final Rectangle2D startBounds = fm.getStringBounds(startFreqTxt, g2d);
 		int y = 
-				(int)Math.round((bounds.getY() + bounds.getHeight()) - 1);
+				(int)Math.round((bounds.getY() + bounds.getHeight())) - fm.getDescent();
 		int x = 
 				(int)Math.round((bounds.getX() + bounds.getWidth()) - startBounds.getWidth());
 		g2d.drawString(startFreqTxt, x, y);
@@ -196,7 +196,7 @@ public class SpectrogramPainter extends CachingPainter<Spectrogram> {
 		final String endFreqTxt = nf.format(endFreq) + " Hz";
 		final Rectangle2D endBounds = fm.getStringBounds(endFreqTxt, g2d);
 		y = 
-				(int)Math.round(bounds.getY() + endBounds.getHeight());
+				(int)Math.round(bounds.getY() + endBounds.getHeight()) - fm.getDescent();
 		x = 
 				(int)Math.round((bounds.getX() + bounds.getWidth()) - endBounds.getWidth());
 		g2d.drawString(endFreqTxt, x, y);

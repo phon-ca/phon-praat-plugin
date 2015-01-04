@@ -142,7 +142,7 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 		final String startTxt = nf.format(startValue) + " " + unitText.toString();
 		int y = 
 				(int)Math.round(
-						(bounds.getY() + bounds.getHeight()) - 1);
+						(bounds.getY() + bounds.getHeight())) - fm.getDescent();
 		int x = (int)Math.round(bounds.getX());
 		g2d.setColor(Color.blue);
 		g2d.drawString(startTxt, x, y);
@@ -151,7 +151,7 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 		final Rectangle2D endBounds = fm.getStringBounds(endTxt, g2d);
 		y = 
 				(int)Math.round(
-						(bounds.getY()) + endBounds.getHeight());
+						(bounds.getY()) + endBounds.getHeight()) - fm.getDescent();
 		g2d.drawString(endTxt, x, y);
 	}
 	

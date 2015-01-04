@@ -1,6 +1,7 @@
 package ca.phon.plugins.praat.painters;
 
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
@@ -41,6 +42,7 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 		final NumberFormat nf = NumberFormat.getNumberInstance();
 		nf.setMaximumFractionDigits(2);
 		
+		final FontMetrics fm = g2d.getFontMetrics(g2d.getFont());
 		final double minIntensity = getSettings().getViewRangeMin();
 		final double maxIntensity = getSettings().getViewRangeMax();
 		final String suffix = " dB";
@@ -51,13 +53,13 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 		
 		int y = 
 				(int)Math.round(
-						(bounds.getY() + bounds.getHeight()) - 1);
+						(bounds.getY() + bounds.getHeight())) - fm.getDescent();
 		g2d.setColor(intensityColor);
 		g2d.drawString(minStr, (float)(bounds.getX() - minBounds.getWidth()),
 				(float)(y));
 		
 		g2d.drawString(maxStr, (float)(bounds.getX() - maxBounds.getWidth()),
-				(float)(bounds.getY() + maxBounds.getHeight()));
+				(float)(bounds.getY() + maxBounds.getHeight()) - fm.getDescent());
 	}
 
 	@Override
