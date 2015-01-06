@@ -6,44 +6,26 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.ImageIcon;
-
-import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
-
 import ca.hedlund.jpraat.binding.fon.Formant;
-import ca.hedlund.jpraat.binding.stat.Table;
 import ca.phon.plugins.praat.FormantSettings;
-import ca.phon.util.icons.IconManager;
-import ca.phon.util.icons.IconSize;
+import ca.phon.ui.painter.BufferedPainter;
 
-public class FormantPainter extends CachingPainter<Formant> {
+public class FormantPainter extends BufferedPainter<Formant> implements PraatPainter<Formant> {
 	
 	private FormantSettings settings = new FormantSettings();
 	
 	private double maxFrequency = settings.getMaxFrequency();
 
-	@Override
-	protected BufferedImage createImage(double width, double height) {
-		final Formant formants = getValue();
-		if(formants == null) return null;
-		
-		BufferedImage formantImg = new BufferedImage((int)width, (int)height,
-                BufferedImage.TYPE_INT_ARGB);
-		
-		final Graphics2D g2d = (Graphics2D)formantImg.createGraphics();
-		final Rectangle2D bounds = new Rectangle2D.Double(0.0, 0.0, 
-				(double)width, (double)height);
-		g2d.setBackground(new Color(0, 0, 0, 0));
-		g2d.clearRect((int)bounds.getX(), 
-				(int)bounds.getY(), (int)bounds.getWidth(), (int)bounds.getHeight());
-		paintFormants(g2d, bounds);
-		
-		return formantImg;
+	public FormantPainter() {
+		this(new FormantSettings());
+	}
+	
+	public FormantPainter(FormantSettings settings) {
+		super();
+		super.setResizeMode(ResizeMode.REPAINT_ON_RESIZE);
+		this.settings = settings;
 	}
 	
 	public FormantSettings getSettings() {
@@ -52,14 +34,13 @@ public class FormantPainter extends CachingPainter<Formant> {
 	
 	public void setSettings(FormantSettings settings) {
 		this.settings = settings;
-		setImage(null, null);
 	}
 	
-	private void paintFormants(Graphics2D g2d, Rectangle2D bounds) {
+	@Override
+	protected void paintBuffer(Formant formants, Graphics2D g2d, Rectangle2D bounds) {
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 		
-		final Formant formants = getValue();
 		if(formants == null) return;
 		
 		final double tmin = formants.getXMin();
@@ -127,9 +108,7 @@ public class FormantPainter extends CachingPainter<Formant> {
 	}
 
 	@Override
-	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
-		// paint formant values in red along the left edge of the bounds
-		
+	public void paintGarnish(Formant formants, Graphics2D g2d, Rectangle2D bounds, int location) {
 	}
 	
 }

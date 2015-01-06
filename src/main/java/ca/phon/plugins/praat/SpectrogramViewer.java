@@ -902,7 +902,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 		spectrogramPainter.setSettings(spectrogramSettings);
-		spectrogramPainter.setValue(spectrogram);
 		
 		if(showFormants) {
 			try {
@@ -914,7 +913,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			}
 			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			formantPainter.setSettings(formantSettings);
-			formantPainter.setValue(formants);
 		}
 		
 		if(showPitch) {
@@ -926,7 +924,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 			pitchPainter.setSettings(pitchSettings);
-			pitchPainter.setValue(pitch);
 		}
 		
 		if(showIntensity) {
@@ -938,7 +935,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 			intensityPainter.setSettings(intensitySettings);
-			intensityPainter.setValue(intensity);
 		}
 		updateLock.unlock();
 		
@@ -1000,25 +996,25 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			
 			if(spectrogram != null) {
 				updateLock.lock();
-				spectrogramPainter.paintInside(g2, contentRect);
+				spectrogramPainter.paint(spectrogram, g2, contentRect);
 				updateLock.unlock();
 			}
 			
 			if(showFormants && formants != null) {
 				updateLock.lock();
-				formantPainter.paintInside(g2, contentRect);
+				formantPainter.paint(formants, g2, contentRect);
 				updateLock.unlock();
 			}
 			
 			if(showPitch && pitch != null) {
 				updateLock.lock();
-				pitchPainter.paintInside(g2, contentRect);
+				pitchPainter.paint(pitch, g2, contentRect);
 				updateLock.unlock();
 			}
 			
 			if(showIntensity && intensity != null) {
 				updateLock.lock();
-				intensityPainter.paintInside(g2, contentRect);
+				intensityPainter.paint(intensity, g2, contentRect);
 				updateLock.unlock();
 			}
 			
@@ -1180,19 +1176,19 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					100.0, contentRect.getHeight());
 			if(spectrogram != null) {
 				updateLock.lock();
-				spectrogramPainter.paintGarnish(g2, leftInsetRect, SwingConstants.LEFT);
+				spectrogramPainter.paintGarnish(spectrogram, g2, leftInsetRect, SwingConstants.LEFT);
 				updateLock.unlock();
 			}
 	
 			if(showPitch && pitch != null) {
 				updateLock.lock();
-				pitchPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
+				pitchPainter.paintGarnish(pitch, g2, rightInsetRect, SwingConstants.RIGHT);
 				updateLock.unlock();
 			}
 			
 			if(showIntensity && intensity != null) {
 				updateLock.lock();
-				intensityPainter.paintGarnish(g2, rightInsetRect, SwingConstants.RIGHT);
+				intensityPainter.paintGarnish(intensity, g2, rightInsetRect, SwingConstants.RIGHT);
 				updateLock.unlock();
 			}
 		}

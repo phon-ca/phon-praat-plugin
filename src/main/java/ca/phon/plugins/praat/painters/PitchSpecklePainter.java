@@ -7,62 +7,43 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 
-import ca.hedlund.jpraat.binding.fon.Formant;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.kPitch_unit;
 import ca.phon.plugins.praat.PitchSettings;
+import ca.phon.ui.painter.BufferedPainter;
 
-public class PitchSpecklePainter extends CachingPainter<Pitch> {
+public class PitchSpecklePainter extends BufferedPainter<Pitch> implements PraatPainter<Pitch> {
 	
 	private PitchSettings settings = new PitchSettings();
 	
 	public PitchSpecklePainter() {
+		this(new PitchSettings());
+	}
+	
+	public PitchSpecklePainter(PitchSettings settings) {
 		super();
+		super.setResizeMode(ResizeMode.REPAINT_ON_RESIZE);
+		this.settings = settings;
 	}
 	
 	public void setSettings(PitchSettings settings) {
 		this.settings = settings;
-		setImage(null, null);
 	}
 	
 	public PitchSettings getSettings() {
 		return this.settings;
 	}
-
-	@Override
-	protected BufferedImage createImage(double width, double height) {
-		final Pitch pitch = getValue();
-		if(pitch == null) return null;
-		
-		BufferedImage pitchImg = new BufferedImage((int)width, (int)height,
-                BufferedImage.TYPE_INT_ARGB);
-		
-		final Graphics2D g2d = (Graphics2D)pitchImg.createGraphics();
-		final Rectangle2D bounds = new Rectangle2D.Double(0.0, 0.0, 
-				(double)width, (double)height);
-		g2d.setBackground(new Color(0, 0, 0, 0));
-		g2d.clearRect((int)bounds.getX(), 
-				(int)bounds.getY(), (int)bounds.getWidth(), (int)bounds.getHeight());
-		paintPitch(g2d, bounds);
-		
-		return pitchImg;
-	}
 	
-	private void paintPitch(Graphics2D g2d, Rectangle2D bounds) {
+	protected void paintBuffer(Pitch pitch, Graphics2D g2d, Rectangle2D bounds) {
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 		
-		final Pitch pitch = getValue();
 		if(pitch == null) return;
 		
 		final double tmin = pitch.getXMin();
@@ -121,8 +102,7 @@ public class PitchSpecklePainter extends CachingPainter<Pitch> {
 	}
 
 	@Override
-	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
-		final Pitch pitch = getValue();
+	public void paintGarnish(Pitch pitch, Graphics2D g2d, Rectangle2D bounds, int location) {
 		final WString unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
 				settings.getUnits(), Function.UNIT_TEXT_SHORT);
 		final double startValue = 

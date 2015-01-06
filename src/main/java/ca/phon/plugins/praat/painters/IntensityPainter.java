@@ -6,28 +6,31 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.codehaus.groovy.tools.shell.commands.SetCommand;
-
 import ca.hedlund.jpraat.binding.fon.Intensity;
 import ca.phon.plugins.praat.IntensitySettings;
+import ca.phon.ui.painter.BufferedPainter;
 
-public class IntensityPainter extends CachingPainter<Intensity> {
+public class IntensityPainter extends BufferedPainter<Intensity> implements PraatPainter<Intensity> {
 	
 	private final Color intensityColor = Color.YELLOW;
 	
 	private IntensitySettings settings = new IntensitySettings();
 
 	public IntensityPainter() {
+		this(new IntensitySettings());
+	}
+	
+	public IntensityPainter(IntensitySettings settings) {
 		super();
+		super.setResizeMode(ResizeMode.REPAINT_ON_RESIZE);
+		this.settings = settings;
 	}
 	
 	public void setSettings(IntensitySettings settings) {
 		this.settings = settings;
-		setImage(null, null);
 	}
 	
 	public IntensitySettings getSettings() {
@@ -35,8 +38,7 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 	}
 	
 	@Override
-	public void paintGarnish(Graphics2D g2d, Rectangle2D bounds, int location) {
-		final Intensity intensity = getValue();
+	public void paintGarnish(Intensity intensity, Graphics2D g2d, Rectangle2D bounds, int location) {
 		if(intensity == null) return;
 		
 		final NumberFormat nf = NumberFormat.getNumberInstance();
@@ -61,32 +63,12 @@ public class IntensityPainter extends CachingPainter<Intensity> {
 		g2d.drawString(maxStr, (float)(bounds.getX() - maxBounds.getWidth()),
 				(float)(bounds.getY() + maxBounds.getHeight()) - fm.getDescent());
 	}
-
-	@Override
-	protected BufferedImage createImage(double width, double height) {
-		final Intensity intensity = getValue();
-		if(intensity == null) return null;
-		
-		BufferedImage intensityImg = new BufferedImage((int)width, (int)height,
-				BufferedImage.TYPE_INT_ARGB);
-		
-		final Graphics2D g2d = (Graphics2D)intensityImg.createGraphics();
-		final Rectangle2D bounds = new Rectangle2D.Double(0.0, 0.0, 
-				(double)width, (double)height);
-		g2d.setBackground(new Color(0, 0, 0, 0));
-		g2d.clearRect((int)bounds.getX(), 
-				(int)bounds.getY(), (int)bounds.getWidth(), (int)bounds.getHeight());
-		paintIntensity(g2d, bounds);
-		
-		return intensityImg;
-	}
 	
-	private void paintIntensity(Graphics2D g2d, Rectangle2D bounds) {
+	protected void paintBuffer(Intensity intensity, Graphics2D g2d, Rectangle2D bounds) {
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 		
-		final Intensity intensity = getValue();
 		if(intensity == null) return;
 		
 		double tmin = intensity.getXMin();
