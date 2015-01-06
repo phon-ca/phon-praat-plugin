@@ -902,6 +902,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 		spectrogramPainter.setSettings(spectrogramSettings);
+		spectrogramPainter.setRepaintBuffer(true);
 		
 		if(showFormants) {
 			try {
