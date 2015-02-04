@@ -235,7 +235,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	public void onGenerateTextGrid() {
 		final SessionEditor editor = parent.getEditor();
-		final int currentRecord = editor.getCurrentRecordIndex();
+		final int currentRecord = editor.getCurrentRecordIndex()+1;
 		
 		try {
 			final RecordFilter filter = new RangeRecordFilter(editor.getSession(), "" + (currentRecord));
