@@ -62,13 +62,13 @@
   <properties>
     <!-- Project settings -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.sourceVersion>1.6</project.build.sourceVersion>
-    <project.build.targetVersion>1.6</project.build.targetVersion>
+    <project.build.sourceVersion>1.8</project.build.sourceVersion>
+    <project.build.targetVersion>1.8</project.build.targetVersion>
 
     <!-- Dependency versions -->
     <ca.hedlund.jpraat.version>0.3</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>2.0.4</ca.phon.phon-app.version>
-    <ca.phon.native-dialogs.version>3</ca.phon.native-dialogs.version>
+    <ca.phon.phon-app.version>2.0.5</ca.phon.phon-app.version>
+    <ca.phon.native-dialogs.version>4</ca.phon.native-dialogs.version>
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     <org.swinglabs.swingx.version>1.6.1</org.swinglabs.swingx.version>
@@ -124,5 +124,5 @@
 
     </plugins>
   </build>
-  <version>9</version>
+  <version>10</version>
 </project>
