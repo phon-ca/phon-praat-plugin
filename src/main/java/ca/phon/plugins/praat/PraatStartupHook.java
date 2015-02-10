@@ -1,6 +1,9 @@
 package ca.phon.plugins.praat;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.swing.SwingUtilities;
 
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
@@ -27,18 +30,16 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 	
 	@Override
 	public void startup() throws PluginException {
-		LOGGER.info("Initializing Praat library");
-		
-		final String praatSearchFolder = 
-				PrefHelper.get(PRAAT_SEARCH_FOLDER, null);
-		if(praatSearchFolder != null) {
-			NativeLibrary.addSearchPath("praat", praatSearchFolder);
-		}
-		
-		// try to prevent JVM crashing
-		Native.setProtected(true);
 		
 		try {
+			LOGGER.info("Initializing Praat library");
+			
+			final String praatSearchFolder = 
+					PrefHelper.get(PRAAT_SEARCH_FOLDER, null);
+			if(praatSearchFolder != null) {
+				NativeLibrary.addSearchPath("praat", praatSearchFolder);
+			}
+			
 			Praat.INSTANCE.praat_lib_init();
 			
 			final PraatVersion praatVersion = PraatVersion.getVersion();
@@ -48,7 +49,7 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 			sb.append(" ").append(praatVersion.day).append('-').append(praatVersion.month).append('-').append(praatVersion.year);
 			LOGGER.info(sb.toString());
 		} catch (UnsatisfiedLinkError e) {
-			throw new PluginException(e);
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 
