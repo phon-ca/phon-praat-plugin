@@ -187,7 +187,7 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 		    }
 			out.print("\"" + ipa.toString() + "\"");
 			for(col = 1; col <= formantTable.getNcol(); col++) {
-				out.print(",\"" + formantTable.getNumericValue_Assert(row, col) + "\"");
+				out.print(",\"" + formantTable.getNumericValue(row, col) + "\"");
 			}
 			out.println();
 		}
