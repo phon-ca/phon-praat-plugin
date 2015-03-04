@@ -174,7 +174,7 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 	var printedPrefix = false;
 	for(row = 1; row < formantTable.getNrow(); row++) {
 		// get time
-		rowTime = formantTable.getNumericValue_Assert(row, 1);
+		rowTime = formantTable.getNumericValue(row, 1);
 		if(rowTime > tgi.end) break;
 		if(rowTime >= tgi.start) {
 		    if(!printedPrefix) {
