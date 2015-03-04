@@ -57,6 +57,7 @@ import ca.hedlund.jpraat.binding.fon.Sound;
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 import ca.hedlund.jpraat.binding.stat.Table;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.BufferPanel;
 import ca.phon.app.log.BufferWindow;
 import ca.phon.app.log.LogBuffer;
@@ -83,6 +84,7 @@ import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.ui.nativedialogs.OSInfo;
+import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
@@ -533,20 +535,36 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 		
-		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
-		final Sound sound = ls.extractPart(formantStart, formantEnd, 1);
+		Sound sound = null;
+		try {
+			final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
+			sound = ls.extractPart(formantStart, formantEnd, 1);
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			return;
+		}
 		
 		Pitch pitch = null;
 		if(pitchSettings.isAutoCorrelate()) {
-			pitch = sound.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
-					pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
-					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
-					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			try {
+				pitch = sound.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+						pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+						pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+						pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			} catch (PraatException pe) {
+				ToastFactory.makeToast(pe.getLocalizedMessage()).start(this);
+				LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			}
 		} else {
-			pitch = sound.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
-					pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
-					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
-					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			try {
+				pitch = sound.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+						pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+						pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+						pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			} catch (PraatException pe) {
+				ToastFactory.makeToast(pe.getLocalizedMessage()).start(this);
+				LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			}
 		}
 		
 		if(pitch == null) return;
@@ -637,14 +655,20 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 		
-		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
-		final Sound sound = ls.extractPart(formantStart, formantEnd, 1);
-		final Formant formants = sound.to_Formant_burg(formantSettings.getTimeStep(), 
-				formantSettings.getNumFormants(), formantSettings.getMaxFrequency(), 
-				formantSettings.getWindowLength(), formantSettings.getPreEmphasis());
-		
-		final Table formantTable = formants.downto_Table(false, true, 6, 
-				formantSettings.isIncludeIntensity(), 6, formantSettings.isIncludeNumFormants(), 6, formantSettings.isIncludeBandwidths());
+		Table formantTable = null;
+		try {
+			final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
+			final Sound sound = ls.extractPart(formantStart, formantEnd, 1);
+			final Formant formants = sound.to_Formant_burg(formantSettings.getTimeStep(), 
+					formantSettings.getNumFormants(), formantSettings.getMaxFrequency(), 
+					formantSettings.getWindowLength(), formantSettings.getPreEmphasis());
+			
+			formantTable = formants.downto_Table(false, true, 6, 
+					formantSettings.isIncludeIntensity(), 6, formantSettings.isIncludeNumFormants(), 6, formantSettings.isIncludeBandwidths());
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			return;
+		}
 		
 		final BufferWindow bw = BufferWindow.getInstance();
 		bw.showWindow();
@@ -673,7 +697,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			for(int row = 1; row <= formantTable.getNrow(); row++) {
 				sb.setLength(0);
 					
-				final double time = formantTable.getNumericValue_Assert(row, 1);
+				final double time = formantTable.getNumericValue(row, 1);
 				
 				if(time > selEnd) break;
 				
@@ -681,7 +705,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					for(int col = 1; col <= formantTable.getNcol(); col++) {
 						if(col > 1) sb.append(sc);
 						sb.append(qc);
-						sb.append(format.format(formantTable.getNumericValue_Assert(row, col)));
+						sb.append(format.format(formantTable.getNumericValue(row, col)));
 						sb.append(qc);
 					}
 					out.println(sb.toString());
@@ -694,7 +718,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
 			out.flush();
 			out.close();
-		} catch (UnsupportedEncodingException e) {
+		} catch (UnsupportedEncodingException | PraatException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 		
@@ -733,8 +757,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 		
-		final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
-		final Sound sound = ls.extractPart(start, end, 1);
+		Sound sound = null;
+		try {
+			final LongSound ls = LongSound.open(MelderFile.fromPath(wavFile.getAbsolutePath()));
+			sound = ls.extractPart(start, end, 1);
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			return;
+		}
 		
 		final Intensity intensity = sound.to_Intensity(intensitySettings.getViewRangeMin(), 
 				0.0, intensitySettings.getSubtractMean() ? 1 : 0);
@@ -794,6 +824,9 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		return (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
 	}
 	
+	/**
+	 * @return
+	 */
 	private Spectrogram loadSpectrogram() {
 		final MediaSegment segment = getSegment();
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
@@ -802,14 +835,19 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
-		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0,
-				(double)segment.getEndValue()/1000.0, 1);
+		Spectrogram spectrogram = null;
+		try {
+			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0,
+					(double)segment.getEndValue()/1000.0, 1);
 		
-		final Spectrogram spectrogram = part.toSpectrogram(
+			spectrogram = part.toSpectrogram(
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
 				spectrogramSettings.getTimeStep(), spectrogramSettings.getFrequencyStep(), 
 				spectrogramSettings.getWindowShape(), 8.0, 8.0);
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+		}
 		return spectrogram;
 	}
 	
@@ -821,20 +859,24 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
-		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
-		
 		Pitch pitch = null;
-		if(pitchSettings.isAutoCorrelate()) {
-			pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
-				pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
-				pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
-				pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
-		} else {
-			pitch = part.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
-				pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
-				pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
-				pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+		try {
+			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			
+			if(pitchSettings.isAutoCorrelate()) {
+				pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+					pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			} else {
+				pitch = part.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0, 
+					pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(), 
+					pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(), 
+					pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+			}
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
 		}
 
 		return pitch;
@@ -848,12 +890,17 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
-		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
-		
-		final Formant formants = 
-				part.to_Formant_burg(formantSettings.getTimeStep(), formantSettings.getNumFormants(), 
-						formantSettings.getMaxFrequency(), formantSettings.getWindowLength(), formantSettings.getPreEmphasis());
+		Formant formants = null;
+		try {
+			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			
+			formants = 
+					part.to_Formant_burg(formantSettings.getTimeStep(), formantSettings.getNumFormants(), 
+							formantSettings.getMaxFrequency(), formantSettings.getWindowLength(), formantSettings.getPreEmphasis());
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+		}
 		return formants;
 	}
 	
@@ -865,14 +912,18 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final File audioFile = parent.getAudioFile();
 		if(audioFile == null) return null;
 		
-		final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-		final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
-		
-		final double windowLen = (segment.getEndValue() / 1000.0 - segment.getStartValue() / 1000.0) / 100.0;
-		final Intensity intensity =
-				part.to_Intensity(pitchSettings.getRangeStart(),
-						0.0,
-						(intensitySettings.getSubtractMean() ? 1 : 0));
+		Intensity intensity = null;
+		try {
+			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			
+			intensity =
+					part.to_Intensity(pitchSettings.getRangeStart(),
+							0.0,
+							(intensitySettings.getSubtractMean() ? 1 : 0));
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+		}
 		return intensity;
 	}
 	
@@ -1122,8 +1173,13 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				}
 				
 				if(showIntensity && intensity != null) {
-					double intensityVal = intensity.getAverage(wavDisplay.getSelectionStart(), 
+					double intensityVal = 0.0;
+					try {
+						intensityVal = intensity.getAverage(wavDisplay.getSelectionStart(), 
 							wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength(), intensitySettings.getAveraging());
+					} catch (PraatException pe) {
+						LOGGER.log(Level.WARNING, pe.getLocalizedMessage(), pe);
+					}
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel = 
 								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();

@@ -66,8 +66,8 @@
     <project.build.targetVersion>1.8</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.4</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>2.0.5</ca.phon.phon-app.version>
+    <ca.hedlund.jpraat.version>0.5</ca.hedlund.jpraat.version>
+    <ca.phon.phon-app.version>2.0.6</ca.phon.phon-app.version>
     <ca.phon.native-dialogs.version>4</ca.phon.native-dialogs.version>
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
@@ -124,5 +124,5 @@
 
     </plugins>
   </build>
-  <version>11</version>
+  <version>12</version>
 </project>
