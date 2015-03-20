@@ -2,14 +2,16 @@ package ca.phon.plugins.praat;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridTier;
+import ca.hedlund.jpraat.binding.fon.Function;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.exceptions.PraatException;
 
 /**
  * Utilties methods for scanning a directory of .TextGrid files.
@@ -39,12 +41,12 @@ public class TextGridScanner {
 		for(File f:textGridFolder.listFiles(tgFilter)) {
 			TextGrid tg = null;
 			try {
-				tg = TextGridManager.loadTextGrid(f);
-				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-					final TextGridTier tgTier = tg.getTier(i);
-					retVal.add(tgTier.getTierName());
+				tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(f.getAbsolutePath()));
+				for(long i = 0; i < tg.numberOfTiers(); i++) {
+					final Function tgTier = tg.tier(i);
+					retVal.add(tgTier.getName().toString());
 				}
-			} catch (IOException e) {
+			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 		}

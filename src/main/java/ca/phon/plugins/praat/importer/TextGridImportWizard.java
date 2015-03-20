@@ -14,6 +14,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JScrollPane;
 
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.modules.EntryPointArgs;
 import ca.phon.plugin.PluginEntryPointRunner;
 import ca.phon.plugin.PluginException;
@@ -24,8 +28,6 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
 import ca.phon.session.TierDescriptions;
 import ca.phon.session.TierViewItem;
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridReader;
 import ca.phon.ui.PhonLoggerConsole;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.wizard.WizardFrame;
@@ -177,23 +179,10 @@ public class TextGridImportWizard extends WizardFrame {
 			for(File f:selectedFolder.listFiles(filter)) {
 				LOGGER.log(Level.INFO, "Importing file " + f.getAbsolutePath());
 				try {
-					final TextGridReader reader = new TextGridReader(f, "UTF-16");
-					final TextGrid tg = reader.readTextGrid();
-					
+					final TextGrid tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(f.getAbsolutePath()));
 					importer.importTextGrid(project, session, tg, tierMap, step1.getMarkerMap());
-				} catch (IOException e) {
+				} catch (PraatException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				} catch (ParseException e) {
-					try {
-						final TextGridReader reader = new TextGridReader(f, "UTF-8");
-						final TextGrid tg = reader.readTextGrid();
-						
-						importer.importTextGrid(project, session, tg, tierMap, step1.getMarkerMap());
-					} catch (IOException ex) {
-						LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
-					} catch (ParseException ex) {
-						LOGGER.log(Level.SEVERE, "Unable to read TextGrid", ex);
-					}
 				}
 			}
 			

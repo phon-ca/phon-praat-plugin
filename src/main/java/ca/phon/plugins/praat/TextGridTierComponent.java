@@ -17,10 +17,10 @@ import java.awt.geom.Rectangle2D;
 import javax.swing.JComponent;
 import javax.swing.event.MouseInputAdapter;
 
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.wavdisplay.WavDisplay;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridTier;
 import ca.phon.ui.PhonGuiConstants;
 
 /**
@@ -31,14 +31,14 @@ public class TextGridTierComponent extends JComponent {
 
 	private static final long serialVersionUID = -6771204663446541476L;
 
-	private TextGridTier tier;
+	private IntervalTier tier;
 	
 	private final PCMSegmentView segmentView;
 	
 	/**
 	 * Constructor
 	 */
-	public TextGridTierComponent(TextGridTier tier, PCMSegmentView segmentView) {
+	public TextGridTierComponent(IntervalTier tier, PCMSegmentView segmentView) {
 		super();
 		this.tier = tier;
 		this.segmentView = segmentView;
@@ -54,30 +54,32 @@ public class TextGridTierComponent extends JComponent {
 	 * 
 	 * @return interval
 	 */
-	public TextGridInterval intervalForLocation(int x) {
-		for(int i = 0; i < tier.getNumberOfIntervals(); i++) {
-			final TextGridInterval interval = tier.getIntervalAt(i);
-			
-			final double start = segmentView.modelToView(interval.getStart());
-			final double end = segmentView.modelToView(interval.getEnd());
-			
-			if(x >= start && x < end) {
-				return interval;
-			}
-		}
-		return null;
+	public TextInterval intervalForLocation(int x) {
+		double time = segmentView.viewToModel(x);
+		long i = tier.timeToLowIndex(time);
+//		for(int i = 1; i <= tier.numberOfIntervals(); i++) {
+//			final TextGridInterval interval = tier.getIntervalAt(i);
+//			
+//			final double start = segmentView.modelToView(interval.getStart());
+//			final double end = segmentView.modelToView(interval.getEnd());
+//			
+//			if(x >= start && x < end) {
+//				return interval;
+//			}
+//		}
+		return (i > 0 && i <= tier.numberOfIntervals() ? tier.interval(i) : null);
 	}
 	
-	public TextGridTier getTier() {
+	public IntervalTier getTier() {
 		return this.tier;
 	}
 	
-	private float getMinTime() {
-		return tier.getIntervalAt(0).getStart();
+	private double getMinTime() {
+		return tier.getXmin();
 	}
 	
-	private float getMaxTime() {
-		return tier.getIntervalAt(tier.getNumberOfIntervals()-1).getEnd();
+	private double getMaxTime() {
+		return tier.getXmax();
 	}
 	
 	@Override
@@ -117,9 +119,9 @@ public class TextGridTierComponent extends JComponent {
 		final FontMetrics fm = getFontMetrics(getFont());
 		double currentX = contentRect.getX();
 		
-		for(int i = 0; i < tier.getNumberOfIntervals(); i++) {
-			final TextGridInterval interval = tier.getIntervalAt(i);
-			double intervalEnd = segmentView.modelToView(interval.getEnd());
+		for(long i = 1; i <= tier.numberOfIntervals(); i++) {
+			final TextInterval interval = tier.interval(i);
+			double intervalEnd = segmentView.modelToView((float)interval.getXmax());
 			
 			final Rectangle2D intervalRect = 
 					new Rectangle2D.Double(currentX, 0.0, (intervalEnd - currentX), height);
@@ -130,7 +132,7 @@ public class TextGridTierComponent extends JComponent {
 			g2.setFont(getFont());
 			g2.setColor(getForeground());
 			
-			final String txt = interval.getLabel();
+			final String txt = interval.getText();
 			final Rectangle2D txtRect = fm.getStringBounds(txt, g2);
 			
 			double fontX = 0;
@@ -148,7 +150,7 @@ public class TextGridTierComponent extends JComponent {
 			
 			// draw end boundary
 			g2.setColor(Color.lightGray);
-			if(i < tier.getNumberOfIntervals()-1) {
+			if(i < tier.numberOfIntervals()) {
 				final Line2D line = new Line2D.Double(intervalEnd, 0.0, intervalEnd, height);
 				g2.draw(line);
 			}
@@ -175,7 +177,7 @@ public class TextGridTierComponent extends JComponent {
 	/*
 	 * Selection
 	 */
-	private TextGridInterval selectedInterval = null;
+	private TextInterval selectedInterval = null;
 	
 	private boolean selectionPainted = false;
 	
@@ -190,7 +192,7 @@ public class TextGridTierComponent extends JComponent {
 		repaint();
 	}
 	
-	public TextGridInterval getSelectedInterval() {
+	public TextInterval getSelectedInterval() {
 		return this.selectedInterval;
 	}
 	
@@ -202,11 +204,11 @@ public class TextGridTierComponent extends JComponent {
 		@Override
 		public void mousePressed(MouseEvent e) {
 			final Point p = e.getPoint();
-			final TextGridInterval interval = intervalForLocation(p.x);
+			final TextInterval interval = intervalForLocation(p.x);
 			if(interval != null) {
-				final TextGridInterval oldInterval = selectedInterval;
+				final TextInterval oldInterval = selectedInterval;
 				selectedInterval = interval;
-				firePropertyChange(SELECTED_INTERVAL_PROP, null, selectedInterval);
+				firePropertyChange(SELECTED_INTERVAL_PROP, oldInterval, selectedInterval);
 			}
 		}
 		

@@ -46,8 +46,14 @@ import javax.swing.MenuElement;
 import org.jdesktop.swingx.VerticalLayout;
 
 import ca.hedlund.jpraat.binding.Praat;
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.binding.sys.PraatDir;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
@@ -71,10 +77,6 @@ import ca.phon.session.Record;
 import ca.phon.session.RecordFilter;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridReader;
-import ca.phon.textgrid.TextGridTier;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.toast.Toast;
@@ -182,9 +184,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			final Record currentRecord = parent.getEditor().currentRecord();
 			final Tier<MediaSegment> segTier = currentRecord.getSegment();
 			final MediaSegment seg = (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
-			if(seg == null ||
-					(seg.getStartValue() / 1000.0f != tg.getMin())
-					|| (seg.getEndValue() / 1000.0f != tg.getMax())) {
+			if(seg == null
+					) {
 				final JLabel errLabel = new JLabel("<html><b>TextGrid dimensions do not match segment</b></html>");
 				errLabel.setBackground(Color.red);
 				errLabel.setOpaque(true);
@@ -200,14 +201,18 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				contentPane.add(errLabel);
 				contentPane.add(generateTextGridBtn);
 			} else {
-				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-					final TextGridTier tier = tg.getTier(i);
-					final TextGridTierComponent tierComp = new TextGridTierComponent(tier, parent.getWavDisplay());
-					tierComp.setEnabled(isEnabled());
-					tierComp.setFont(getFont());
-					tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
-					contentPane.add(tierComp);
-					tiers.add(tierComp);
+				for(long i = 1; i <= tg.numberOfTiers(); i++) {
+					try {
+						final IntervalTier tier = tg.checkSpecifiedTierIsIntervalTier(i);
+						final TextGridTierComponent tierComp = new TextGridTierComponent(tier, parent.getWavDisplay());
+						tierComp.setEnabled(isEnabled());
+						tierComp.setFont(getFont());
+						tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
+						contentPane.add(tierComp);
+						tiers.add(tierComp);
+					} catch (PraatException pe) {
+						// not an interval tier
+					}
 				}
 			}
 		} else {
@@ -403,8 +408,11 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			setEnabled(true);
 		}
 		
-		final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
-		setTextGrid(tg);
+		final File tgFile = new File(tgManager.textGridPath(model.currentRecord().getUuid().toString()));
+		if(tgFile.exists() && tgFile.canRead()) {
+			final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
+			setTextGrid(tg);
+		}
 	}
 	
 	@RunOnEDT
@@ -481,14 +489,14 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			if(selectedComponent != null) {
 				selectedComponent.setSelectionPainted(true);
 				
-				final TextGridInterval interval = selectedComponent.getSelectedInterval();
+				final TextInterval interval = selectedComponent.getSelectedInterval();
 				if(interval != null) {
 					final PCMSegmentView wavDisplay = parent.getWavDisplay();
 					wavDisplay.setValuesAdusting(true);
-					wavDisplay.setSelectionStart(interval.getStart());
+					wavDisplay.setSelectionStart((float)interval.getXmin());
 					wavDisplay.setSelectionLength(0.0f);
 					wavDisplay.setValuesAdusting(false);
-					wavDisplay.setSelectionLength(interval.getEnd()-interval.getStart());
+					wavDisplay.setSelectionLength((float)(interval.getXmax()-interval.getXmin()));
 					requestFocus();
 				}
 			}
@@ -575,30 +583,16 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				final File tgFile = new File(
 						PraatDir.getPath() + File.separator + "praat_backToCaller.Data");
 				if(tgFile.exists() && tgFile.isFile()) {
-					TextGrid tg = null;
+					
 					try {
-						TextGridReader reader = new TextGridReader(tgFile, "UTF-16");
-						tg = reader.readTextGrid();
-					} catch (IOException e) {
-						LOGGER.log(Level.SEVERE,
-								e.getLocalizedMessage(), e);
-					} catch (ParseException e) {
-						try {
-							TextGridReader reader = new TextGridReader(tgFile, "UTF-8");
-							tg = reader.readTextGrid();
-						} catch (IOException e1) {
-							LOGGER.log(Level.SEVERE,
-									e1.getLocalizedMessage(), e1);
-						} catch (ParseException e1) {
-							LOGGER.log(Level.SEVERE,
-									e1.getLocalizedMessage(), e1);
-						}
-					}
-					if(tg != null) {
+						TextGrid tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
 						final SessionEditor model = parent.getEditor();
 						final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 						tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
+					} catch (PraatException e) {
+						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 					}
+					
 				}
 				
 				update();

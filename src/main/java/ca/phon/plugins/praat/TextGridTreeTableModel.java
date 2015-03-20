@@ -19,9 +19,10 @@ package ca.phon.plugins.praat;
 
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridTier;
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.util.Tuple;
 
 /**
@@ -55,24 +56,22 @@ public class TextGridTreeTableModel extends AbstractTreeTableModel {
 		if(col == 0) {
 			if(obj == tg) {
 				retVal = "TextGrid";
-			} else if(obj instanceof TextGridTier) {
-				TextGridTier tier = (TextGridTier)obj;
-				retVal = tier.getTierName();
-			} else if (obj instanceof TextGridInterval) {
-				TextGridInterval interval = (TextGridInterval)obj;
-				retVal = interval.getLabel();
+			} else if(obj instanceof IntervalTier) {
+				IntervalTier tier = (IntervalTier)obj;
+				retVal = tier.getName();
+			} else if (obj instanceof TextInterval) {
+				TextInterval interval = (TextInterval)obj;
+				retVal = interval.getText();
 			} else if (obj instanceof Tuple) {
 				Tuple<String, Object> tup =
 						(Tuple<String,Object>)obj;
 				retVal = tup.getObj1();
 			}
 		} else if(col == 1) {
-			if(obj instanceof TextGridTier) {
-				TextGridTier tier = (TextGridTier)obj;
-				retVal = tier.getTierType();
-			} else if (obj instanceof TextGridInterval) {
-				TextGridInterval interval = (TextGridInterval)obj;
-				retVal = (interval.isPoint() ? "Point" : "Interval");
+			if(obj instanceof IntervalTier) {
+				retVal = "Interval Tier";
+			} else if (obj instanceof TextInterval) {
+				retVal = "Interval";
 			} else if(obj instanceof Tuple) {
 				Tuple<String, Object> tup =
 						(Tuple<String,Object>)obj;
@@ -88,18 +87,26 @@ public class TextGridTreeTableModel extends AbstractTreeTableModel {
 		Object retVal = null;
 
 		if(parent == tg) {
-			retVal = tg.getTier(childIndex);
-		} else if(parent instanceof TextGridTier) {
-			TextGridTier tier = (TextGridTier)parent;
-			retVal = tier.getIntervalAt(childIndex);
-		} else if(parent instanceof TextGridInterval) {
-			TextGridInterval interval = (TextGridInterval)parent;
+			try {
+				retVal = tg.checkSpecifiedTierIsIntervalTier(childIndex);
+			} catch (PraatException e) {
+				try {
+					retVal = tg.checkSpecifiedTierIsPointTier(childIndex);
+				} catch (PraatException ex) {
+					retVal = tg.tier(childIndex);
+				}
+			}
+		} else if(parent instanceof IntervalTier) {
+			IntervalTier tier = (IntervalTier)parent;
+			retVal = tier.interval(childIndex);
+		} else if(parent instanceof TextInterval) {
+			TextInterval interval = (TextInterval)parent;
 			if(childIndex == 0)
 				retVal = 
-						new Tuple<String, Object>("Start", new Float(interval.getStart()));
+						new Tuple<String, Object>("Start", new Float(interval.getXmin()));
 			else if(childIndex == 1)
 				retVal =
-						new Tuple<String, Object>("End", new Float(interval.getEnd()));
+						new Tuple<String, Object>("End", new Float(interval.getXmax()));
 		}
 
 		return retVal;
@@ -110,11 +117,11 @@ public class TextGridTreeTableModel extends AbstractTreeTableModel {
 		int retVal = 0;
 
 		if(parent == tg) {
-			retVal = tg.getNumberOfTiers();
-		} else if(parent instanceof TextGridTier) {
-			TextGridTier tier = (TextGridTier)parent;
-			retVal = tier.getNumberOfIntervals();
-		} else if(parent instanceof TextGridInterval) {
+			retVal = (int)tg.numberOfTiers();
+		} else if(parent instanceof IntervalTier) {
+			IntervalTier tier = (IntervalTier)parent;
+			retVal = (int)tier.numberOfIntervals();
+		} else if(parent instanceof TextInterval) {
 			retVal = 2;
 		}
 
@@ -126,21 +133,21 @@ public class TextGridTreeTableModel extends AbstractTreeTableModel {
 		int retVal = 0;
 
 		if(parent == tg) {
-			for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-				if(tg.getTier(i) == child) {
+			for(int i = 0; i < tg.numberOfTiers(); i++) {
+				if(tg.tier(i) == child) {
 					retVal = i;
 					break;
 				}
 			}
-		} else if (parent instanceof TextGridTier) {
-			TextGridTier tier = (TextGridTier)parent;
-			for(int i = 0; i < tier.getNumberOfIntervals(); i++) {
-				if(tier.getIntervalAt(i) == child) {
+		} else if (parent instanceof IntervalTier) {
+			IntervalTier tier = (IntervalTier)parent;
+			for(int i = 0; i < tier.numberOfIntervals(); i++) {
+				if(tier.interval(i) == child) {
 					retVal = i;
 					break;
 				}
 			}
-		} else if (parent instanceof TextGridInterval) {
+		} else if (parent instanceof TextInterval) {
 			Tuple<String,Float> tuple =
 					(Tuple<String,Float>)child;
 			if(tuple.getObj1().equals("Start"))

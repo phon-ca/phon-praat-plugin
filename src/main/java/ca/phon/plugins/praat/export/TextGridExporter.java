@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
@@ -33,11 +37,6 @@ import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.syllable.SyllableConstituentType;
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridTier;
-import ca.phon.textgrid.TextGridTierType;
-import ca.phon.textgrid.TextGridWriter;
 
 /**
  * Utility methods for exporting Phon tier data into
@@ -89,39 +88,42 @@ public class TextGridExporter {
 	public void addTierToTextGrid(Record record, String tier, Segmentation type,
 			TextGrid textgrid, String tgName) {
 		// create the new textgrid tier
-		final TextGridTier tgTier = new TextGridTier(tgName, TextGridTierType.INTERVAL);
-		textgrid.addTier(tgTier);
-		
+		IntervalTier tgTier = null;
+		try {
+			tgTier = IntervalTier.create(textgrid.getXmin(), textgrid.getXmax());
+			tgTier.removeInterval(1);
+			tgTier.setName(tgName);
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			return;
+		}
 		// check if we a processing a built-in tier
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
 		
 		// calculate some values for interval times
 		final int numHashes = record.numberOfGroups() + 1;
-		final float totalTime = textgrid.getMax() - textgrid.getMin();
+		final double totalTime = textgrid.getXmax() - textgrid.getXmin();
 		final float hashLength = MARKER_LENGTH * numHashes;
-		final float dataLength = totalTime - hashLength;
-		final float groupLength = dataLength / record.numberOfGroups();
+		final double dataLength = totalTime - hashLength;
+		final double groupLength = dataLength / record.numberOfGroups();
 		
 		// if the exportType is TIER, we create a 3-interval tier
 		// this takes care of all flat tiers
 		if(type == Segmentation.TIER) {
 			setupThreeIntervalTier(textgrid, tgTier, record.getTier(tier, String.class).toString());
 		} else {
-			float currentStart = textgrid.getMin();
-			float dataEnd = textgrid.getMax() - MARKER_LENGTH;
+			double currentStart = textgrid.getXmin();
+			double dataEnd = textgrid.getXmax() - MARKER_LENGTH;
 			
-//			final List<IWord> words = utt.getWords();
 			for(int i = 0; i < record.numberOfGroups(); i++) {
 				final Group group = record.getGroup(i);
 				
 				// add group marker
-				final TextGridInterval marker = new TextGridInterval(MARKER_TEXT, currentStart, currentStart + MARKER_LENGTH);
-				tgTier.addInterval(marker);
+				tgTier.addInterval(currentStart, currentStart + MARKER_LENGTH, MARKER_TEXT);
 				currentStart += MARKER_LENGTH;
 				
-//				final IWord word = words.get(i);
-				final float groupStart = currentStart;
-				final float groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
+				final double groupStart = currentStart;
+				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
 				if(type == Segmentation.GROUP) {
 					String data = "";
 					if(systemTier != null) {
@@ -173,98 +175,105 @@ public class TextGridExporter {
 				}
 			}
 			// add final marker
-			final TextGridInterval marker = new TextGridInterval(MARKER_TEXT, dataEnd, textgrid.getMax());
-			tgTier.addInterval(marker);
+			tgTier.addInterval(dataEnd, textgrid.getXmax(), MARKER_TEXT);
+		}
+		try {
+			textgrid.addTier(tgTier);
+		} catch (PraatException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 	
-	private void addGroup(TextGridTier tier, String groupData, float start, float end) {
-		final TextGridInterval interval = new TextGridInterval(groupData, start, end);
-		tier.addInterval(interval);
+	private void addGroup(IntervalTier tier, String groupData, double start, double end) {
+		tier.addInterval(start, end, groupData);
 	}
 	
-	private void addWords(TextGridTier tier, String groupData, float start, float end) {
+	private void addWords(IntervalTier tier, String groupData, double start, double end) {
 		final String[] words = groupData.split("\\p{Space}");
-		final float wordLength = (end - start) / words.length;
+		final double wordLength = (end - start) / words.length;
 		
-		float currentStart = start;
+		double currentStart = start;
 		for(int i = 0; i < words.length; i++) {
 			String word = words[i];
-			final TextGridInterval interval = new TextGridInterval(word, 
-					currentStart, (i == words.length - 1 ? end : currentStart + wordLength));
+			tier.addInterval( 
+					currentStart, (i == words.length - 1 ? end : currentStart + wordLength), word);
 			currentStart += wordLength;
-			
-			tier.addInterval(interval);
 		}
 	}
 	
-	private void addSyllables(TextGridTier tier, IPATranscript ipaGroup, float start, float end) {
+	private void addSyllables(IntervalTier tier, IPATranscript ipaGroup, double start, double end) {
 		final List<IPATranscript> ipaWords = ipaGroup.words();
 		
 		// calculate length of each word
-		final float dataLength = (end - start);
-		final float wordLength = dataLength / ipaWords.size();
+		final double dataLength = (end - start);
+		final double wordLength = dataLength / ipaWords.size();
 		
 		// add intervals to tier
-		float currentStart = start;
+		double currentStart = start;
 		for(int i = 0; i < ipaWords.size(); i++) {
 			if(i > 0) {
 				// add space to previous interval
-				final TextGridInterval lastInterval =
-						(tier.getNumberOfIntervals() > 0 ? tier.getIntervalAt(tier.getNumberOfIntervals()-1) : null);
+				final TextInterval lastInterval =
+						(tier.numberOfIntervals() > 0 ? tier.interval(tier.numberOfIntervals()) : null);
 				if(lastInterval != null) {
-					lastInterval.setLabel(lastInterval.getLabel() + SPACER_TEXT);
+					try {
+						lastInterval.setText(lastInterval.getText() + SPACER_TEXT);
+					} catch (PraatException e) {
+						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					}
 				}
 			}
 			
 			final IPATranscript word = ipaWords.get(i);
 			final List<IPATranscript> sylls = word.syllables();
 			
-			final float wordStart = currentStart;
-			final float wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
-			final float syllLength = wordLength / sylls.size();
+			final double wordStart = currentStart;
+			final double wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
+			final double syllLength = wordLength / sylls.size();
 			
 			for(int j = 0; j < sylls.size(); j++) {
 				final IPATranscript syll = sylls.get(j);
-				float intEnd = (j == sylls.size() - 1 ? wordEnd : currentStart + syllLength);
-				final TextGridInterval interval = new TextGridInterval(syll.toString(),
-						currentStart, intEnd);
-				tier.addInterval(interval);
+				double intEnd = (j == sylls.size() - 1 ? wordEnd : currentStart + syllLength);
+				tier.addInterval(currentStart, intEnd, syll.toString());
 				currentStart = intEnd;
 			}
 		}
 	}
 	
-	private void addPhones(TextGridTier tier, IPATranscript ipaGroup, float start, float end) {
+	private void addPhones(IntervalTier tier, IPATranscript ipaGroup, double start, double end) {
 		final List<IPATranscript> ipaWords = ipaGroup.words();
 		
 		// calculate length of each word
-		final float dataLength = (end - start);
-		final float wordLength = dataLength / ipaWords.size();
+		final double dataLength = (end - start);
+		final double wordLength = dataLength / ipaWords.size();
 		
 		// add intervals to tier
-		float currentStart = start;
+		double currentStart = start;
 		for(int i = 0; i < ipaWords.size(); i++) {
 			if(i > 0) {
 				// add space to previous interval
-				final TextGridInterval lastInterval =
-						(tier.getNumberOfIntervals() > 0 ? tier.getIntervalAt(tier.getNumberOfIntervals()-1) : null);
+				final TextInterval lastInterval =
+						(tier.numberOfIntervals() > 0 ? tier.interval(tier.numberOfIntervals()) : null);
 				if(lastInterval != null) {
-					lastInterval.setLabel(lastInterval.getLabel() + SPACER_TEXT);
+					try {
+						lastInterval.setText(lastInterval.getText() + SPACER_TEXT);
+					} catch (PraatException e) {
+						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					}
 				}
 			}
 			
 			final IPATranscript word = ipaWords.get(i);
 			final List<IPATranscript> sylls = word.syllables();
 			
-			final float wordStart = currentStart;
-			final float wordEnd = (i == ipaWords.size() - 1 ? end : currentStart + wordLength);
-			final float syllLength = wordLength / sylls.size();
+			final double wordStart = currentStart;
+			final double wordEnd = (i == ipaWords.size() - 1 ? end : currentStart + wordLength);
+			final double syllLength = wordLength / sylls.size();
 			
 			for(int j = 0; j < sylls.size(); j++) {
 				final IPATranscript syll = sylls.get(j);
-				final float syllStart = currentStart;
-				final float syllEnd = (j == sylls.size() - 1 ? wordEnd: syllStart + syllLength);
+				final double syllStart = currentStart;
+				final double syllEnd = (j == sylls.size() - 1 ? wordEnd: syllStart + syllLength);
 				
 				final List<String> intervals = new ArrayList<String>();
 				IPAElement prevPhone = null;
@@ -283,15 +292,13 @@ public class TextGridExporter {
 				}
 				
 				// add phone intervals
-				final float phoneLength = syllLength / intervals.size();
+				final double phoneLength = syllLength / intervals.size();
 				
 				for(int k = 0; k < intervals.size(); k++) {
 					final String text = intervals.get(k);
-					final float phoneStart = currentStart;
-					final float phoneEnd = (k == intervals.size() - 1 ? syllEnd : currentStart + phoneLength);
-					final TextGridInterval interval = new TextGridInterval(text, 
-							phoneStart, phoneEnd);
-					tier.addInterval(interval);
+					final double phoneStart = currentStart;
+					final double phoneEnd = (k == intervals.size() - 1 ? syllEnd : currentStart + phoneLength);
+					tier.addInterval(phoneStart, phoneEnd, text);
 					currentStart = phoneEnd;
 				}
 			}
@@ -301,22 +308,18 @@ public class TextGridExporter {
 	/*
 	 * Helper methods for adding tiers to TextGrids
 	 */
-	private void setupThreeIntervalTier(TextGrid textgrid, TextGridTier tier, String data) {
-		final float start = textgrid.getMin();
+	private void setupThreeIntervalTier(TextGrid textgrid, IntervalTier tier, String data) {
+		final double start = textgrid.getXmin();
 		
-		float currentStart = start;
-		final TextGridInterval firstHash = new TextGridInterval(MARKER_TEXT, start, start+MARKER_LENGTH);
+		double currentStart = start;
+		tier.addInterval(start, start+MARKER_LENGTH, MARKER_TEXT);
 		currentStart += MARKER_LENGTH;
 		
-		final float dataEnd = textgrid.getMax() - MARKER_LENGTH;
-		final TextGridInterval dataInterval = new TextGridInterval(data, currentStart, dataEnd);
+		final double dataEnd = textgrid.getXmax() - MARKER_LENGTH;
+		tier.addInterval(currentStart, dataEnd, data);
 		currentStart = dataEnd;
 		
-		final TextGridInterval lastHash = new TextGridInterval(MARKER_TEXT, currentStart, textgrid.getMax());
-		
-		tier.addInterval(firstHash);
-		tier.addInterval(dataInterval);
-		tier.addInterval(lastHash);
+		tier.addInterval(currentStart, textgrid.getXmax(), MARKER_TEXT);
 	}
 	
 //	public void addTierToTextGrid(IUtterance utt, String tier,  ExportType type,
@@ -493,23 +496,30 @@ public class TextGridExporter {
 	 * @param utt
 	 */
 	public TextGrid createEmptyTextGrid(Record utt) {
-		final TextGrid retVal = new TextGrid();
+		double startTime = Integer.MAX_VALUE, endTime = Integer.MIN_VALUE;
+		
 		final Tier<MediaSegment> segmentTier = utt.getSegment();
-		if(segmentTier.numberOfGroups() == 0) return retVal;
+		if(segmentTier.numberOfGroups() == 0) return null;
 		final MediaSegment media = segmentTier.getGroup(0);
 		
 		if(media != null) {
-			float startTime = media.getStartValue();
+			double st = media.getStartValue();
 			if(media.getUnitType() == MediaUnit.Millisecond)
-				startTime /= 1000.0f;
-			float endTime = media.getEndValue();
+				st /= 1000.0f;
+			double et = media.getEndValue();
 			if(media.getUnitType() == MediaUnit.Millisecond)
-				endTime /= 1000.0f;
-			retVal.setMin(startTime);
-			retVal.setMax(endTime);
+				et /= 1000.0f;
+			
+			startTime = Math.min(startTime, st);
+			endTime = Math.max(endTime, et);
 		}
 		
-		return retVal;
+		try {
+			return TextGrid.createWithoutTiers(startTime, endTime);
+		} catch (PraatException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			return null;
+		}
 	}
 	
 	/**

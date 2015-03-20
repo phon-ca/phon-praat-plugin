@@ -52,6 +52,7 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.jdesktop.swingx.JXTreeTable;
 
+import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
@@ -69,10 +70,6 @@ import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
 import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Tier;
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridReader;
-import ca.phon.textgrid.TextGridWriter;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;

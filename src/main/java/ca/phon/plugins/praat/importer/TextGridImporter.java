@@ -14,6 +14,12 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.ipa.alignment.PhoneAligner;
 import ca.phon.ipa.alignment.PhoneMap;
@@ -32,10 +38,6 @@ import ca.phon.session.Tier;
 import ca.phon.session.TierDescription;
 import ca.phon.syllabifier.Syllabifier;
 import ca.phon.syllabifier.SyllabifierLibrary;
-import ca.phon.textgrid.TextGrid;
-import ca.phon.textgrid.TextGridInterval;
-import ca.phon.textgrid.TextGridReader;
-import ca.phon.textgrid.TextGridTier;
 
 public class TextGridImporter {
 	
@@ -67,28 +69,12 @@ public class TextGridImporter {
 		final Set<String> retVal = new LinkedHashSet<String>();
 		for(File f:folder.listFiles(filter)) {
 			try {
-				// load text grid
-				final TextGridReader reader = new TextGridReader(f, "UTF-16");
-				final TextGrid tg = reader.readTextGrid();
-				for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-					final TextGridTier tier = tg.getTier(i);
-					retVal.add(tier.getTierName());
+				TextGrid tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(f.getAbsolutePath()));
+				for(long i = 1; i <= tg.numberOfTiers(); i++) {
+					retVal.add(tg.tier(i).getName().toString());
 				}
-			} catch (IOException e) {
+			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-			} catch (ParseException e) {
-				try {
-					final TextGridReader reader = new TextGridReader(f, "UTF-8");
-					final TextGrid tg = reader.readTextGrid();
-					for(int i = 0; i < tg.getNumberOfTiers(); i++) {
-						final TextGridTier tier = tg.getTier(i);
-						retVal.add(tier.getTierName());
-					}
-				} catch (IOException ex) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), ex);
-				} catch (ParseException ex) {
-					LOGGER.log(Level.SEVERE, "Unable to read TextGrid", ex);
-				}
 			}
 		}
 		return retVal;
@@ -127,8 +113,8 @@ public class TextGridImporter {
 		final SessionFactory factory = SessionFactory.newFactory();
 		final Record r = factory.createRecord();
 		final MediaSegment segment = factory.createMediaSegment();
-		segment.setStartValue(textGrid.getMin() * 1000.0f);
-		segment.setEndValue(textGrid.getMax() * 1000.0f);
+		segment.setStartValue((float)(textGrid.getXmin() * 1000.0f));
+		segment.setEndValue((float)(textGrid.getXmax() * 1000.0f));
 		segment.setUnitType(MediaUnit.Millisecond);
 		r.getSegment().addGroup(segment);
 		session.addRecord(r);
@@ -149,11 +135,15 @@ public class TextGridImporter {
 		
 		final PhoneAligner aligner = new PhoneAligner();
 		
-		for(int i = 0; i < textGrid.getNumberOfTiers(); i++) {
-			final TextGridTier tier = textGrid.getTier(i);
-			final TierDescription td = tierMap.get(tier.getTierName());
-			if(td != null) {
-				importTextGridTier(r, tier, td, groupMarkers.get(tier.getTierName()) == null ? "#" : groupMarkers.get(tier.getTierName()));
+		for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
+			try {
+				final IntervalTier tier = textGrid.checkSpecifiedTierIsIntervalTier(i);
+				final TierDescription td = tierMap.get(tier.getName());
+				if(td != null) {
+					importTextGridTier(r, tier, td, groupMarkers.get(tier.getName()) == null ? "#" : groupMarkers.get(tier.getName()));
+				}
+			} catch (PraatException e) {
+				// not an interval tier
 			}
 		}
 		
@@ -174,15 +164,15 @@ public class TextGridImporter {
 		}
 	}
 	
-	public void importTextGridTier(Record r, TextGridTier tgTier, TierDescription td, String groupMarker) {
+	public void importTextGridTier(Record r, IntervalTier tgTier, TierDescription td, String groupMarker) {
 		final List<String> grpVals = new ArrayList<String>();
 		
-		if(tgTier.getTierName().endsWith(": Tier")) {
+		if(tgTier.getName().toString().endsWith(": Tier")) {
 			String fullTierData = "[]";
-			for(int i = 0; i < tgTier.getNumberOfIntervals(); i++) {
-				final TextGridInterval interval = tgTier.getIntervalAt(i);
-				if(!interval.getLabel().equals(groupMarker)) {
-					fullTierData = interval.getLabel();
+			for(long i = 1; i <= tgTier.numberOfIntervals(); i++) {
+				final TextInterval interval = tgTier.interval(i);
+				if(!interval.getText().equals(groupMarker)) {
+					fullTierData = interval.getText();
 					break; // only one interval with data expected
 				}
 			}
@@ -194,11 +184,11 @@ public class TextGridImporter {
 			}
 		} else {
 			StringBuffer buffer = new StringBuffer();
-			for(int i = 0; i < tgTier.getNumberOfIntervals(); i++) {
-				final TextGridInterval interval = tgTier.getIntervalAt(i);
-				if(!interval.getLabel().equals(groupMarker)) {
+			for(long i = 1; i <= tgTier.numberOfIntervals(); i++) {
+				final TextInterval interval = tgTier.interval(i);
+				if(!interval.getText().equals(groupMarker)) {
 					if(buffer.length() > 0) buffer.append(" ");
-					buffer.append(interval.getLabel());
+					buffer.append(interval.getText());
 				} else {
 					if(i > 0) {
 						String val = buffer.toString();
