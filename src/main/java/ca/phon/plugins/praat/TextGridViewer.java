@@ -412,6 +412,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(tgFile.exists() && tgFile.canRead()) {
 			final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
 			setTextGrid(tg);
+		} else {
+			setTextGrid(null);
 		}
 	}
 	
