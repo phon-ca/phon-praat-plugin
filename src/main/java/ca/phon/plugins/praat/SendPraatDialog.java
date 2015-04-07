@@ -15,15 +15,10 @@ import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import ca.hedlund.jpraat.binding.sys.SendPraat;
@@ -259,8 +254,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 			}
 		}
 
-		final TextGridManager manager = TextGridManager.getInstance(editor
-				.getProject());
+		final TextGridManager manager = new TextGridManager(editor.getProject());
 		context.put("textGridPath",
 				manager.textGridPath(r.getUuid().toString()));
 

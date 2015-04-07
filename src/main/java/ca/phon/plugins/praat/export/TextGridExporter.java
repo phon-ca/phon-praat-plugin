@@ -8,10 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +19,6 @@ import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.orthography.OrthoElement;
 import ca.phon.plugins.praat.Segmentation;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.script.PraatScript;
@@ -562,7 +558,7 @@ public class TextGridExporter {
 	
 	public void exportTextGrids(Project project, Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, boolean overwrite) 
 		throws IOException {
-		final TextGridManager tgManager = TextGridManager.getInstance(project);
+		final TextGridManager tgManager = new TextGridManager(project);
 		
 		for(int i = 0; i < session.getRecordCount(); i++) {
 			final Record utt = session.getRecord(i);
@@ -613,7 +609,7 @@ public class TextGridExporter {
 	public void exportTextGrids(Project project, Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, 
 			String outputFolder, boolean copyExisting) 
 			throws IOException {
-		final TextGridManager tgManager = TextGridManager.getInstance(project);
+		final TextGridManager tgManager = new TextGridManager(project);
 		
 		final File folder = new File(outputFolder);
 		if(!folder.exists()) {

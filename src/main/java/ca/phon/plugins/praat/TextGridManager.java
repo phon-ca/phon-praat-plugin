@@ -1,9 +1,7 @@
 package ca.phon.plugins.praat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,18 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.sys.Data;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.plugins.praat.TextGridEvent.TextGridEventType;
 import ca.phon.project.Project;
-import ca.phon.worker.PhonTask;
-import ca.phon.worker.PhonTask.TaskStatus;
-import ca.phon.worker.PhonWorker;
 
 /**
  * Utility class for reading/writing TextGrid files
@@ -50,19 +42,19 @@ public class TextGridManager {
 	
 	private List<TextGridListener> listeners = Collections.synchronizedList(new ArrayList<TextGridListener>());
 	
-	private static final Map<Project, TextGridManager> managers = 
-			Collections.synchronizedMap(new HashMap<Project, TextGridManager>());
-	
-	public synchronized static TextGridManager getInstance(Project project) {
-		TextGridManager retVal = managers.get(project);
-		if(retVal == null) {
-			retVal = new TextGridManager(project);
-			managers.put(project, retVal);
-		}
-		return retVal;
-	}
-	
-	private TextGridManager(Project project) {
+//	private static final Map<Project, TextGridManager> managers = 
+//			Collections.synchronizedMap(new HashMap<Project, TextGridManager>());
+//	
+//	public synchronized static TextGridManager getInstance(Project project) {
+//		TextGridManager retVal = managers.get(project);
+//		if(retVal == null) {
+//			retVal = new TextGridManager(project);
+//			managers.put(project, retVal);
+//		}
+//		return retVal;
+//	}
+
+	public TextGridManager(Project project) {
 		super();
 		
 		this.project = project;

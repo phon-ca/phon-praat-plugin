@@ -2,18 +2,6 @@ package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
@@ -30,22 +18,15 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JToolBar;
-import javax.swing.MenuElement;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.hedlund.jpraat.binding.Praat;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
@@ -62,10 +43,8 @@ import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
-import ca.phon.media.exceptions.PhonMediaException;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.media.wavdisplay.WavDisplay;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
@@ -100,6 +79,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private final static String OPEN_TEXTGRID_TEMPLATE = "ca/phon/plugins/praat/OpenTextGrid.vm";
 	
+	private TextGridManager tgManager;
+	
 	private TextGrid tg;
 	
 	// parent panel
@@ -130,6 +111,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		setLayout(new BorderLayout());
 		add(buttonPane, BorderLayout.NORTH);
 		add(contentPane, BorderLayout.CENTER);
+		
+		tgManager = new TextGridManager(parent.getEditor().getProject());
 		
 		// setup toolbar buttons
 		setupToolbar();
@@ -333,7 +316,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(segmentTier.numberOfGroups() == 0) return;
 
 		final MediaSegment media = segmentTier.getGroup(0);
-		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 		
 		final PraatScriptContext map = new PraatScriptContext();
@@ -398,7 +380,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private void update() {
 		final SessionEditor model = parent.getEditor();
-		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		tgManager.addTextGridListener(tgListener);
 		buttonPane.removeAll();
 		
@@ -589,7 +570,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					try {
 						TextGrid tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
 						final SessionEditor model = parent.getEditor();
-						final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 						tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
 					} catch (PraatException e) {
 						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);

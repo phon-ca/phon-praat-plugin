@@ -21,35 +21,18 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.jdesktop.swingx.JXTreeTable;
 
 import ca.hedlund.jpraat.binding.fon.TextGrid;
@@ -64,7 +47,6 @@ import ca.phon.plugins.praat.export.ExportEntryCheckboxTree;
 import ca.phon.plugins.praat.export.TextGridExportEntry;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.export.TextGridExporter;
-import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
 import ca.phon.plugins.praat.script.PraatScriptTcpServer;
@@ -97,6 +79,8 @@ public class TextGridPanel extends EditorView {
 	private JButton generateButton;
 	
 	private JButton openTgButton;
+	
+	private TextGridManager tgManager;
 
 	/**
 	 * Velocity templates
@@ -108,6 +92,8 @@ public class TextGridPanel extends EditorView {
 	 */
 	public TextGridPanel(SessionEditor editor) {
 		super(editor);
+		
+		tgManager = new TextGridManager(editor.getProject());
 		
 		init();
 		registerEvents();
@@ -190,13 +176,11 @@ public class TextGridPanel extends EditorView {
 	 */
 	private TextGrid readTextGrid() {
 		final SessionEditor model = getEditor();
-		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		return tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
 	}
 
 	private void saveTextGrid(TextGrid tg) {
 		final SessionEditor model = getEditor();
-		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		tgManager.saveTextGrid(tg, model.currentRecord().getUuid().toString());
 	}
 
@@ -241,7 +225,6 @@ public class TextGridPanel extends EditorView {
 		if(segmentTier.numberOfGroups() == 0) return;
 		final MediaSegment media = segmentTier.getGroup(0);
 
-		final TextGridManager tgManager = TextGridManager.getInstance(model.getProject());
 		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
 
 		final PraatScriptContext map = new PraatScriptContext();

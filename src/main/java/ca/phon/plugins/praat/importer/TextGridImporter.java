@@ -2,7 +2,6 @@ package ca.phon.plugins.praat.importer;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -119,7 +118,7 @@ public class TextGridImporter {
 		r.getSegment().addGroup(segment);
 		session.addRecord(r);
 		
-		final TextGridManager tgManager = TextGridManager.getInstance(project);
+		final TextGridManager tgManager = new TextGridManager(project);
 		tgManager.saveTextGrid(textGrid, r.getUuid().toString());
 		
 		final SyllabifierLibrary library = SyllabifierLibrary.getInstance();
