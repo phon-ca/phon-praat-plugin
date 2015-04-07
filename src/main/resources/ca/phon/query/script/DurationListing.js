@@ -82,7 +82,7 @@ function begin_search(s) {
 	session = s;
 	printedTableHeader = false;
 	
-	textGridManager = TextGridManager.getInstance(project);
+	textGridManager = new TextGridManager(project);
 }
 
 function annotateRecord(r) {

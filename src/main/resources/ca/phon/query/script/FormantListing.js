@@ -116,7 +116,7 @@ function begin_search(s) {
 	session = s;
 	printedTableHeader = false;
 	
-	textGridManager = TextGridManager.getInstance(project);
+	textGridManager = new TextGridManager(project);
 	
 	wavPath = getMediaFile(s);
 	if(wavPath != null) { 
