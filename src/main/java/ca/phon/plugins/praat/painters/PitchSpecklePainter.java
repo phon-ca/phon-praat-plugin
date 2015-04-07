@@ -10,13 +10,13 @@ import java.awt.geom.Rectangle2D;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.sun.jna.WString;
-
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.kPitch_unit;
 import ca.phon.plugins.praat.PitchSettings;
 import ca.phon.ui.painter.BufferedPainter;
+
+import com.sun.jna.WString;
 
 public class PitchSpecklePainter extends BufferedPainter<Pitch> implements PraatPainter<Pitch> {
 	

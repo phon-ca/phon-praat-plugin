@@ -1,13 +1,11 @@
 package ca.phon.plugins.praat;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -20,8 +18,6 @@ import javax.swing.event.MouseInputAdapter;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.phon.media.sampled.PCMSegmentView;
-import ca.phon.media.wavdisplay.WavDisplay;
-import ca.phon.ui.PhonGuiConstants;
 
 /**
  * Display a text grid tier.

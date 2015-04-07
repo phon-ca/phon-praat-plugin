@@ -1,7 +1,5 @@
 package ca.phon.plugins.praat;
 
-import java.util.logging.Level;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;

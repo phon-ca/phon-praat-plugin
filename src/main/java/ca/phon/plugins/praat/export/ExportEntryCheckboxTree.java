@@ -1,5 +1,7 @@
 package ca.phon.plugins.praat.export;
 
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +13,6 @@ import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierViewItem;
 import ca.phon.ui.CheckedTreeNode;
-import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 
 public class ExportEntryCheckboxTree extends CheckboxTree {
 

@@ -19,7 +19,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.tree.TreeSelectionModel;
 
 import org.jdesktop.swingx.JXBusyLabel;
 import org.jdesktop.swingx.VerticalLayout;
@@ -32,7 +31,6 @@ import ca.phon.plugins.praat.TextGridViewer;
 import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
 import ca.phon.session.Session;
-import ca.phon.session.SessionLocation;
 import ca.phon.session.SessionPath;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.decorations.DialogHeader;
@@ -42,9 +40,9 @@ import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardFrame;
 import ca.phon.ui.wizard.WizardStep;
 import ca.phon.worker.PhonTask;
+import ca.phon.worker.PhonTask.TaskStatus;
 import ca.phon.worker.PhonTaskListener;
 import ca.phon.worker.PhonWorker;
-import ca.phon.worker.PhonTask.TaskStatus;
 
 public class TextGridExportWizard extends WizardFrame {
 	

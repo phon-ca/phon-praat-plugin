@@ -1,7 +1,6 @@
 package ca.phon.plugins.praat;
 
  import java.util.Arrays;
- import java.awt.Color;
  
  public class ColorMap
  {

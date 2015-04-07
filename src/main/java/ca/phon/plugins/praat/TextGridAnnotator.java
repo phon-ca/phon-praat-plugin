@@ -3,7 +3,6 @@ package ca.phon.plugins.praat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;

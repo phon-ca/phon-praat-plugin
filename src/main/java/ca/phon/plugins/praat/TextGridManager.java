@@ -41,18 +41,6 @@ public class TextGridManager {
 	private Project project;
 	
 	private List<TextGridListener> listeners = Collections.synchronizedList(new ArrayList<TextGridListener>());
-	
-//	private static final Map<Project, TextGridManager> managers = 
-//			Collections.synchronizedMap(new HashMap<Project, TextGridManager>());
-//	
-//	public synchronized static TextGridManager getInstance(Project project) {
-//		TextGridManager retVal = managers.get(project);
-//		if(retVal == null) {
-//			retVal = new TextGridManager(project);
-//			managers.put(project, retVal);
-//		}
-//		return retVal;
-//	}
 
 	public TextGridManager(Project project) {
 		super();

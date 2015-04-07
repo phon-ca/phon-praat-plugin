@@ -1,6 +1,5 @@
 package ca.phon.plugins.praat;
 import java.awt.Window;
-import java.io.ByteArrayOutputStream;
 import java.util.logging.Logger;
 
 import javax.swing.JMenu;

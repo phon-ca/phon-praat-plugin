@@ -14,7 +14,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.tree.TreeSelectionModel;
 
 import org.jdesktop.swingx.VerticalLayout;
 
