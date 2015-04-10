@@ -96,20 +96,20 @@ function annotateRecord(r) {
 }
 
 function listDuration(recordIndex, groupIndex, ipa) {
-	tgi = ipa.textGridInterval;
+	tgi = ipa.textInterval;
 	if(tgi == null && ipa.length() > 0) {
-		tgi = ipa.elementAt(0).textGridInterval;
+		tgi = ipa.elementAt(0).textInterval;
 		if(tgi == null) {
 			err.println("No TextGrid information for " + ipa);
 			return;
 		}
-		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textGridInterval) {
-			tgi = new TextGridInterval(ipa.text,
-				tgi.start, ipa.elementAt(ipa.length()-1).textGridInterval.end);
+		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textInterval) {
+			tgi = TextInterval.create(
+				tgi.getXmin(), ipa.elementAt(ipa.length()-1).textInterval.getXmax(), ipa.toString());
 		}
 	}
 	
-	len = tgi.end - tgi.start;
+	len = tgi.getXmax() - tgi.getXmin();
 	
 	var nf = java.text.NumberFormat.getNumberInstance();
 	nf.setMaximumFractionDigits(6);
@@ -125,8 +125,8 @@ function listDuration(recordIndex, groupIndex, ipa) {
 	out.print("\"" + (recordIndex+1) + "\"");
 	out.print(",\"" + (groupIndex+1) + "\"");
 	out.print(",\"" + ipa + "\"");
-	out.print(",\"" + nf.format(tgi.start) + "\"");
-	out.print(",\"" + nf.format(tgi.end) + "\"");
+	out.print(",\"" + nf.format(tgi.getXmin()) + "\"");
+	out.print(",\"" + nf.format(tgi.getXmax()) + "\"");
 	out.println(",\"" + nf.format(len) + "\"");
 	
 }
