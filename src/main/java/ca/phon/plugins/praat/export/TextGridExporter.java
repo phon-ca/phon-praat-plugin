@@ -106,7 +106,9 @@ public class TextGridExporter {
 		// if the exportType is TIER, we create a 3-interval tier
 		// this takes care of all flat tiers
 		if(type == Segmentation.TIER) {
-			setupThreeIntervalTier(textgrid, tgTier, record.getTier(tier, String.class).toString());
+			final Tier<String> t = record.getTier(tier, String.class);
+			final String tierData = (t == null ? "" : t.toString());
+			setupThreeIntervalTier(textgrid, tgTier, tierData);
 		} else {
 			double currentStart = textgrid.getXmin();
 			double dataEnd = textgrid.getXmax() - MARKER_LENGTH;
@@ -131,7 +133,8 @@ public class TextGridExporter {
 							data = group.getIPAActual().toString();
 						}
 					} else {
-						data = group.getTier(tier).toString();
+						if(group.getTier(tier) != null)
+							data = group.getTier(tier, String.class);
 					}
 					
 					addGroup(tgTier, data, currentStart, groupEnd);
@@ -151,7 +154,8 @@ public class TextGridExporter {
 							data = group.getIPAActual().toString();
 						}
 					} else {
-						data = group.getTier(tier, String.class);
+						if(group.getTier(tier) != null)
+							data = group.getTier(tier, String.class);
 					}
 					
 					addWords(tgTier, data, currentStart, groupEnd);
