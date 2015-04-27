@@ -140,23 +140,23 @@ function annotateRecord(r) {
 }
 
 function listPitch(recordIndex, groupIndex, pitch, ipa) {
-	tgi = ipa.textGridInterval;
+	tgi = ipa.textInterval;
 	if(tgi == null && ipa.length() > 0) {
-		tgi = ipa.elementAt(0).textGridInterval;
+		tgi = ipa.elementAt(0).textInterval;
 		if(tgi == null) {
 			err.println("No TextGrid information for " + ipa);
 			return;
 		}
-		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textGridInterval) {
-			tgi = new TextGridInterval(ipa.text,
-				tgi.start, ipa.elementAt(ipa.length()-1).textGridInterval.end);
+		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textInterval) {
+			tgi = TextInterval(
+				tgi.getXmin(), ipa.elementAt(ipa.length()-1).textGridInterval.getXmax(), ipa.text);
 		}
 	}
 	
 	var ixminPtr = new AtomicReference(new java.lang.Long(0));
 	var ixmaxPtr = new AtomicReference(new java.lang.Long(0));
 	
-	pitch.getWindowSamples(tgi.start, tgi.end, ixminPtr, ixmaxPtr);
+	pitch.getWindowSamples(tgi.getXmin(), tgi.getXmax(), ixminPtr, ixmaxPtr);
 	
 	var xmin = ixminPtr.get().intValue();
 	var xmax = ixmaxPtr.get().intValue();

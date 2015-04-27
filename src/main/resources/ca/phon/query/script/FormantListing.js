@@ -139,16 +139,16 @@ function annotateRecord(r) {
 }
 
 function listFormants(recordIndex, groupIndex, formants, ipa) {
-	tgi = ipa.textGridInterval;
+	tgi = ipa.textInterval;
 	if(tgi == null && ipa.length() > 0) {
-		tgi = ipa.elementAt(0).textGridInterval;
+		tgi = ipa.elementAt(0).textInterval;
 		if(tgi == null) {
 			err.println("No TextGrid information for " + ipa);
 			return;
 		}
-		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textGridInterval) {
-			tgi = new TextGridInterval(ipa.text,
-				tgi.start, ipa.elementAt(ipa.length()-1).textGridInterval.end);
+		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textInterval) {
+			tgi = TextInterval.create(
+				tgi.getXmin(), ipa.elementAt(ipa.length()-1).textInterval.getXmax(), ipa.text);
 		}
 	}
 	
@@ -175,8 +175,8 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 	for(row = 1; row < formantTable.getNrow(); row++) {
 		// get time
 		rowTime = formantTable.getNumericValue(row, 1);
-		if(rowTime > tgi.end) break;
-		if(rowTime >= tgi.start) {
+		if(rowTime > tgi.getXmax()) break;
+		if(rowTime >= tgi.getXmin()) {
 		    if(!printedPrefix) {
 		        out.print("\"" + (recordIndex+1) + "\",");
 		        out.print("\"" + (groupIndex+1) + "\",");

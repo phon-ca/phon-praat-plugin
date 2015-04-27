@@ -62,7 +62,7 @@ public class TextGridAnnotator {
 		// full tier
 		final IntervalTier fullOrthoTier = findTextGridIntervalTier(textGrid, orthoTier, "Tier");
 		if(fullOrthoTier != null) {
-			final long fullTierIntervalIdx = findIntervalForText(fullOrthoTier, orthoTier.toString(), 0);
+			final long fullTierIntervalIdx = findIntervalForText(fullOrthoTier, orthoTier.toString(), 1);
 			if(fullTierIntervalIdx >= 0) {
 				orthoTier.putExtension(TextInterval.class, fullOrthoTier.interval(fullTierIntervalIdx));
 			}
@@ -74,10 +74,10 @@ public class TextGridAnnotator {
 			long gidx = 0;
 			for(int i = 0; i < orthoTier.numberOfGroups(); i++) {
 				final Orthography ortho = orthoTier.getGroup(i);
-				final long gTgi = findIntervalForText(orthoGroupTier, ortho.toString(), gidx);
+				final long gTgi = findIntervalForText(orthoGroupTier, ortho.toString(), gidx+1);
 				if(gTgi >= 0) {
 					ortho.putExtension(TextInterval.class, orthoGroupTier.interval(gTgi));
-					gidx = gTgi + 1;
+					gidx = gTgi;
 				} else {
 					LOGGER.warning(
 							String.format("Unable to find interval for group '%s'", ortho.toString()));
@@ -95,10 +95,10 @@ public class TextGridAnnotator {
 				final OrthoWordExtractor wordExtractor = new OrthoWordExtractor();
 				ortho.accept(wordExtractor);
 				for(OrthoElement ele:wordExtractor.getWordList()) {
-					final long wTgi = findIntervalForText(orthoWordTier, ele.toString(), widx);
+					final long wTgi = findIntervalForText(orthoWordTier, ele.toString(), widx+1);
 					if(wTgi >= 0) {
 						ele.putExtension(TextInterval.class, orthoWordTier.interval(wTgi));
-						widx = wTgi+1;
+						widx = wTgi;
 					} else {
 						LOGGER.warning(
 								String.format("Unable to find interval for word '%s'", ele.toString()));
@@ -112,12 +112,11 @@ public class TextGridAnnotator {
 		// full tier
 		final IntervalTier fullOrthoTier = findTextGridIntervalTier(textGrid, ipaTier, "Tier");
 		if(fullOrthoTier != null) {
-			final long fullTierIntervalIdx = findIntervalForText(fullOrthoTier, ipaTier.toString(), 0);
+			final long fullTierIntervalIdx = findIntervalForText(fullOrthoTier, ipaTier.toString(), 1);
 			if(fullTierIntervalIdx >= 0) {
 				ipaTier.putExtension(TextInterval.class, fullOrthoTier.interval(fullTierIntervalIdx));
 			}
 		}
-		
 
 		// phones
 		final IntervalTier ipaPhoneTier = findTextGridIntervalTier(textGrid, ipaTier, "Phone");
@@ -131,10 +130,10 @@ public class TextGridAnnotator {
 					if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
 						txt = ipaGrp.elementAt(eleIdx-1).getText() + txt;
 					}
-					final long pTgi = findIntervalForText(ipaPhoneTier, txt, pidx);
+					final long pTgi = findIntervalForText(ipaPhoneTier, txt, pidx+1);
 					if(pTgi >= 0) {
 						ele.putExtension(TextInterval.class, ipaPhoneTier.interval(pTgi));
-						pidx = pTgi + 1;
+						pidx = pTgi;
 					} else {
 						LOGGER.warning(String.format("Unable to find interval for element '%s'", ele.toString()));
 						break;
@@ -149,10 +148,10 @@ public class TextGridAnnotator {
 			long gidx = 0;
 			for(int i = 0; i < ipaTier.numberOfGroups(); i++) {
 				final IPATranscript ipaGrp = ipaTier.getGroup(i);
-				final long gTgi = findIntervalForText(ipaGroupTier, ipaGrp.toString(), gidx);
+				final long gTgi = findIntervalForText(ipaGroupTier, ipaGrp.toString(), gidx+1);
 				if(gTgi >= 0) {
 					ipaGrp.putExtension(TextInterval.class, ipaGroupTier.interval(gTgi));
-					gidx = gTgi + 1;
+					gidx = gTgi;
 				} else {
 					LOGGER.warning(
 							String.format("Unable to find interval for group '%s'", ipaGrp.toString()));
@@ -172,10 +171,10 @@ public class TextGridAnnotator {
 			for(int i = 0; i < ipaTier.numberOfGroups(); i++) {
 				final IPATranscript ipaGrp = ipaTier.getGroup(i);
 				for(IPATranscript word:ipaGrp.words()) {
-					final long wTgi = findIntervalForText(ipaWordTier, word.toString(), widx);
+					final long wTgi = findIntervalForText(ipaWordTier, word.toString(), widx+1);
 					if(wTgi >= 0) {
 						word.putExtension(TextInterval.class, ipaWordTier.interval(wTgi));
-						widx = wTgi + 1;
+						widx = wTgi;
 					} else {
 						LOGGER.warning(
 								String.format("Unable to find interval for word '%s'", ipaGrp.toString()));
@@ -198,10 +197,10 @@ public class TextGridAnnotator {
 			for(int i = 0; i < ipaTier.numberOfGroups(); i++) {
 				final IPATranscript ipaGrp = ipaTier.getGroup(i);
 				for(IPATranscript syll:ipaGrp.syllables()) {
-					final long sTgi = findIntervalForText(ipaSyllTier, syll.toString(), sidx);
+					final long sTgi = findIntervalForText(ipaSyllTier, syll.toString(), sidx+1);
 					if(sTgi >= 0) {
 						syll.putExtension(TextInterval.class, ipaSyllTier.interval(sTgi));
-						sidx = sTgi + 1;
+						sidx = sTgi;
 					} else {
 						LOGGER.warning(
 								String.format("Unable to find interval for syllablle '%s'", ipaGrp.toString()));
@@ -239,10 +238,10 @@ public class TextGridAnnotator {
 	
 	private IntervalTier findTextGridIntervalTier(TextGrid tg, Tier<?> tier, String classifier) {
 		final String tierName = tier.getName() + ": " + classifier;
-		for(long i = 0; i < tg.numberOfTiers(); i++) {
+		for(long i = 1; i <= tg.numberOfTiers(); i++) {
 			try {
 				final IntervalTier tgTier = tg.checkSpecifiedTierIsIntervalTier(i);
-				if(tgTier.getName().equals(tierName)) {
+				if(tgTier.getName().toString().equals(tierName)) {
 					return tgTier;
 				}
 			} catch (PraatException pe) {
@@ -253,7 +252,7 @@ public class TextGridAnnotator {
 	}
 	
 	private long findIntervalForText(IntervalTier tgTier, String txt, long fromIndex) {
-		for(long i = fromIndex; i < tgTier.numberOfIntervals(); i++) {
+		for(long i = fromIndex; i <= tgTier.numberOfIntervals(); i++) {
 			final TextInterval interval = tgTier.interval(i);
 			if(interval.getText().trim().equals(txt)) {
 				return i;
