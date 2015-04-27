@@ -21,6 +21,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -43,9 +45,11 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.event.MouseInputAdapter;
 
 import org.jdesktop.swingx.VerticalLayout;
 
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.sys.Data;
@@ -467,35 +471,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(showTextGrid) update();
 	}
 	
-	private TextGridTierComponent selectedComponent = null;
-	
-	private final PropertyChangeListener selectionListener = new PropertyChangeListener() {
-		
-		@Override
-		public void propertyChange(PropertyChangeEvent evt) {
-			final TextGridTierComponent tierComp = 
-					(TextGridTierComponent)evt.getSource();
-			if(selectedComponent != null) {
-				selectedComponent.setSelectionPainted(false);
-			}
-			selectedComponent = tierComp;
-			if(selectedComponent != null) {
-				selectedComponent.setSelectionPainted(true);
-				
-				final TextInterval interval = selectedComponent.getSelectedInterval();
-				if(interval != null) {
-					final PCMSegmentView wavDisplay = parent.getWavDisplay();
-					wavDisplay.setValuesAdusting(true);
-					wavDisplay.setSelectionStart((float)interval.getXmin());
-					wavDisplay.setSelectionLength(0.0f);
-					wavDisplay.setValuesAdusting(false);
-					wavDisplay.setSelectionLength((float)(interval.getXmax()-interval.getXmin()));
-					requestFocus();
-				}
-			}
-		}
-	};
-	
 	public void onPlayInterval() {
 		parent.getWavDisplay().play();
 	}
@@ -547,12 +522,58 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		praatMenu.add(sendPraatAct);
 	}
 
+	private class TextGridMouseListener extends MouseInputAdapter {
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			long tierIdx = tierForPoint(e.getPoint());
+			
+			if(tg != null && tierIdx > 0 && tierIdx <= tg.numberOfTiers()) {
+				try {
+					IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tierIdx);
+					long intervalIdx = 
+							intervalTier.timeToLowIndex(parent.getWavDisplay().viewToModel(e.getX()));
+					
+					if(intervalIdx > 0 && intervalIdx <= intervalTier.numberOfIntervals()) {
+						final TextInterval interval = intervalTier.interval(intervalIdx);
+						
+						if(interval != null) {
+							// set selection to interval
+							final PCMSegmentView wavDisplay = parent.getWavDisplay();
+							wavDisplay.setValuesAdusting(true);
+							wavDisplay.setSelectionStart((float)interval.getXmin());
+							wavDisplay.setSelectionLength(0.0f);
+							wavDisplay.setValuesAdusting(false);
+							wavDisplay.setSelectionLength((float)(interval.getXmax()-interval.getXmin()));
+							requestFocus();
+						}
+					}
+				} catch (PraatException pe) {
+					// do nothing
+				}
+			}
+		}
+		
+		private long tierForPoint(Point p) {
+			long retVal = -1;
+			
+			if(tg != null) {
+				retVal = (long)(p.getY() / 50) + 1;
+			}
+			
+			return retVal;
+		}
+		
+	}
+	
 	private class TextGridContentPanel extends JPanel {
 
 		private static final long serialVersionUID = 1370029937245278277L;
 		
 		public TextGridContentPanel() {
 			super();
+			
+			addMouseListener(new TextGridMouseListener());
 			
 			setFont(FontPreferences.getUIIpaFont());
 		}
@@ -603,6 +624,18 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				} catch (PraatException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				}
+			}
+			
+			// paint selection
+			if(wavDisplay.hasSelection()) {
+				double x1 = wavDisplay.modelToView(wavDisplay.getSelectionStart());
+				double x2 = wavDisplay.modelToView(wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength());
+				
+				Rectangle2D selRect = new Rectangle2D.Double(x1, contentRect.getY(), x2-x1, 
+								contentRect.getHeight());
+				
+				g2.setColor(parent.getWavDisplay().getSelectionColor());
+				g2.fill(selRect);
 			}
 		}
 		
