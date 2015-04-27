@@ -19,19 +19,27 @@ package ca.phon.plugins.praat;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.binding.sys.Data;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.project.Project;
+import ca.phon.session.Record;
+import ca.phon.session.Session;
 
 /**
  * Utility class for reading/writing TextGrid files
@@ -42,13 +50,18 @@ public class TextGridManager {
 	private final static Logger LOGGER = Logger.getLogger(TextGridManager.class.getName());
     
 	/**
-	 * Location of textgrid files in project folder
+	 * Location of textgrid files in project folder for records
+	 * 
+	 * @deprecated since ver 15
 	 */
-	private final static String TEXTGRID_FOLDER = "__res/plugin_data/textgrid/data";
+	private final static String RECORD_TEXTGRID_FOLDER = "__res/plugin_data/textgrid/data";
 	
-	private final static String ALTERNATE_TEXTGRID_ENCODING = "UTF-8";
+	/**
+	 * Location of textgrid files in project folder for sessions
+	 */
+	private final static String SESSION_TEXTGRID_FOLDER = "__res/textgrids/";
 	
-	private final static String DEFAULT_TEXTGRID_ENCODING = "UTF-16";
+	public final static String DEFAULT_TEXTGRID_NAME = "default";
 	
 	private final static String TEXTGRID_EXT = ".TextGrid";
 	
@@ -57,8 +70,6 @@ public class TextGridManager {
 	 */
 	private Project project;
 	
-	private List<TextGridListener> listeners = Collections.synchronizedList(new ArrayList<TextGridListener>());
-
 	public TextGridManager(Project project) {
 		super();
 		
@@ -75,6 +86,8 @@ public class TextGridManager {
 	 * 
 	 * @return the textgrid or <code>null</code> if not
 	 *  found/loaded
+	 *  
+	 * @deprecated since version 15
 	 */
 	public TextGrid loadTextGrid(String recordId) {
 		final String tgPath = textGridPath(recordId);
@@ -100,6 +113,8 @@ public class TextGridManager {
 	 * 
 	 * @returns <code>true</code> if successful, <code>false</code>
 	 *  otherwise
+	 *  
+	 * @deprecated since version 15
 	 */
 	public boolean saveTextGrid(TextGrid textgrid, String recordId) {
 		final String tgPath = textGridPath(recordId);
@@ -110,6 +125,101 @@ public class TextGridManager {
 			retVal = true;
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+		
+		return retVal;
+	}
+	
+	/**
+	 * List available TextGrids for a given session.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * 
+	 * @return list of textgrid files available
+	 */
+	public List<File> textGridFilesForSession(String corpus, String session) {
+		List<File> retVal = new ArrayList<>();
+		
+		final Path textGridFolderPath = Paths.get(textGridFolder(corpus, session));
+		if(Files.exists(textGridFolderPath)) {
+			 try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(textGridFolderPath)) {
+				 for(Path subFile:directoryStream) {
+					 if(subFile.getFileName().toString().endsWith(TEXTGRID_EXT)) {
+						 retVal.add(subFile.toFile());
+					 }
+				 }
+			 } catch (IOException e) {
+				 LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			 }
+		}
+		
+		return retVal;
+	}
+	
+	/**
+	 * List of TextGrid names for a given session.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * 
+	 * @return textgrid names
+	 */
+	public List<String> textGridNamesForSession(String corpus, String session) {
+		List<String> retVal = new ArrayList<>();
+		
+		textGridFilesForSession(corpus, session).forEach(
+			(File file) -> {
+				String name = file.getName();
+				name = name.substring(0, name.length()-TEXTGRID_EXT.length());
+				retVal.add(name);
+			} 
+		);
+		
+		return retVal;
+	}
+	
+	/**
+	 * Get the default TextGrid file for a given session.  This will be 
+	 * the TextGrid file named 'default.TextGrid' or the first TextGrid
+	 * found in the text grid folder.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * 
+	 * @param TextGrid file or <code>null</code> if not found
+	 */
+	public File defaultTextGridFile(String corpus, String session) {
+		List<File> textGridFiles = textGridFilesForSession(corpus, session);
+		
+		File retVal = null;
+		for(File textGridFile:textGridFiles) {
+			if(retVal == null)
+				retVal = textGridFile;
+			if(textGridFile.getName().equals(DEFAULT_TEXTGRID_NAME + TEXTGRID_EXT)) {
+				retVal = textGridFile;
+				break;
+			}
+		}
+		
+		return retVal;
+	}
+	
+	/**
+	 * Default TextGrid name for session.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * 
+	 * @return TextGrid name or <code>null</code> if not found
+	 */
+	public String defaultTextGridName(String corpus, String session) {
+		final File defaultTextGridFile = defaultTextGridFile(corpus, session);
+		
+		String retVal = null;
+		if(defaultTextGridFile != null) {
+			retVal = defaultTextGridFile.getName();
+			retVal = retVal.substring(0, retVal.length()-TEXTGRID_EXT.length());
 		}
 		
 		return retVal;
@@ -166,17 +276,15 @@ public class TextGridManager {
 	 * @param recordId
 	 * 
 	 * @return textgrid path
+	 * 
+	 * @deprecated since version 15
 	 */
 	public String textGridPath(String recordId) {
 		final StringBuilder sb = new StringBuilder();
 		sb.append(project.getLocation());
 		sb.append(File.separator);
-		sb.append(TEXTGRID_FOLDER);
+		sb.append(RECORD_TEXTGRID_FOLDER);
 		sb.append(File.separator);
-//		sb.append(corpus);
-//		sb.append("_");
-//		sb.append(session);
-//		sb.append("_");
 		sb.append(recordId);
 		sb.append(TEXTGRID_EXT);
 		
@@ -184,123 +292,149 @@ public class TextGridManager {
 	}
 	
 	/**
-	 * Add a listener
+	 * TextGrid folder for the given session.
 	 * 
-	 * @param listener
+	 * @param corpus
+	 * @param session
+	 * 
+	 * @return TextGrid folder for given session
 	 */
-	public void addTextGridListener(TextGridListener listener) {
-		if(!listeners.contains(listener)) {
-			listeners.add(listener);
+	public String textGridFolder(String corpus, String session) {
+		final StringBuilder sb = new StringBuilder();
+		
+		sb.append(project.getLocation()).append(File.separator);
+		sb.append(SESSION_TEXTGRID_FOLDER).append(File.separator);
+		sb.append(corpus).append(File.separator);
+		sb.append(session);
+		
+		return sb.toString();
+	}
+	
+	public String textGridPath(String corpus, String session, String name) {
+		final StringBuilder sb = new StringBuilder();
+		
+		sb.append(textGridFolder(corpus, session)).append(File.separator);
+		sb.append(name).append(TEXTGRID_EXT);
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * TextGrid path for given session and TextGrid name.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * @param name
+	 * 
+	 * @return TextGrid if exists.
+	 * 
+	 * @throws IOException if TextGrid could not be opened
+	 */
+	public TextGrid openTextGrid(String corpus, String session, String name) 
+		throws IOException {
+		final String textGridPath = textGridPath(corpus, session, name);
+		final File textGridFile = new File(textGridPath);
+		
+		return loadTextGrid(textGridFile);
+	}
+	
+	/**
+	 * Save TextGrid with given name for session.
+	 * 
+	 * @param corpus
+	 * @param session
+	 * @param textGrid
+	 * @param name
+	 * 
+	 * @throws IOException
+	 */
+	public void saveTextGrid(String corpus, String session, TextGrid textGrid, String name) 
+		throws IOException {
+		final String textGridPath = textGridPath(corpus, session, name);
+		final File textGridFile = new File(textGridPath);
+		
+		saveTextGrid(textGrid, textGridFile);
+	}
+	
+	/**
+	 * Merge text grids for a session.
+	 * 
+	 * @param session
+	 * 
+	 * @return single TextGrid for merged session
+	 */
+	public TextGrid mergeTextGrids(Session session) 
+		throws IOException {
+		// get xmin and xmax
+		double xmin = 0;
+		double xmax = 0;
+		
+		List<TextGrid> textGrids = new ArrayList<>();
+		for(Record record:session.getRecords()) {
+			final String id = record.getUuid().toString();
 			
-//			if(listeners.size() == 1) {
-//				startWatcher();
-//			}
-		}
-	}
-	
-	public void removeTextGridListener(TextGridListener listener) {
-		listeners.remove(listener);
-//		if(listeners.size() == 0) {
-//			watcher.shutdown();
-//		}
-	}
+			final String textGridPath = textGridPath(id);
+			final File textGridFile = new File(textGridPath);
+			if(textGridFile.exists()) {
+				TextGrid tg = loadTextGrid(textGridFile);
 
-	public List<TextGridListener> getTextGridListeners() {
-		return Collections.unmodifiableList(listeners);
-	}
-	
-	public void fireTextGridEvent(TextGridEvent evt) {
-		for(TextGridListener listener:getTextGridListeners()) {
-			listener.textGridEvent(evt);
+				xmin = Math.min(xmin, tg.getXmin());
+				xmax = Math.max(xmax, tg.getXmax());
+				
+				textGrids.add(tg);
+			}
+		}
+		
+		try {
+			TextGrid retVal = TextGrid.createWithoutTiers(xmin, xmax);
+			
+			Map<String, Long> intervalTiers = new LinkedHashMap<>();
+			Map<String, Long> pointTiers = new LinkedHashMap<>();
+			
+			for(TextGrid tg:textGrids) {
+				for(long i = 1; i <= tg.numberOfTiers(); i++) {
+					try {
+						IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(i);
+						
+						IntervalTier fullIntervalTier = null;
+						if(!intervalTiers.keySet().contains(intervalTier.getName().toString())) {
+							fullIntervalTier = IntervalTier.create(xmin, xmax);
+							fullIntervalTier.setForgetOnFinalize(false);
+							fullIntervalTier.setName(intervalTier.getName());
+							fullIntervalTier.removeInterval(1);
+							
+							retVal.addTier(fullIntervalTier);
+							intervalTiers.put(intervalTier.getName().toString(), retVal.numberOfTiers());
+						} 
+						Long tierNum = intervalTiers.get(intervalTier.getName().toString());
+						if(tierNum != null && tierNum > 0 && tierNum <= retVal.numberOfTiers()) {
+							try {
+								fullIntervalTier = retVal.checkSpecifiedTierIsIntervalTier(tierNum);
+							} catch (PraatException e) {
+								LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+							}
+						}
+						
+						if(fullIntervalTier != null) {
+							for(long j = 1; j <= intervalTier.numberOfIntervals(); j++) {
+								TextInterval interval = intervalTier.interval(j);
+								fullIntervalTier.addInterval(interval.getXmin(), interval.getXmax(), interval.getText());
+							}
+						}
+						
+					} catch (PraatException e) {
+						try {
+							TextTier pointTier = tg.checkSpecifiedTierIsPointTier(i);
+						} catch (PraatException e1) {
+							LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
+						}
+					}
+				}
+			}
+			return retVal;
+		} catch (PraatException e) {
+			throw new IOException(e);
 		}
 	}
 	
-//	private WatchService watchService;
-//	
-//	private void startWatcher() {
-//		try {
-//			watchService = FileSystems.getDefault().newWatchService();
-//			
-//			final Path dir = FileSystems.getDefault().getPath(project.getLocation(), TEXTGRID_FOLDER);
-//			final WatchKey key = dir.register(watchService, 
-//					StandardWatchEventKinds.ENTRY_CREATE,
-//					StandardWatchEventKinds.ENTRY_DELETE, 
-//					StandardWatchEventKinds.ENTRY_MODIFY);
-//			final PhonWorker worker = PhonWorker.createWorker();
-//			worker.setFinishWhenQueueEmpty(true);
-//			worker.invokeLater(watcher);
-//			worker.start();
-//			
-//		} catch (IOException e) {
-//			LOGGER.log(Level.SEVERE, e.getMessage(), e);
-//		}
-//	}
-	
-//	private final PhonTask watcher = new PhonTask() {
-//		
-//		@Override
-//		public void performTask() {
-//			setStatus(TaskStatus.RUNNING);
-//			
-//			for(;;) {
-//				if(super.isShutdown())
-//					break;
-//				
-//				WatchKey key = null;
-//				try {
-//					key = watchService.take();
-//				} catch (InterruptedException e) {
-//					LOGGER.log(Level.SEVERE, e.getMessage(), e);
-//					super.err = e;
-//					setStatus(TaskStatus.ERROR);
-//					return;
-//				}
-//				
-//				if(key == null) continue;
-//				
-//				for(WatchEvent<?> evt:key.pollEvents()) {
-//					final WatchEvent.Kind<?> kind = evt.kind();
-//					if(kind == StandardWatchEventKinds.OVERFLOW
-//							|| !(evt.context() instanceof Path)) {
-//						continue;
-//					}
-//					
-//					
-//					final Path path = (Path)evt.context();
-//					final String filename = path.getFileName().toString();
-//					
-////					LOGGER.info(filename);
-//					
-//					final String regex = "([^_]+)_([^_]+)_(u[0-9]+)\\.TextGrid";
-//					final Pattern pattern = Pattern.compile(regex);
-//					final Matcher matcher = pattern.matcher(filename);
-//					
-//					if(matcher.matches()) {
-//						final String corpus = matcher.group(1);
-//						final String session = matcher.group(2);
-//						final String recordID = matcher.group(3);
-//						
-//						TextGridEvent.TextGridEventType type = null;
-//						if(kind == StandardWatchEventKinds.ENTRY_CREATE) 
-//							type = TextGridEventType.TEXTGRID_ADDED;
-//						else if(kind == StandardWatchEventKinds.ENTRY_DELETE)
-//							type = TextGridEventType.TEXTGRID_REMOVED;
-//						else
-//							type = TextGridEventType.TEXTGRID_CHANGED;
-//						
-//						final TextGridEvent tgEvent = 
-//								new TextGridEvent(project, corpus, session, recordID, TextGridManager.this, type);
-//						fireTextGridEvent(tgEvent);
-//					}
-//					
-//					boolean valid = key.reset();
-//					if(!valid) {
-//						break;
-//					}
-//				}
-//			}
-//			
-//			setStatus(TaskStatus.FINISHED);
-//		}
-//	};
 }

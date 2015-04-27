@@ -18,7 +18,10 @@
 package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
@@ -38,13 +41,11 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.sys.Data;
@@ -63,6 +64,7 @@ import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
+import ca.phon.plugins.praat.painters.TextGridPainter;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
@@ -75,6 +77,7 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.PrefHelper;
@@ -103,7 +106,9 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	// parent panel
 	private SpeechAnalysisEditorView parent;
 	
-	private JPanel contentPane;
+	private TextGridContentPanel contentPane;
+	
+	private TextGridPainter tgPainter = new TextGridPainter();
 	
 	private JPanel buttonPane;
 	
@@ -130,6 +135,20 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		add(contentPane, BorderLayout.CENTER);
 		
 		tgManager = new TextGridManager(parent.getEditor().getProject());
+		// load default TextGrid
+		final File defaultTextGridFile = tgManager.defaultTextGridFile(parent.getEditor().getSession().getCorpus(),
+				parent.getEditor().getSession().getName());
+		if(defaultTextGridFile != null) {
+			try {
+				final TextGrid tg = TextGridManager.loadTextGrid(defaultTextGridFile);
+				setTextGrid(tg);
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+			}
+		} else {
+			setTextGrid(null);
+		}
 		
 		// setup toolbar buttons
 		setupToolbar();
@@ -172,63 +191,75 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		
 		@Override
 		public void propertyChange(PropertyChangeEvent evt) {
+			tgPainter.setRepaintBuffer(true);
 			repaint();
 		}
+		
 	};
 	
 	private void setupTextGrid() {
 		contentPane.removeAll();
 		tiers.clear();
 		
-		if(tg != null) {
-			final Record currentRecord = parent.getEditor().currentRecord();
-			final Tier<MediaSegment> segTier = currentRecord.getSegment();
-			final MediaSegment seg = (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
-			if(seg == null
-					) {
-				final JLabel errLabel = new JLabel("<html><b>TextGrid dimensions do not match segment</b></html>");
-				errLabel.setBackground(Color.red);
-				errLabel.setOpaque(true);
-				
-				final PhonUIAction generateTextGridAct = new PhonUIAction
-						(this, "onGenerateTextGrid");
-				generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
-				generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
-				
-				final JButton generateTextGridBtn = new JButton(generateTextGridAct);
-				contentPane.add(generateTextGridBtn);
-				
-				contentPane.add(errLabel);
-				contentPane.add(generateTextGridBtn);
-			} else {
-				for(long i = 1; i <= tg.numberOfTiers(); i++) {
-					try {
-						final IntervalTier tier = tg.checkSpecifiedTierIsIntervalTier(i);
-						final TextGridTierComponent tierComp = new TextGridTierComponent(tier, parent.getWavDisplay());
-						tierComp.setEnabled(isEnabled());
-						tierComp.setFont(getFont());
-						tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
-						contentPane.add(tierComp);
-						tiers.add(tierComp);
-					} catch (PraatException pe) {
-						// not an interval tier
-					}
-				}
-			}
-		} else {
-			final PhonUIAction generateTextGridAct = new PhonUIAction
-					(this, "onGenerateTextGrid");
-			generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
-			generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
-			
-			final JButton generateTextGridBtn = new JButton(generateTextGridAct);
-			contentPane.add(generateTextGridBtn);
-		}
+//		if(tg != null) {
+//			final Record currentRecord = parent.getEditor().currentRecord();
+//			final Tier<MediaSegment> segTier = currentRecord.getSegment();
+//			final MediaSegment seg = (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
+//			if(seg == null
+//					) {
+//				final JLabel errLabel = new JLabel("<html><b>TextGrid dimensions do not match segment</b></html>");
+//				errLabel.setBackground(Color.red);
+//				errLabel.setOpaque(true);
+//				
+//				final PhonUIAction generateTextGridAct = new PhonUIAction
+//						(this, "onGenerateTextGrid");
+//				generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+//				generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
+//				
+//				final JButton generateTextGridBtn = new JButton(generateTextGridAct);
+//				contentPane.add(generateTextGridBtn);
+//				
+//				contentPane.add(errLabel);
+//				contentPane.add(generateTextGridBtn);
+//			} else {
+//				double segStart = seg.getStartValue() / 1000.0 - 0.1;
+//				double segEnd = seg.getEndValue() / 1000.0 + 0.1;
+//				if(segStart >= tg.getXmin() && segEnd <= tg.getXmax()) {
+//					try {
+//						TextGrid tg = this.tg.extractPart(segStart, segEnd, 1);
+//						tg.setForgetOnFinalize(false);
+//						for(long i = 1; i <= tg.numberOfTiers(); i++) {
+//							try {
+//								final IntervalTier tier = tg.checkSpecifiedTierIsIntervalTier(i);
+//								final TextGridTierComponent tierComp = new TextGridTierComponent(tier, parent.getWavDisplay());
+//								tierComp.setEnabled(isEnabled());
+//								tierComp.setFont(getFont());
+//								tierComp.addPropertyChangeListener(TextGridTierComponent.SELECTED_INTERVAL_PROP, selectionListener);
+//								contentPane.add(tierComp);
+//								tiers.add(tierComp);
+//							} catch (PraatException pe) {
+//								// not an interval tier
+//							}
+//						}
+//					} catch (PraatException e) {
+//						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//						ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+//					}
+//				}
+//			}
+//		} else {
+//			final PhonUIAction generateTextGridAct = new PhonUIAction
+//					(this, "onGenerateTextGrid");
+//			generateTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+//			generateTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for record.");
+//			
+//			final JButton generateTextGridBtn = new JButton(generateTextGridAct);
+//			contentPane.add(generateTextGridBtn);
+//		}
 		
 		revalidate();
 		repaint();
 	}
-	
 	
 	@Override
 	public void setEnabled(boolean enabled) {
@@ -333,7 +364,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(segmentTier.numberOfGroups() == 0) return;
 
 		final MediaSegment media = segmentTier.getGroup(0);
-		String tgPath = tgManager.textGridPath(model.currentRecord().getUuid().toString());
+		File tgFile = tgManager.defaultTextGridFile(model.getSession().getCorpus(), model.getSession().getName());
+		String tgPath = (tgFile != null ? tgFile.getAbsolutePath() : "");
 		
 		final PraatScriptContext map = new PraatScriptContext();
 		final PraatScriptTcpServer server = new PraatScriptTcpServer();
@@ -396,23 +428,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	}
 	
 	private void update() {
-		final SessionEditor model = parent.getEditor();
-		tgManager.addTextGridListener(tgListener);
-		buttonPane.removeAll();
-		
-		if(serverMap.get(model.currentRecord()) != null) {
-			lock(serverMap.get(model.currentRecord()));
-		} else {
-			setEnabled(true);
-		}
-		
-		final File tgFile = new File(tgManager.textGridPath(model.currentRecord().getUuid().toString()));
-		if(tgFile.exists() && tgFile.canRead()) {
-			final TextGrid tg = tgManager.loadTextGrid(model.currentRecord().getUuid().toString());
-			setTextGrid(tg);
-		} else {
-			setTextGrid(null);
-		}
+		repaint();
 	}
 	
 	@RunOnEDT
@@ -450,29 +466,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		TextGridViewer.this.setVisible(showTextGrid);
 		if(showTextGrid) update();
 	}
-	
-	private final TextGridListener tgListener = new TextGridListener() {
-		
-		@Override
-		public void textGridEvent(TextGridEvent event) {
-			if(parent == null) return;
-			// check the event and see if it matches our current record
-			final SessionEditor model = parent.getEditor();
-			if(model == null || model.getSession() == null || model.currentRecord() == null) return;
-			
-			final String currentCorpus = model.getSession().getCorpus();
-			final String currentSession = model.getSession().getName();
-			final String recordID = model.currentRecord().getUuid().toString();
-			
-			if( event.getCorpus().equals(currentCorpus) &&
-					event.getSession().equals(currentSession) &&
-					event.getRecordID().equals(recordID)) {
-				update();
-				invalidate();
-				parent.revalidate();
-			}
-		}
-	};
 	
 	private TextGridTierComponent selectedComponent = null;
 	
@@ -559,7 +552,58 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		private static final long serialVersionUID = 1370029937245278277L;
 		
 		public TextGridContentPanel() {
-			super(new VerticalLayout(0));
+			super();
+			
+			setFont(FontPreferences.getUIIpaFont());
+		}
+		
+		@Override
+		public Dimension getPreferredSize() {
+			Dimension retVal = super.getPreferredSize();
+			
+			if(tg != null) {
+				retVal.height = 50 * (int)tg.numberOfTiers();
+			}
+			
+			return retVal;
+		}
+		
+		@Override
+		public void paintComponent(Graphics g) {
+			final Graphics2D g2 = (Graphics2D)g;
+			
+			g2.setColor(parent.getWavDisplay().getBackground());
+			g2.fillRect(0, 0, getWidth(), getHeight());
+			g2.setColor(parent.getWavDisplay().getExcludedColor());
+			g2.fillRect(0, 0, getWidth(), getHeight());
+			
+			final PCMSegmentView wavDisplay = parent.getWavDisplay();
+			final int height = getHeight();
+			
+			final double segX1 = wavDisplay.modelToView(wavDisplay.getSegmentStart());
+			final double segX2 = 
+							wavDisplay.modelToView(wavDisplay.getSegmentStart()+wavDisplay.getSegmentLength());
+			
+			final Rectangle2D contentRect = new Rectangle2D.Double(
+					segX1, 0, segX2-segX1, height);
+			
+			if((int)contentRect.getWidth() <= 0
+					|| (int)contentRect.getHeight() <= 0) {
+				return;
+			}
+			
+			if(tg != null) {
+				// get text grid for visible rect
+				double windowStart = parent.getWavDisplay().getWindowStart();
+				double windowEnd = windowStart + parent.getWavDisplay().getWindowLength();
+				
+				try {
+					TextGrid textGrid = tg.extractPart(windowStart, windowEnd, 1);
+					tgPainter.paint(textGrid, g2, getBounds());
+				} catch (PraatException e) {
+					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				}
+			}
 		}
 		
 	}
