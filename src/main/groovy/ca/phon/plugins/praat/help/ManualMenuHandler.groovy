@@ -32,24 +32,21 @@ class ManualMenuHandler implements IPluginMenuFilter {
 		}
 		assert menu != null;
 		
-		PhonUIAction action = new PhonUIAction(this, "onShowManual", APP_MANUAL);
+		PhonUIAction action = new PhonUIAction(ManualMenuHandler.class, "onShowManual");
+		action.setData(APP_MANUAL);
 		action.putValue(PhonUIAction.NAME, "Praat Plug-in Manual");
 		JMenuItem manualItem = new JMenuItem(action);
 		
 		menu.add(manualItem, 0);
 	}
 	
-	public void onShowAPI(String url) {
-		OpenFileLauncher.openURL(new java.net.URL(url));
-	}
-	
-	public void onShowManual(String manual) {
+	public static void onShowManual(String manual) {
 		File tempFile = extractTextFile(manual);
 		assert tempFile != null;
 		showPDF(tempFile);
 	}
 
-	private File extractTextFile(String source) 
+	private static File extractTextFile(String source) 
 		throws IOException {
 		final ClassLoader cl = this.class.classLoader;
 		
@@ -72,7 +69,7 @@ class ManualMenuHandler implements IPluginMenuFilter {
 		return retVal;
 	}
 		
-	private void showPDF(File pdfFile) {
+	private static void showPDF(File pdfFile) {
 		OpenFileLauncher.openURL(pdfFile.toURI().toURL());
 	}
 }
