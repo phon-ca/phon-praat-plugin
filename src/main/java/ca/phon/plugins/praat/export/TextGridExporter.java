@@ -35,6 +35,8 @@ import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
+import ca.phon.media.sampled.PCMSampled;
+import ca.phon.media.sampled.Sampled;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.plugins.praat.Segmentation;
 import ca.phon.plugins.praat.TextGridManager;
@@ -88,6 +90,20 @@ public class TextGridExporter {
 		addTierToTextGrid(utt, entry.getPhonTier(), entry.getExportType(), textgrid, entry.getTextGridTier());
 	}
 	
+	public IntervalTier findIntervalTier(TextGrid textGrid, String tgName) {
+		for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
+			try {
+				IntervalTier it = textGrid.checkSpecifiedTierIsIntervalTier(i);
+				if(it.getName().toString().equals(tgName)) {
+					return it;
+				}
+			} catch (PraatException pe) {
+				// ignore, could be just a point tier
+			}
+		}
+		return null;
+	}
+	
 	/**
 	 * Export the specified tier from the given Phon record
 	 * into the given text grid with specified name.
@@ -101,21 +117,20 @@ public class TextGridExporter {
 	public void addTierToTextGrid(Record record, String tier, Segmentation type,
 			TextGrid textgrid, String tgName) {
 		// create the new textgrid tier
-		IntervalTier tgTier = null;
-		try {
-			tgTier = IntervalTier.create(textgrid.getXmin(), textgrid.getXmax());
-			tgTier.removeInterval(1);
-			tgTier.setName(tgName);
-		} catch (PraatException pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
-			return;
-		}
+		IntervalTier tgTier = findIntervalTier(textgrid, tgName);
+		if(tgTier == null) return;
+		
+		final MediaSegment mediaSeg = record.getSegment().getGroup(0);
+		if(mediaSeg == null || (mediaSeg.getEndValue() - mediaSeg.getStartValue()) <= 0) return;
+		double startTime = mediaSeg.getStartValue() / 1000.0;
+		double endTime = mediaSeg.getEndValue() / 1000.0;
+		
 		// check if we a processing a built-in tier
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
 		
 		// calculate some values for interval times
 		final int numHashes = record.numberOfGroups() + 1;
-		final double totalTime = textgrid.getXmax() - textgrid.getXmin();
+		final double totalTime = endTime - startTime;
 		final float hashLength = MARKER_LENGTH * numHashes;
 		final double dataLength = totalTime - hashLength;
 		final double groupLength = dataLength / record.numberOfGroups();
@@ -125,10 +140,10 @@ public class TextGridExporter {
 		if(type == Segmentation.TIER) {
 			final Tier<String> t = record.getTier(tier, String.class);
 			final String tierData = (t == null ? "" : t.toString());
-			setupThreeIntervalTier(textgrid, tgTier, tierData);
+			setupThreeIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
 		} else {
-			double currentStart = textgrid.getXmin();
-			double dataEnd = textgrid.getXmax() - MARKER_LENGTH;
+			double currentStart = startTime;
+			double dataEnd = endTime - MARKER_LENGTH;
 			
 			for(int i = 0; i < record.numberOfGroups(); i++) {
 				final Group group = record.getGroup(i);
@@ -192,12 +207,7 @@ public class TextGridExporter {
 				}
 			}
 			// add final marker
-			tgTier.addInterval(dataEnd, textgrid.getXmax(), MARKER_TEXT);
-		}
-		try {
-			textgrid.addTier(tgTier);
-		} catch (PraatException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			tgTier.addInterval(dataEnd, endTime, MARKER_TEXT);
 		}
 	}
 	
@@ -325,186 +335,17 @@ public class TextGridExporter {
 	/*
 	 * Helper methods for adding tiers to TextGrids
 	 */
-	private void setupThreeIntervalTier(TextGrid textgrid, IntervalTier tier, String data) {
-		final double start = textgrid.getXmin();
-		
-		double currentStart = start;
-		tier.addInterval(start, start+MARKER_LENGTH, MARKER_TEXT);
+	private void setupThreeIntervalTier(TextGrid textgrid, IntervalTier tier, String data, double startTime, double endTime) {
+		double currentStart = startTime;
+		tier.addInterval(startTime, startTime+MARKER_LENGTH, MARKER_TEXT);
 		currentStart += MARKER_LENGTH;
 		
-		final double dataEnd = textgrid.getXmax() - MARKER_LENGTH;
+		final double dataEnd = endTime - MARKER_LENGTH;
 		tier.addInterval(currentStart, dataEnd, data);
 		currentStart = dataEnd;
 		
-		tier.addInterval(currentStart, textgrid.getXmax(), MARKER_TEXT);
+		tier.addInterval(currentStart, endTime, MARKER_TEXT);
 	}
-	
-//	public void addTierToTextGrid(IUtterance utt, String tier,  ExportType type,
-//			TextGrid textgrid, String tgName) {
-//		// create the new textgrid tier
-//		final TextGridTier tgTier = new TextGridTier(tgName, TextGridTierType.INTERVAL);
-//		textgrid.addTier(tgTier);
-//		
-//		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
-//		final List<String> intervals = new ArrayList<String>();
-//		
-//		// handle 'TIER' case here
-//		if(type == ExportType.TIER) {
-//			intervals.add("#");
-//			intervals.add(utt.getTierString(tier));
-//			intervals.add("#");
-//		} else {
-//			if(systemTier != null) {
-//				
-//				if(systemTier == SystemTierType.Orthography) {
-//					switch(type) {
-//					case GROUP:
-//						for(IWord word:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							intervals.add(word.getWord());
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//						
-//					default:
-//						for(IWord group:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							final String[] split = group.getWord().split("\\p{Space}");
-//							int widx = 0;
-//							for(String word:split) {
-//								if(widx++ > 0) intervals.add(SPACER_TEXT);
-//								intervals.add(word);
-//							}
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//					}
-//				} else if(systemTier == SystemTierType.IPATarget || systemTier == SystemTierType.IPAActual) {
-//					switch(type) {
-//					case GROUP:
-//						for(IWord word:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-//							intervals.add(phoRep.getTranscription());
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//						
-//					case WORD:
-//						for(IWord word:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-//							final String group = phoRep.getTranscription();
-//							final String[] words = group.split("\\p{Space}");
-//							int widx = 0;
-//							for(String w:words) {
-//								if(widx++ > 0) intervals.add(SPACER_TEXT);
-//								intervals.add(w);
-//							}
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//						
-//					case SYLLABLE:
-//						for(IWord word:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-//							
-//							final List<Phone> currentWord = new ArrayList<Phone>();
-//							for(Phone p:phoRep.getPhones()) {
-//								int widx = 0;
-//								if(p.getScType() == SyllableConstituentType.WordBoundaryMarker) {
-//									if(currentWord.size() > 0) {
-//										if(widx++ > 0) intervals.add(SPACER_TEXT);
-//										final List<Syllable> sylls = Syllabifier.getSyllabification(currentWord);
-//										for(Syllable syll:sylls) {
-//											intervals.add(syll.toString());
-//										}
-//									}
-//								}
-//							}
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//						
-//					case PHONE:
-//						for(IWord word:utt.getWords()) {
-//							intervals.add(MARKER_TEXT);
-//							final IPhoneticRep phoRep = word.getPhoneticRepresentation(
-//									(systemTier == SystemTierType.IPATarget ? Form.Target : Form.Actual));
-//							
-//							final List<Phone> currentInterval = new ArrayList<Phone>();
-//							for(Phone p:phoRep.getPhones()) {
-//								if(p.getScType() == SyllableConstituentType.SyllableBoundaryMarker
-//										|| p.getScType() == SyllableConstituentType.SyllableStressMarker) {
-//									currentInterval.add(p);
-//								} else {
-//									String intervalText = "";
-//									for(Phone ph:currentInterval) {
-//										intervalText += ph.getPhoneString();
-//									}
-//									intervalText += p.getPhoneString();
-//									intervals.add(intervalText);
-//									currentInterval.clear();
-//								}
-//							}
-//						}
-//						intervals.add(MARKER_TEXT);
-//						break;
-//					}
-//				} else {
-//					intervals.add("#");
-//					intervals.add(utt.getTierString(tier));
-//					intervals.add("#");
-//				}
-//			} else {
-//				// user-defined tier
-//				if(utt.getWordAlignedTierNames().contains(tier)) {
-//					for(IWord word:utt.getWords()) {
-//						intervals.add(MARKER_TEXT);
-//						final IDependentTier depTier = word.getDependentTier(tier);
-//						intervals.add(depTier.getTierValue());
-//					}
-//					intervals.add(MARKER_TEXT);
-//				} else {
-//					intervals.add("#");
-//					intervals.add(utt.getTierString(tier));
-//					intervals.add("#");
-//				}
-//			}
-//		}
-//		
-//		// create textgrid invervals
-//		int markerCount = 0;
-//		int spacerCount = 0;
-//		for(String interval:intervals) {
-//			if(interval.equals(MARKER_TEXT)) {
-//				markerCount++;
-//			} else if(interval.equals(SPACER_TEXT)) {
-//				spacerCount++;
-//			}
-//		}
-//		
-//		final float tgLength = textgrid.getMax() - textgrid.getMin();
-//		final float intervalsLength = tgLength - (MARKER_LENGTH * markerCount) - (SPACER_LENGTH * spacerCount);
-//		final float intervalLength = intervalsLength / (intervals.size() - markerCount - spacerCount);
-//		
-//		float currentStart = textgrid.getMin();
-//		for(String interval:intervals) {
-//			float len = intervalLength;
-//			if(interval.equals(MARKER_TEXT)) {
-//				len = MARKER_LENGTH;
-//			} else if(interval.equals(SPACER_TEXT)) {
-//				len = SPACER_LENGTH;
-//			}
-//			final TextGridInterval tgInt = new TextGridInterval(interval, currentStart, currentStart + len);
-//			tgTier.addInterval(tgInt);
-//			currentStart += len;
-//		}
-//	}
 	
 	/**
 	 * Create an empty textgrid from the given record.
@@ -540,6 +381,68 @@ public class TextGridExporter {
 	}
 	
 	/**
+	 * Add record to TextGrid.
+	 * 
+	 * @param record
+	 * @param textGrid
+	 * @param exports
+	 * @param overwrite
+	 * 
+	 * @throws IOException
+	 */
+	public void addRecordToTextGrid(Record record, TextGrid textGrid, List<TextGridExportEntry> exports, boolean overwrite) {
+		final MediaSegment seg = record.getSegment().getGroup(0);
+		if(seg == null) return;
+	
+		double startTime = (double)(seg.getStartValue() / 1000.0);
+		double endTime = (double)(seg.getEndValue() / 1000.0);
+		if(startTime < textGrid.getXmin() || endTime > textGrid.getXmax()) return;
+		
+		// TODO check old TextGrid for intervals at this time
+		
+		for(TextGridExportEntry entry:exports) {
+			addTierToTextGrid(record, textGrid, entry);
+		}
+	}
+	
+	/**
+	 * Create text grid for the specified session with given name.
+	 * 
+	 * @param session
+	 * @param recordFilter
+	 * @param exports
+	 * @param name
+	 * @param keepCurrent
+	 * 
+	 * @throws IOException
+	 */
+	public void generateTextGrid(Project project, Session session, RecordFilter recordFilter,
+			List<TextGridExportEntry> exports, String name) throws IOException {
+		// get audio file
+		final File audioFile = getAudioFile(project, session);
+		if(audioFile == null) throw new IOException("Unable to open audio");
+		
+		final Sampled sampled = new PCMSampled(audioFile);
+		
+		try {
+			final TextGrid textGrid = TextGrid.createWithoutTiers(0.0, (double)sampled.getLength());
+			setupTextGridTiers(textGrid, exports);
+			
+			session.getRecords().forEach( (Record record) -> {
+				if(recordFilter != null && !recordFilter.checkRecord(record)) return;
+				exports.forEach( (TextGridExportEntry entry) -> {
+					addTierToTextGrid(record, textGrid, entry);
+				} );
+			} );
+			
+			final TextGridManager manager = new TextGridManager(project);
+			manager.saveTextGrid(session.getCorpus(), session.getName(), textGrid, name);
+		} catch (PraatException pe) {
+			throw new IOException(pe);
+		}
+	}
+	
+	/**
 	 * Export text grids for the specified session to the
 	 * given folder.
 	 * 
@@ -550,6 +453,7 @@ public class TextGridExporter {
 	 * 
 	 * @throws IOException
 	 */
+	@Deprecated
 	public void exportTextGrids(Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, String outputFolder) 
 		throws IOException {
 		final File folder = new File(outputFolder);
@@ -563,37 +467,47 @@ public class TextGridExporter {
 		for(int i = 0; i < session.getRecordCount(); i++) {
 			final Record utt = session.getRecord(i);
 			if(recordFilter.checkRecord(utt)) {
-				// export text grid
-				final TextGrid tg = new TextGrid();
-				setupTextGrid(utt, tg, exports);
-				
-				// save text grid to file
-				final String tgFilename = 
-						utt.getUuid().toString() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "") + ".TextGrid";
-				final File tgFile = new File(folder, tgFilename);
-				
-				TextGridManager.saveTextGrid(tg, tgFile);
+				try {
+					// export text grid
+					final TextGrid tg = new TextGrid();
+					setupTextGrid(utt, tg, exports);
+					
+					// save text grid to file
+					final String tgFilename = 
+							utt.getUuid().toString() + (utt.getSpeaker() != null ? utt.getSpeaker().getName() : "") + ".TextGrid";
+					final File tgFile = new File(folder, tgFilename);
+					
+					TextGridManager.saveTextGrid(tg, tgFile);
+				} catch (PraatException pe) {
+					throw new IOException(pe);
+				}
 			}
 		}
 	}
 	
-	public void exportTextGrids(Project project, Session session, RecordFilter recordFilter, List<TextGridExportEntry> exports, boolean overwrite) 
+	@Deprecated
+	public void exportTextGrids(Project project, Session session,
+			RecordFilter recordFilter, List<TextGridExportEntry> exports, boolean overwrite) 
 		throws IOException {
 		final TextGridManager tgManager = new TextGridManager(project);
 		
 		for(int i = 0; i < session.getRecordCount(); i++) {
 			final Record utt = session.getRecord(i);
 			if(recordFilter.checkRecord(utt)) {
-				TextGrid tg = tgManager.loadTextGrid(utt.getUuid().toString());
-				if(tg != null && !overwrite) {
-					continue;
+				try {
+					TextGrid tg = tgManager.loadTextGrid(utt.getUuid().toString());
+					if(tg != null && !overwrite) {
+						continue;
+					}
+					
+					// export text grid
+					tg = createEmptyTextGrid(utt);
+					setupTextGrid(utt, tg, exports);
+					
+					tgManager.saveTextGrid(tg, utt.getUuid().toString());
+				} catch (PraatException pe) {
+					throw new IOException(pe);
 				}
-				
-				// export text grid
-				tg = createEmptyTextGrid(utt);
-				setupTextGrid(utt, tg, exports);
-				
-				tgManager.saveTextGrid(tg, utt.getUuid().toString());
 			}
 		}
 	}
@@ -648,7 +562,11 @@ public class TextGridExporter {
 				// export text grid
 				if(tg == null || (tg != null && !copyExisting)) {
 					tg = createEmptyTextGrid(utt);
-					setupTextGrid(utt, tg, exports);
+					try {
+						setupTextGrid(utt, tg, exports);
+					} catch (PraatException pe) {
+						throw new IOException(pe);
+					}
 				}
 				
 				// save text grid to file
@@ -689,14 +607,31 @@ public class TextGridExporter {
 	 * @param utt
 	 * @param textgrid
 	 */
-	public void setupTextGrid(Project project, Record utt, TextGrid textgrid) {
+	public void setupTextGrid(Project project, Record utt, TextGrid textgrid) 
+		throws PraatException {
 		final List<TextGridExportEntry> exports = getExports(project);
 		setupTextGrid(utt, textgrid, exports);
 	}
 	
-	public void setupTextGrid(Record utt, TextGrid textgrid, List<TextGridExportEntry> exports) {
+	public void setupTextGrid(Record utt, TextGrid textgrid, List<TextGridExportEntry> exports)
+		throws PraatException {
+		setupTextGridTiers(textgrid, exports);
 		for(TextGridExportEntry entry:exports) {
 			addTierToTextGrid(utt, textgrid, entry);
+		}
+	}
+	
+	public void setupTextGridTiers(TextGrid textGrid, List<TextGridExportEntry> exports)
+		throws PraatException {
+		// setup tiers
+		for(TextGridExportEntry exportEntry:exports) {
+			final IntervalTier intervalTier = IntervalTier
+					.create(textGrid.getXmin(), textGrid.getXmax());
+			// remove default interval
+			intervalTier.removeInterval(1);
+			intervalTier.setName(exportEntry.getTextGridTier());
+			intervalTier.setForgetOnFinalize(false);
+			textGrid.addTier(intervalTier);
 		}
 	}
 	

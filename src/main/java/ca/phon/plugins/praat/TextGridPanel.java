@@ -157,19 +157,19 @@ public class TextGridPanel extends EditorView {
 		return retVal;
 	}
 
-	private TextGrid generateTextGrid() {
-		final TextGridExporter tgExporter = new TextGridExporter();
-		final TextGrid retVal = tgExporter.createEmptyTextGrid(getEditor().currentRecord());
-
-		final SessionEditor model = getEditor();
-		// create some default tiers
-		tgExporter.setupTextGrid(model.getProject(), model.currentRecord(), retVal);
-		
-		// save text grid to file
-		saveTextGrid(retVal);
-		
-		return retVal;
-	}
+//	private TextGrid generateTextGrid() {
+//		final TextGridExporter tgExporter = new TextGridExporter();
+//		final TextGrid retVal = tgExporter.createEmptyTextGrid(getEditor().currentRecord());
+//
+//		final SessionEditor model = getEditor();
+//		// create some default tiers
+//		tgExporter.setupTextGrid(model.getProject(), model.currentRecord(), retVal);
+//		
+//		// save text grid to file
+//		saveTextGrid(retVal);
+//		
+//		return retVal;
+//	}
 
 	/**
 	 * Look for the text grid in project resources.

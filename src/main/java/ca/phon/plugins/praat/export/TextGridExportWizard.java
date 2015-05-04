@@ -36,6 +36,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 
 import org.jdesktop.swingx.JXBusyLabel;
 import org.jdesktop.swingx.VerticalLayout;
@@ -44,6 +45,7 @@ import ca.phon.app.session.RecordFilterPanel;
 import ca.phon.app.session.SessionSelector;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.SessionEditor;
+import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.TextGridViewer;
 import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
@@ -51,8 +53,6 @@ import ca.phon.session.Session;
 import ca.phon.session.SessionPath;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.text.FileSelectionField;
-import ca.phon.ui.text.FileSelectionField.SelectionMode;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardFrame;
 import ca.phon.ui.wizard.WizardStep;
@@ -77,16 +77,16 @@ public class TextGridExportWizard extends WizardFrame {
 	
 	private RecordFilterPanel recordFilterPanel;
 	
-	private FileSelectionField outputFolderField;
+	private JTextField nameField;
 	
 	private ExportEntryCheckboxTree exportsTree;
 	
 	/*
 	 * radio buttons for selection output location
 	 */
-	private ButtonGroup exportLocationGroup;
-	private JRadioButton forProjectButton;
-	private JRadioButton toFolderButton;
+	private ButtonGroup nameGroup;
+	private JRadioButton defaultNameButton;
+	private JRadioButton customNameButton;
 	
 	/*
 	 * overwrite/use existing TextGrids
@@ -204,42 +204,40 @@ public class TextGridExportWizard extends WizardFrame {
 		overwriteBox = new JCheckBox();
 		overwriteBox.setText(OVERWRITE_MESSAGE);
 		
-		outputFolderField = new FileSelectionField();
-		outputFolderField.setMode(SelectionMode.FOLDERS);
-		outputFolderField.setEnabled(false);
+		nameField = new JTextField();
+		nameField.setEnabled(false);
 		
-		forProjectButton = new JRadioButton("Save TextGrids in project resources (i.e., __res/plugin_data/textgrid/data)");
-		toFolderButton = new JRadioButton("Save TextGrids in external folder (select below)");
-		forProjectButton.setSelected(true);
+		defaultNameButton = new JRadioButton("Save as default TextGrid for session (__res/textgrids/.../default.TextGrid)");
+		customNameButton = new JRadioButton("Save TextGrid with custom name");
+		defaultNameButton.setSelected(true);
 
-		forProjectButton.addActionListener(new ActionListener() {
+		defaultNameButton.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				boolean state = forProjectButton.isSelected();
+				boolean state = defaultNameButton.isSelected();
 				if(state) {
-					overwriteBox.setText(OVERWRITE_MESSAGE);
-					outputFolderField.setEnabled(false);
+					nameField.setEnabled(false);
 				}
 			}
 			
 		});
 		
-		toFolderButton.addActionListener(new ActionListener() {
+		customNameButton.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				boolean state = toFolderButton.isSelected();
+				boolean state = customNameButton.isSelected();
 				if(state) {
 					overwriteBox.setText(USE_MESSAGE);
-					outputFolderField.setEnabled(true);
+					nameField.setEnabled(true);
 				}
 			}
 		});
 		
-		exportLocationGroup = new ButtonGroup();
-		exportLocationGroup.add(toFolderButton);
-		exportLocationGroup.add(forProjectButton);
+		nameGroup = new ButtonGroup();
+		nameGroup.add(defaultNameButton);
+		nameGroup.add(customNameButton);
 		
 		final TextGridExporter exporter = new TextGridExporter();
 		exportsTree = new ExportEntryCheckboxTree(session);
@@ -250,9 +248,9 @@ public class TextGridExportWizard extends WizardFrame {
 		final JPanel topPanel = new JPanel();
 		topPanel.setLayout(new VerticalLayout());
 		topPanel.setBorder(BorderFactory.createTitledBorder("Options"));
-		topPanel.add(forProjectButton);
-		topPanel.add(toFolderButton);
-		topPanel.add(outputFolderField);
+		topPanel.add(defaultNameButton);
+		topPanel.add(customNameButton);
+		topPanel.add(nameField);
 		topPanel.add(overwriteBox);
 		
 		final JPanel centerPanel = new JPanel();
@@ -373,27 +371,24 @@ public class TextGridExportWizard extends WizardFrame {
 			}
 			
 			final TextGridExporter exporter = new TextGridExporter();
-			try {
-				if(forProjectButton.isSelected()) {
-					exporter.exportTextGrids(getProject(), getSession(), 
-							getRecordFilter(), exportsTree.getSelectedExports(), overwriteBox.isSelected()); 
-					
-					if(editor != null) {
-						final EditorEvent ee = new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, 
-								this, editor.getCurrentRecordIndex());
-						editor.getEventManager().queueEvent(ee);
-					}
-				} else {
-					exporter.exportTextGrids(getProject(), getSession(), getRecordFilter(),
-							exportsTree.getSelectedExports(), outputFolderField.getSelectedFile().getAbsolutePath(), overwriteBox.isSelected());
-				}
-			} catch (IOException e) {
-				super.err = e;
-				super.setStatus(TaskStatus.ERROR);
-				return;
+			String name = TextGridManager.DEFAULT_TEXTGRID_NAME;
+			if(customNameButton.isSelected()) {
+				name = nameField.getText();
 			}
+			name = name.trim();
 			
-			super.setStatus(TaskStatus.FINISHED);
+			try {
+				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name);
+				if(editor != null) {
+					final EditorEvent ee = new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, 
+							this, editor.getCurrentRecordIndex());
+					editor.getEventManager().queueEvent(ee);
+				}
+				super.setStatus(TaskStatus.FINISHED);
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				ToastFactory.makeToast(e.getLocalizedMessage()).start(TextGridExportWizard.this);
+			}
 		}
 		
 	};

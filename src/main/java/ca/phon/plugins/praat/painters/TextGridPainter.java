@@ -121,10 +121,6 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 				double textX = labelRect.getCenterX() - textBounds.getCenterX();
 				double textY = labelRect.getCenterY() - textBounds.getCenterY();
 				
-				if(labelText.length() > 10) {
-					System.out.println(textX + " " + textY);
-				}
-				
 				g2d.drawString(labelText, (float)textX, (float)textY);
 			}
 		}
