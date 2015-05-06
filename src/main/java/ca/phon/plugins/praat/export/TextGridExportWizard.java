@@ -93,8 +93,7 @@ public class TextGridExportWizard extends WizardFrame {
 	 */
 	private JCheckBox overwriteBox;
 	
-	private final static String OVERWRITE_MESSAGE = "Overwrite existing TextGrids";
-	private final static String USE_MESSAGE = "Copy existing TextGrids";
+	private final static String OVERWRITE_MESSAGE = "Keep existing data for records";
 	
 	/*
 	 * Wizard steps
@@ -229,7 +228,6 @@ public class TextGridExportWizard extends WizardFrame {
 			public void actionPerformed(ActionEvent e) {
 				boolean state = customNameButton.isSelected();
 				if(state) {
-					overwriteBox.setText(USE_MESSAGE);
 					nameField.setEnabled(true);
 				}
 			}
@@ -378,7 +376,8 @@ public class TextGridExportWizard extends WizardFrame {
 			name = name.trim();
 			
 			try {
-				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name);
+				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name,
+						overwriteBox.isSelected());
 				if(editor != null) {
 					final EditorEvent ee = new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, 
 							this, editor.getCurrentRecordIndex());

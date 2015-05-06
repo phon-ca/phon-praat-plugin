@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
@@ -412,34 +413,100 @@ public class TextGridExporter {
 	 * @param recordFilter
 	 * @param exports
 	 * @param name
-	 * @param keepCurrent
+	 * @param keepExisting
 	 * 
 	 * @throws IOException
 	 */
 	public void generateTextGrid(Project project, Session session, RecordFilter recordFilter,
-			List<TextGridExportEntry> exports, String name) throws IOException {
+			List<TextGridExportEntry> exports, String name, boolean keepExisting) throws IOException {
 		// get audio file
 		final File audioFile = getAudioFile(project, session);
 		if(audioFile == null) throw new IOException("Unable to open audio");
 		
 		final Sampled sampled = new PCMSampled(audioFile);
+		if(sampled.getLength() == 0) throw new IOException("Unable to read audio file");
+		
+		final TextGridManager manager = new TextGridManager(project);
+		TextGrid oldTextGrid = null;
+		if(keepExisting) {
+			try {
+				oldTextGrid = manager.openTextGrid(session.getCorpus(), session.getName(), name);
+			} catch (IOException e) {
+				// no previous textgrid available
+			}
+		}
 		
 		try {
 			final TextGrid textGrid = TextGrid.createWithoutTiers(0.0, (double)sampled.getLength());
 			setupTextGridTiers(textGrid, exports);
 			
-			session.getRecords().forEach( (Record record) -> {
-				if(recordFilter != null && !recordFilter.checkRecord(record)) return;
+			for(Record record:session.getRecords()) {
+				if(keepExisting && oldTextGrid != null) {
+					try {
+						if(copyRecordData(oldTextGrid, textGrid, record))
+							continue;
+					} catch (PraatException e) {
+						
+					}
+				}
+				if(recordFilter != null && !recordFilter.checkRecord(record)) continue;
+				
 				exports.forEach( (TextGridExportEntry entry) -> {
 					addTierToTextGrid(record, textGrid, entry);
 				} );
-			} );
+			}
 			
-			final TextGridManager manager = new TextGridManager(project);
 			manager.saveTextGrid(session.getCorpus(), session.getName(), textGrid, name);
 		} catch (PraatException pe) {
 			throw new IOException(pe);
 		}
+	}
+	
+	/**
+	 * Copy textgrid data from the old textgrid object to the new one.
+	 * Will only copy tiers which exist in the new textgrid.  The method
+	 * returns true if any TextGrid data is copied, <code>false</code> 
+	 * otherwise.
+	 * 
+	 * @param oldTextGrid
+	 * @param textGrid
+	 * @param record
+	 * 
+	 * throws PraatException
+	 */
+	private boolean copyRecordData(TextGrid oldTextGrid, TextGrid textGrid, Record record)
+		throws PraatException {
+		boolean retVal = false;
+		
+		final MediaSegment mediaSeg = record.getSegment().getGroup(0);
+		if(mediaSeg == null || 
+				(mediaSeg.getEndValue() - mediaSeg.getStartValue()) <= 0) {
+			return retVal;
+		}
+		
+		double startTime = mediaSeg.getStartValue() / 1000.0;
+		double endTime = mediaSeg.getEndValue() / 1000.0;
+		
+		final TextGrid recordTextGrid = oldTextGrid.extractPart(startTime, endTime, 1);
+		for(long tierIdx = 1; tierIdx <= recordTextGrid.numberOfTiers(); tierIdx++) {
+			try {
+				final IntervalTier oldTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+				final IntervalTier newTier = findIntervalTier(textGrid, oldTier.getName().toString());
+				
+				if(newTier != null) {
+					for(long intervalIdx = 1; intervalIdx <= oldTier.numberOfIntervals(); intervalIdx++) {
+						final TextInterval oldInterval = oldTier.interval(intervalIdx);
+						newTier.addInterval(oldInterval.getXmin(), oldInterval.getXmax(), oldInterval.getText());
+						retVal = true;
+					}
+				}
+			} catch (PraatException pe) {
+				final TextTier oldTier = recordTextGrid.checkSpecifiedTierIsPointTier(tierIdx);
+				// TODO copy point tier data
+			}
+		}
+		
+		return retVal;
 	}
 	
 	/**
