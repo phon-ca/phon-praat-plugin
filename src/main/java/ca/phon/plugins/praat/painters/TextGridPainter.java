@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
@@ -39,6 +40,8 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 	private final static Logger LOGGER = Logger.getLogger(TextGridPainter.class.getName());
 	
 	private List<String> hiddenTiers = new ArrayList<>();
+
+	private boolean paintTierLabels = false;
 	
 	private double startTime = 0.0;
 	
@@ -57,6 +60,14 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		hiddenTiers.add(tierName);
 	}
 	
+	public boolean isPaintTierLabels() {
+		return paintTierLabels;
+	}
+
+	public void setPaintTierLabels(boolean paintTierLabels) {
+		this.paintTierLabels = paintTierLabels;
+	}
+
 	@Override
 	protected void paintBuffer(TextGrid obj, Graphics2D g2d, Rectangle2D bounds) {
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -89,6 +100,27 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		}
 	}
 	
+	public void paintTierLabel(Function tier, Graphics2D g2d, Rectangle2D bounds) {
+		final String name = (tier.getName() != null ? tier.getName().toString() : "");
+		if(name.length() > 0) {
+			// get bounding rectangle of tier name
+			Rectangle2D tierNameBounds = g2d.getFontMetrics().getStringBounds(name, g2d);
+			
+			// create a rounded rectangle
+			Rectangle2D labelRect = new Rectangle2D.Double(bounds.getX(), bounds.getY(), tierNameBounds.getWidth() + 20, 
+					tierNameBounds.getHeight());
+			final Color tierBgColor = new Color(255, 255, 0, 120);
+			g2d.setColor(tierBgColor);
+			g2d.fill(labelRect);
+			g2d.setColor(Color.darkGray);
+			g2d.draw(labelRect);
+			
+			g2d.setColor(Color.black);
+			g2d.drawString(name, (float)bounds.getX() + 10,
+					(float)(bounds.getY() + (float)tierNameBounds.getHeight() - g2d.getFontMetrics().getDescent()) );
+		}
+	}
+	
 	public void paintIntervalTier(IntervalTier intervalTier, Graphics2D g2d, Rectangle2D bounds) {
 		double contentWidth = bounds.getWidth();
 		double tgLen = intervalTier.getXmax() - intervalTier.getXmin();
@@ -116,14 +148,17 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 			final Rectangle2D textBounds = 
 					g2d.getFontMetrics().getStringBounds(labelText, g2d);
 			
+			g2d.setColor(Color.black);
 			if(textBounds.getWidth() <= labelRect.getWidth()) {
 				// center text
 				double textX = labelRect.getCenterX() - textBounds.getCenterX();
 				double textY = labelRect.getCenterY() - textBounds.getCenterY();
-				
 				g2d.drawString(labelText, (float)textX, (float)textY);
 			}
 		}
+		
+		if(paintTierLabels)
+			paintTierLabel(intervalTier, g2d, bounds);
 	}
 	
 	public void paintPointTier(TextTier textTier, Graphics2D g2d, Rectangle2D bounds) {
