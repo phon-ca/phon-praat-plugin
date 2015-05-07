@@ -19,3 +19,6 @@ View & Edit with callback: "localhost:$socket"
 #else
 View & Edit
 #end
+
+editor: "TextGrid $textGridName"
+	Zoom... start end
