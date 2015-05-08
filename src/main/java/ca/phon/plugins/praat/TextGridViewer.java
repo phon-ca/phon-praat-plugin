@@ -78,9 +78,11 @@ import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
 import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
+import ca.phon.session.Record;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
+import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.fonts.FontPreferences;
@@ -96,6 +98,10 @@ import ca.phon.util.icons.IconSize;
  */
 public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
+	/*
+	 * Editor event
+	 * data - String name of textGrid
+	 */
 	public static final String TEXT_GRID_CHANGED_EVENT = 
 			TextGridViewer.class.getName() + ".textGridChangedEvent";
 	
@@ -166,12 +172,58 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			}
 		} else {
 			setTextGrid(null);
+			
+			final HidablePanel textGridMessage = new HidablePanel(TextGridViewer.class.getName() + ".showMergeMessage");
+			textGridMessage.setTopLabelText("<html><b>No TextGrid found for Session</b></html>");
+			boolean hasRecordTextGrids = hasOldTextGridFiles();
+			if(hasRecordTextGrids) {
+				// Deal with older TextGrid setups.  Check to see if there are TextGrids available for the
+				// individual records of a session.  If so, show a message prompting the user to 'merge'
+				// the old TextGrid files.
+				
+				final PhonUIAction mergeAct = new PhonUIAction(this, "mergeOldTextGrids");
+				mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
+				mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
+				mergeAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
+				mergeAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
+				
+				textGridMessage.setDefaultAction(mergeAct);
+				textGridMessage.addAction(mergeAct);
+				
+				textGridMessage.setBottomLabelText("<html>TextGrid files in an older format were found for this Session.  "
+						+ " Click here to import these files as the default TextGrid for this session.");
+			} else {
+				// show a message to open the Generate TextGrid wizard
+				final PhonUIAction generateAct = new PhonUIAction(this, "onGenerateTextGrid");
+				generateAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+				generateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for Session");
+				generateAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
+				
+				textGridMessage.setDefaultAction(generateAct);
+				textGridMessage.addAction(generateAct);
+				
+				textGridMessage.setBottomLabelText("<html>Click here to generate a TextGrid for this session.</html>");
+			}
+			contentPane.add(textGridMessage, BorderLayout.CENTER);
 		}
 		
 		// setup toolbar buttons
 		setupToolbar();
 		
 		setupEditorActions();
+	}
+	
+	private boolean hasOldTextGridFiles() {
+		boolean hasRecordTextGrids = false;
+		for(Record r:parent.getEditor().getSession().getRecords()) {
+			final String recordTgPath = tgManager.textGridPath(r.getUuid().toString());
+			final File recordTgFile = new File(recordTgPath);
+			if(recordTgFile.exists()) {
+				hasRecordTextGrids = true;
+				break;
+			}
+		}
+		return hasRecordTextGrids;
 	}
 	
 	private void setupEditorActions() {
@@ -222,6 +274,22 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			comp.setEnabled(enabled);
 		}
 		super.setEnabled(enabled);
+	}
+	
+	public void mergeOldTextGrids() {
+		final Session session = parent.getEditor().getSession();
+		try {
+			final TextGrid mergedTextGrid = tgManager.mergeTextGrids(session);
+			tgManager.saveTextGrid(session.getCorpus(), session.getName(),
+					mergedTextGrid, TextGridManager.DEFAULT_TEXTGRID_NAME);
+			
+			contentPane.removeAll();
+			currentTextGridName = TextGridManager.DEFAULT_TEXTGRID_NAME;
+			setTextGrid(mergedTextGrid);
+		} catch (IOException e) {
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
 	}
 	
 	public void onGenerateTextGrid() {
@@ -429,10 +497,24 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	@RunOnEDT
 	public void onTextGridChanged(EditorEvent ee) {
-		if(ee.getEventData() != null && ee.getEventData() instanceof Integer) {
-			final int rIdx = (Integer)ee.getEventData();
-			if(rIdx == parent.getEditor().getCurrentRecordIndex())
-				update();
+		if(ee.getEventData() != null && ee.getEventData() instanceof String) {
+			final String name = ee.getEventData().toString();
+		
+			if(currentTextGridName == null || !currentTextGridName.equals(name)) {
+				// load TextGrid
+				final Session session = parent.getEditor().getSession();
+				try {
+					contentPane.removeAll();
+					
+					final TextGrid tg = tgManager.openTextGrid(session.getCorpus(), session.getName(), name);
+					currentTextGridName = name;
+					setTextGrid(tg);
+				} catch (IOException e) {
+					ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				}
+			}
+			update();
 		}
 	}
 	
@@ -536,7 +618,17 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					textGridMenu.add(showTgAct);
 				}
 				
-				if(textGridMenu.getItemCount() > 0) textGridMenu.addSeparator();
+				if(textGridMenu.getItemCount() > 0) {
+					textGridMenu.addSeparator();
+				} else {
+					// add an item to merge previous textgrids
+					if(hasOldTextGridFiles()) {
+						final PhonUIAction mergeAct = new PhonUIAction(TextGridViewer.this, "mergeOldTextGrids");
+						mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
+						mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
+						textGridMenu.add(mergeAct);
+					}
+				}
 				
 				try {
 					final PhonUIAction showTextGridFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL");
@@ -658,19 +750,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			g2.fillRect(0, 0, getWidth(), getHeight());
 			
 			final PCMSegmentView wavDisplay = parent.getWavDisplay();
+			final int width = getWidth();
 			final int height = getHeight();
-			
-			final double segX1 = wavDisplay.modelToView(wavDisplay.getSegmentStart());
-			final double segX2 = 
-							wavDisplay.modelToView(wavDisplay.getSegmentStart()+wavDisplay.getSegmentLength());
-			
-			final Rectangle2D contentRect = new Rectangle2D.Double(
-					segX1, 0, segX2-segX1, height);
-			
-			if((int)contentRect.getWidth() <= 0
-					|| (int)contentRect.getHeight() <= 0) {
-				return;
-			}
 			
 			if(tg != null) {
 				// get text grid for visible rect
@@ -690,8 +771,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				double x1 = wavDisplay.modelToView(wavDisplay.getSelectionStart());
 				double x2 = wavDisplay.modelToView(wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength());
 				
-				Rectangle2D selRect = new Rectangle2D.Double(x1, contentRect.getY(), x2-x1, 
-								contentRect.getHeight());
+				Rectangle2D selRect = new Rectangle2D.Double(x1, 0, x2-x1, 
+								height);
 				
 				g2.setColor(parent.getWavDisplay().getSelectionColor());
 				g2.fill(selRect);
@@ -701,7 +782,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				Color disabledColor = new Color(200, 200, 200, 120);
 				g2.setColor(disabledColor);
 				
-				g2.fillRect(0, 0, getWidth(), getHeight());
+				g2.fillRect(0, 0, width, height);
 			}
 		}
 		

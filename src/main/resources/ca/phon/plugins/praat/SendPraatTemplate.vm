@@ -11,6 +11,7 @@ $segment				ca.phon.session.MediaSegment				Media segment for current record
 $selection			ca.phon.session.MediaSegment				Selection in waveform view (if any)
 $audioPath			java.lang.String						Path to audio file for session
 $textGridPath			java.lang.String						Path to TextGrid for record
+$textGridName			java.lang.String				Name of TextGrid
 $spectrogramSettings	ca.phon.plugins.praat.SpectrogramSettings	Current spectrogram settings
 $formantSettings		ca.phon.plugins.praat.FormantSettings		Current formant settings
 $pitchSettings			ca.phon.plugins.praat.PitchSettings		Current pitch settings

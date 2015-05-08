@@ -380,13 +380,13 @@ public class TextGridExportWizard extends WizardFrame {
 						overwriteBox.isSelected());
 				if(editor != null) {
 					final EditorEvent ee = new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, 
-							this, editor.getCurrentRecordIndex());
+							this, name);
 					editor.getEventManager().queueEvent(ee);
 				}
 				super.setStatus(TaskStatus.FINISHED);
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				ToastFactory.makeToast(e.getLocalizedMessage()).start(TextGridExportWizard.this);
+				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
 			}
 		}
 		

@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
@@ -78,7 +79,8 @@ public class TextGridExporter {
 	/**
 	 * Location of text grid export defaults
 	 */
-	private final static String EXPORT_DEFAULTS = "__res/plugin_data/textgrid/exportdefaults.xml";
+	private final static String EXPORT_DEFAULTS = "__res" + File.separator + 
+		"textgrids" + File.separator + "exportdefaults.xml";
 	
 	/**
 	 * Export phon tier to textgrid 
@@ -100,6 +102,20 @@ public class TextGridExporter {
 				}
 			} catch (PraatException pe) {
 				// ignore, could be just a point tier
+			}
+		}
+		return null;
+	}
+	
+	public TextTier findPointTier(TextGrid textGrid, String tgName) {
+		for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
+			try {
+				TextTier tt = textGrid.checkSpecifiedTierIsPointTier(i);
+				if(tt.getName().toString().equals(tgName)) {
+					return tt;
+				}
+			} catch (PraatException pe) {
+				// ignore, could be just an interval tier
 			}
 		}
 		return null;
@@ -399,8 +415,6 @@ public class TextGridExporter {
 		double endTime = (double)(seg.getEndValue() / 1000.0);
 		if(startTime < textGrid.getXmin() || endTime > textGrid.getXmax()) return;
 		
-		// TODO check old TextGrid for intervals at this time
-		
 		for(TextGridExportEntry entry:exports) {
 			addTierToTextGrid(record, textGrid, entry);
 		}
@@ -502,7 +516,15 @@ public class TextGridExporter {
 				}
 			} catch (PraatException pe) {
 				final TextTier oldTier = recordTextGrid.checkSpecifiedTierIsPointTier(tierIdx);
-				// TODO copy point tier data
+				final TextTier newTier = findPointTier(textGrid, oldTier.getName().toString());
+				
+				if(newTier != null) {
+					for(long pointIdx = 1; pointIdx <= oldTier.numberOfPoints(); pointIdx++) {
+						final TextPoint textPoint = oldTier.point(pointIdx);
+						newTier.addPoint(textPoint.getNumber(), textPoint.getText());
+						retVal = true;
+					}
+				}
 			}
 		}
 		
