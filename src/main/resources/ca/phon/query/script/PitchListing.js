@@ -5,6 +5,7 @@ params =
 */
 importClass(java.util.concurrent.atomic.AtomicReference)
 
+var TextGridNameOptions = require("lib/TextGridNameOptions").TextGridNameOptions;
 var PitchOptions = require("lib/PitchOptions").PitchOptions;
 var GroupFilter = require("lib/GroupFilter").GroupFilter;
 var AlignedGroupFilter = require("lib/TierFilter").TierFilter;
@@ -20,6 +21,7 @@ var PatternType = require("lib/PatternFilter").PatternType;
  *******************************/
 
 var filters = {
+	"textGridName" : new TextGridNameOptions("filters.textGridName"),
     "primary": new PatternFilter("filters.primary"),
     "pitchOpts": new PitchOptions("filters.pitchOpts"),
     "group": new GroupFilter("filters.group"),
@@ -36,6 +38,8 @@ var filters = {
 function setup_params(params) {
 	filters.primary.setSelectedPatternType(PatternType.PHONEX);
 	filters.primary.param_setup(params);
+	
+	filters.textGridName.param_setup(params);
 
 	var pitchSep = new SeparatorScriptParam("Pitch Options", false);
 	params.add(pitchSep);
@@ -82,6 +86,7 @@ importPackage(Packages.ca.phon.media.util)
  */
 var session;
 var textGridManager;
+var textGrid;
 var longSound;
 
 var printedTableHeader = false;
@@ -127,14 +132,34 @@ function begin_search(s) {
 		var mf = MelderFile.fromPath(wavPath);
 		longSound = LongSound.open(mf);
 	}
+	
+	try {
+		tgName = (filters.textGridName.name.length() > 0 ? filters.textGridName.name : textGridManager.defaultTextGridName(s.corpus, s.name));
+		textGrid = textGridManager.openTextGrid(s.corpus, s.name, tgName);
+		if(textGrid == null) {
+			err.println("No TextGrid found for session with name " + tgName);
+		}
+	} catch (e) {
+		err.println(e.message);
+	}
 }
 
 function annotateRecord(r) {
-	tg = textGridManager.loadTextGrid(r.uuid.toString());
-	if(tg == null) {
-		err.println( "No text grid for record " + r.uuid);
-		return;
-	}
+	if(textGrid == null) return;
+	
+	// extract record from textgrid
+	if(r.segment.numberOfGroups() == 0) return;
+	mediaSeg = r.segment.getGroup(0);
+	
+	startTime = r.startTime / 1000.0;
+	endTime = r.endTime / 1000.0;
+	if(endTime - startTime <= 0) return;
+	
+	if(startTime <= textGrid.xmin || endTime >= textGrid.xmax) return;
+	
+	tg = textGrid.extractPart(startTime, endTime, 1);
+	if(tg == null) return;
+	
 	tga = new TextGridAnnotator();
 	tga.annotateRecord(tg, r);
 }
