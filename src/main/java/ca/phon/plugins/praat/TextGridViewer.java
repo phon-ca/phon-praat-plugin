@@ -172,7 +172,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			setTextGrid(null);
 			
 			final HidablePanel textGridMessage = new HidablePanel(TextGridViewer.class.getName() + ".showMergeMessage");
-			textGridMessage.setTopLabelText("<html><b>No TextGrid found for Session</b></html>");
+			textGridMessage.setTopLabelText("<html><b>No TextGrid found</b></html>");
 			boolean hasRecordTextGrids = hasOldTextGridFiles();
 			if(hasRecordTextGrids) {
 				// Deal with older TextGrid setups.  Check to see if there are TextGrids available for the
@@ -189,7 +189,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				textGridMessage.addAction(mergeAct);
 				
 				textGridMessage.setBottomLabelText("<html>TextGrid files in an older format were found for this Session.  "
-						+ " Click here to import these files as the default TextGrid for this session.");
+						+ " Click here to merge these files as the default TextGrid.");
 			} else {
 				// show a message to open the Generate TextGrid wizard
 				final PhonUIAction generateAct = new PhonUIAction(this, "onGenerateTextGrid");
@@ -200,7 +200,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				textGridMessage.setDefaultAction(generateAct);
 				textGridMessage.addAction(generateAct);
 				
-				textGridMessage.setBottomLabelText("<html>Click here to generate a TextGrid for this session.</html>");
+				textGridMessage.setBottomLabelText("<html>Click here to generate a TextGrid.</html>");
 			}
 			contentPane.add(textGridMessage, BorderLayout.CENTER);
 		}
