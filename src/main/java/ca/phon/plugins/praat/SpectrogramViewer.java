@@ -307,6 +307,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				
 				if(!wasCanceled.get()) {
 					spectrogramSettings = settingsPanel.getSettings();
+					spectrogramPainter.setRepaintBuffer(true);
 				}
 				
 				setStatus(TaskStatus.FINISHED);
@@ -390,6 +391,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		if(!wasCanceled.get()) {
 			formantSettings = settingsPanel.getSettings();
+			formantPainter.setRepaintBuffer(true);
 			update();
 		}
 	}
@@ -449,6 +451,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		if(!wasCanceled.get()) {
 			pitchSettings = settingsPanel.getSettings();
+			pitchPainter.setRepaintBuffer(true);
 			update();
 		}
 	}
@@ -508,6 +511,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		if(!wasCanceled.get()) {
 			intensitySettings = settingsPanel.getSettings();
+			intensityPainter.setRepaintBuffer(true);
 			update();
 		}
 	}
