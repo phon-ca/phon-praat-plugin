@@ -23,6 +23,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -33,10 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,7 +85,6 @@ import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.fonts.FontPreferences;
-import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.OpenFileLauncher;
 import ca.phon.util.PrefHelper;
@@ -248,9 +246,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		return this.tg;
 	}
 	
-	private final List<TextGridTierComponent> tiers = 
-			Collections.synchronizedList(new ArrayList<TextGridTierComponent>());
-	
 	private final PropertyChangeListener tierUpdater = new PropertyChangeListener() {
 		
 		@Override
@@ -261,8 +256,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		
 	};
 	
+	
 	private void setupTextGrid() {
-		tiers.clear();
 		tgPainter.setRepaintBuffer(true);
 		contentPane.revalidate();
 		contentPane.repaint();
@@ -270,10 +265,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	@Override
 	public void setEnabled(boolean enabled) {
-		for(TextGridTierComponent comp:tiers) {
-			comp.setEnabled(enabled);
-		}
 		super.setEnabled(enabled);
+		contentPane.setEnabled(enabled);
 	}
 	
 	public void mergeOldTextGrids() {
@@ -381,7 +374,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				
 				// lock textgrid if necessary
 				if(serverMap.containsKey(textGridName)) {
-					lock(serverMap.get(textGridName));
+					lock(textGridName);
 				} else {
 					unlock();
 				}
@@ -412,46 +405,49 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 
 		final MediaSegment media = segmentTier.getGroup(0);
 		
-		File tgFile = (currentTextGridName != null ? new File(tgManager.textGridPath(model.getSession().getCorpus(), model.getSession().getName(), currentTextGridName))
-				: tgManager.defaultTextGridFile(model.getSession().getCorpus(), model.getSession().getName()));
+		final Session session = parent.getEditor().getSession();
+		
+		final String tgName = (currentTextGridName != null ? currentTextGridName : 
+			tgManager.defaultTextGridName(session.getCorpus(), session.getName()));
+		File tgFile = new File(tgManager.textGridPath(session.getCorpus(), session.getName(), tgName));
 		String tgPath = (tgFile != null ? tgFile.getAbsolutePath() : "");
 		
 		final PraatScriptContext map = new PraatScriptContext();
 		final PraatScriptTcpServer server = new PraatScriptTcpServer();
-		server.setHandler(new TextGridTcpHandler(
-				(currentTextGridName != null ? tgManager.defaultTextGridName(model.getSession().getCorpus(), model.getSession().getName()) : currentTextGridName)));
+		server.setHandler(new TextGridTcpHandler(tgName));
 		
 		map.put("replyToPhon", Boolean.TRUE);
 		map.put("socket", server.getPort());
 		map.put("audioPath", mediaFile.getAbsolutePath());
 		map.put("textGridPath", tgPath);
-		map.put("textGridName", (currentTextGridName != null ? currentTextGridName : tgManager.defaultTextGridName(model.getSession().getCorpus(), model.getSession().getName())));
+		map.put("textGridName", tgName);
 		map.put("segment", media);
 		
 		try {
-			serverMap.put((currentTextGridName == null ? tgManager.defaultTextGridName(model.getSession().getCorpus(), model.getSession().getName()) : currentTextGridName), server);
-			lock(server);
 			server.startServer();
+			lock(tgName);
+			serverMap.put(tgName, server);
 			final PraatScript ps = new PraatScript(loadTextGridTemplate());
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
 			if(err != null && err.length() > 0) {
-				final Toast toast = ToastFactory.makeToast("Praat error: " + err);
-				toast.start(this);
+				throw new IOException(err);
 			}
 		} catch (IOException e) {
 			server.stop();
 			unlock();
-			ToastFactory.makeToast(e.getLocalizedMessage()).start();
+			serverMap.remove(tgName);
+			Toolkit.getDefaultToolkit().beep();
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(parent.getToolbar());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
 	
-	private void lock(PraatScriptTcpServer server) {
+	private void lock(String textGridName) {
 		contentPane.setEnabled(false);
 		
 		final JButton forceUnlockBtn = new JButton();
-		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", server);
+		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridName);
 		forceUnlockAct.putValue(PhonUIAction.NAME, "Unlock TextGrid");
 		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
 		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
@@ -466,11 +462,15 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	public void onForceUnlock(PhonActionEvent pae) {
 		contentPane.setEnabled(true);
 		
-		// stop server
-		final PraatScriptTcpServer server = (PraatScriptTcpServer)pae.getData();
-		server.stop();
+		final String textGridName = (pae.getData() != null ? pae.getData().toString() : "");
 		
-		serverMap.remove(parent.getEditor().currentRecord());
+		// stop server
+		final PraatScriptTcpServer server = serverMap.get(textGridName);
+		
+		if(server != null) {
+			server.stop();
+			serverMap.remove(textGridName);
+		}
 		
 		buttonPane.remove((JButton)pae.getActionEvent().getSource());
 		

@@ -145,7 +145,8 @@ public class PraatScriptTcpServer {
 		try {
 			serverSock.close();
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LOGGER.log(Level.INFO, "Forced closed socket " + serverSock.getLocalPort()
+					, e);
 		}
 		server.shutdown();
 	}
