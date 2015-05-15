@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,11 +80,17 @@ import ca.phon.session.Record;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
+import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.fonts.FontPreferences;
+import ca.phon.ui.nativedialogs.FileFilter;
+import ca.phon.ui.nativedialogs.NativeDialogEvent;
+import ca.phon.ui.nativedialogs.NativeDialogs;
+import ca.phon.ui.nativedialogs.OpenDialogProperties;
 import ca.phon.ui.toast.ToastFactory;
+import ca.phon.util.FileUtil;
 import ca.phon.util.OpenFileLauncher;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.IconManager;
@@ -533,6 +538,56 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		dlg.setVisible(true);
 	}
 	
+	public void onAddExistingTextGrid() {
+		final OpenDialogProperties props = new OpenDialogProperties();
+		props.setParentWindow(CommonModuleFrame.getCurrentFrame());
+		props.setCanChooseDirectories(false);
+		props.setCanChooseFiles(true);
+		props.setAllowMultipleSelection(false);
+		final FileFilter filter = new FileFilter("TextGrid files", "TextGrid");
+		props.setFileFilter(filter);
+		
+		props.setListener( (e) -> {
+			if(e.getDialogResult() == NativeDialogEvent.OK_OPTION) {
+				final String tgPath = (String)e.getDialogData();
+				final Session session = parent.getEditor().getSession();
+				
+				final File tgFile = new File(tgPath);
+				
+				int dotIdx = tgFile.getName().lastIndexOf('.');
+				final String tgName = tgFile.getName().substring(0, dotIdx);
+				
+				final File newFile = new File(tgManager.textGridPath(session.getCorpus(), session.getName(), tgName));
+				
+				// attempt to copy file
+				try {
+					if(!newFile.getParentFile().exists() && !newFile.getParentFile().mkdirs()) {
+						throw new IOException("Unable to create TextGrid folder");
+					}
+					FileUtil.copyFile(tgFile, newFile);
+					// select new TextGrid
+					showTextGrid(tgName);
+				} catch (IOException ex) {
+					LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
+				}
+			}
+		});
+		NativeDialogs.showOpenDialog(props);
+	}
+	
+	public void onShowTextGridFolder() {
+		final Session session = parent.getEditor().getSession();
+		try {
+			final File textGridFolder = new File(tgManager.textGridFolder(session.getCorpus(), session.getName()));
+			if(!textGridFolder.exists() && !textGridFolder.mkdirs()) {
+				throw new IOException("Unable to create TextGrid folder");
+			}
+			OpenFileLauncher.openURL(textGridFolder.toURI().toURL());
+		} catch (IOException e) {
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(parent.getToolbar());
+		}
+	}
+	
 	public void onToggleTextGrid() {
 		showTextGrid = !showTextGrid;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_TEXTGRID_PROP, showTextGrid);
@@ -630,15 +685,15 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					}
 				}
 				
-				try {
-					final PhonUIAction showTextGridFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL");
-					showTextGridFolderAct.setData((new File(tgManager.textGridFolder(session.getCorpus(), session.getName())).toURI().toURL()));
-					showTextGridFolderAct.putValue(PhonUIAction.NAME, "Show TextGrid folder");
-					showTextGridFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, tgManager.textGridFolder(session.getCorpus(), session.getName()));
-					textGridMenu.add(showTextGridFolderAct);
-				} catch (IllegalArgumentException | MalformedURLException ex) {
-					LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
-				}
+				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridViewer.this, "onAddExistingTextGrid");
+				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
+				addExistingTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Copy existing TextGrid to TextGrid folder for session");
+				textGridMenu.add(addExistingTextGridAct);
+				
+				final PhonUIAction showTextGridFolderAct = new PhonUIAction(TextGridViewer.this, "onShowTextGridFolder");
+				showTextGridFolderAct.putValue(PhonUIAction.NAME, "Show TextGrid folder");
+				showTextGridFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, tgManager.textGridFolder(session.getCorpus(), session.getName()));
+				textGridMenu.add(showTextGridFolderAct);
 			}
 			
 			@Override
