@@ -161,6 +161,11 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private Point currentPoint = null;
 	
+	private final static String DISPLAY_HEIGHT = "SpectrogramViewer.displayHeight";
+	private JComponent sizer;
+	private int displayHeight = 
+			PrefHelper.getInt(DISPLAY_HEIGHT, -1);
+	
 	public SpectrogramViewer(SpeechAnalysisEditorView p) {
 		super();
 		setVisible(showSpectrogram);
@@ -181,10 +186,15 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		setLayout(new BorderLayout());
 		contentPane = new SpectrogramPanel();
-		contentPane.setPreferredSize(new Dimension(
-				parent.getWidth(),  (int)(spectrogramSettings.getMaxFrequency() / 20)));
+		if(displayHeight < 0) {
+			displayHeight = (int)Math.ceil(spectrogramSettings.getMaxFrequency()  / 40);
+		}
+		Dimension prefSize = contentPane.getPreferredSize();
+		prefSize.height = displayHeight;
+		contentPane.setPreferredSize(prefSize);
+		
 		add(contentPane, BorderLayout.CENTER);
-		final JComponent sizer = new JSeparator(SwingConstants.HORIZONTAL);
+		sizer = new JSeparator(SwingConstants.HORIZONTAL);
 		sizer.setOpaque(true);
 		sizer.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
 		sizer.setPreferredSize(new Dimension(0, 5));
@@ -194,8 +204,15 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			@Override
 			public void mouseDragged(MouseEvent e) {
 				final Dimension currentSize = contentPane.getSize();
+				
 				final Dimension prefSize = contentPane.getPreferredSize();
 				prefSize.height = currentSize.height + e.getY();
+				if(prefSize.height < 0) prefSize.height = 0;
+				
+				displayHeight = prefSize.height;
+				
+				PrefHelper.getUserPreferences().putInt(DISPLAY_HEIGHT, displayHeight);
+				
 				contentPane.setPreferredSize(prefSize);
 				revalidate();
 			}
