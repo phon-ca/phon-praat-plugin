@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.binding.sys.Data;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
@@ -376,12 +377,17 @@ public class TextGridManager {
 			final String textGridPath = textGridPath(id);
 			final File textGridFile = new File(textGridPath);
 			if(textGridFile.exists()) {
-				TextGrid tg = loadTextGrid(textGridFile);
-
-				xmin = Math.min(xmin, tg.getXmin());
-				xmax = Math.max(xmax, tg.getXmax());
-				
-				textGrids.add(tg);
+				try {
+					TextGrid tg = loadTextGrid(textGridFile);
+	
+					xmin = Math.min(xmin, tg.getXmin());
+					xmax = Math.max(xmax, tg.getXmax());
+					
+					textGrids.add(tg);
+				} catch (IOException e) {
+					// TODO - show warning to user
+					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				}
 			}
 		}
 		
@@ -425,6 +431,34 @@ public class TextGridManager {
 					} catch (PraatException e) {
 						try {
 							TextTier pointTier = tg.checkSpecifiedTierIsPointTier(i);
+							
+							TextTier fullPointTier = null;
+							if(!pointTiers.keySet().contains(pointTier.getName().toString())) {
+								fullPointTier = TextTier.create(xmin, xmax);
+								// don't delete native tier object when reference goes out of scope
+								fullPointTier.setForgetOnFinalize(false);
+								fullPointTier.setName(pointTier.getName());
+								fullPointTier.removePoint(1);
+								
+								retVal.addTier(fullPointTier);
+								pointTiers.put(pointTier.getName().toString(), retVal.numberOfTiers());
+							}
+							Long tierNum = pointTiers.get(pointTier.getName().toString());
+							if(tierNum != null && tierNum > 0 && tierNum <= retVal.numberOfTiers()) {
+								try {
+									fullPointTier = retVal.checkSpecifiedTierIsPointTier(tierNum);
+								} catch (PraatException ex) {
+									LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
+								}
+							}
+							
+							if(fullPointTier != null) {
+								for(long j = 1; j < pointTier.numberOfPoints(); j++) {
+									TextPoint tp = pointTier.point(j);
+									fullPointTier.addPoint(tp.getNumber(), tp.getText());
+								}
+							}
+							
 						} catch (PraatException e1) {
 							LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
 						}
