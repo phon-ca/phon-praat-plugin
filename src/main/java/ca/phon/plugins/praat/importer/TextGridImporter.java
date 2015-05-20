@@ -165,7 +165,7 @@ public class TextGridImporter {
 					if(buffer.length() > 0) buffer.append(" ");
 					buffer.append(interval.getText());
 				} else {
-					if(i > 0) {
+					if(i > 1) {
 						String val = buffer.toString();
 						grpVals.add(val);
 						buffer.setLength(0);
