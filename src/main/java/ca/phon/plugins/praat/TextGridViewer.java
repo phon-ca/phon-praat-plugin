@@ -283,7 +283,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					mergedTextGrid, TextGridManager.DEFAULT_TEXTGRID_NAME);
 			
 			contentPane.removeAll();
-			currentTextGridName = TextGridManager.DEFAULT_TEXTGRID_NAME;
+			contentPane.add(buttonPane, BorderLayout.NORTH);
+			currentTextGridName = tgManager.defaultTextGridName(session.getCorpus(), session.getName());
 			setTextGrid(mergedTextGrid);
 		} catch (IOException e) {
 			ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
@@ -511,6 +512,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				final Session session = parent.getEditor().getSession();
 				try {
 					contentPane.removeAll();
+					contentPane.add(buttonPane, BorderLayout.NORTH);
 					
 					final TextGrid tg = tgManager.openTextGrid(session.getCorpus(), session.getName(), name);
 					currentTextGridName = name;
