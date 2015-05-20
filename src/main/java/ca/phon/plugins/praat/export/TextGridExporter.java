@@ -66,7 +66,7 @@ public class TextGridExporter {
 			.getLogger(TextGridExporter.class.getName());
 	
 	/** Default hash length in ms */
-	public final static float MARKER_LENGTH = 0.1f;
+	public final static float MARKER_MAX_LENGTH = 0.1f;
 	
 	/** Default marker interval/point text */
 	public final static String MARKER_TEXT = "#";
@@ -146,9 +146,10 @@ public class TextGridExporter {
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
 		
 		// calculate some values for interval times
-		final int numHashes = record.numberOfGroups() + 1;
 		final double totalTime = endTime - startTime;
-		final float hashLength = MARKER_LENGTH * numHashes;
+		final double hashSize = Math.min(MARKER_MAX_LENGTH, 0.05 * totalTime);
+		final int numHashes = record.numberOfGroups() + 1;
+		final float hashLength = (float)(hashSize * numHashes);
 		final double dataLength = totalTime - hashLength;
 		final double groupLength = dataLength / record.numberOfGroups();
 		
@@ -160,14 +161,14 @@ public class TextGridExporter {
 			setupThreeIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
 		} else {
 			double currentStart = startTime;
-			double dataEnd = endTime - MARKER_LENGTH;
+			double dataEnd = endTime - hashSize;
 			
 			for(int i = 0; i < record.numberOfGroups(); i++) {
 				final Group group = record.getGroup(i);
 				
 				// add group marker
-				tgTier.addInterval(currentStart, currentStart + MARKER_LENGTH, MARKER_TEXT);
-				currentStart += MARKER_LENGTH;
+				tgTier.addInterval(currentStart, currentStart + hashSize, MARKER_TEXT);
+				currentStart += hashSize;
 				
 				final double groupStart = currentStart;
 				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
@@ -353,11 +354,13 @@ public class TextGridExporter {
 	 * Helper methods for adding tiers to TextGrids
 	 */
 	private void setupThreeIntervalTier(TextGrid textgrid, IntervalTier tier, String data, double startTime, double endTime) {
+		double totalTime = endTime - startTime;
+		double hashSize = Math.min(MARKER_MAX_LENGTH, 0.05 * totalTime);
 		double currentStart = startTime;
-		tier.addInterval(startTime, startTime+MARKER_LENGTH, MARKER_TEXT);
-		currentStart += MARKER_LENGTH;
+		tier.addInterval(startTime, startTime+hashSize, MARKER_TEXT);
+		currentStart += hashSize;
 		
-		final double dataEnd = endTime - MARKER_LENGTH;
+		final double dataEnd = endTime - hashSize;
 		tier.addInterval(currentStart, dataEnd, data);
 		currentStart = dataEnd;
 		
