@@ -70,6 +70,7 @@ import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
+import ca.phon.plugins.praat.importer.TextGridImportWizard;
 import ca.phon.plugins.praat.painters.TextGridPainter;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
@@ -538,6 +539,11 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		dlg.setVisible(true);
 	}
 	
+	public void onCreateRecordsFromTextGrid() {
+		final TextGridImportWizard wizard = new TextGridImportWizard(parent.getEditor());
+		wizard.showWizard();
+	}
+	
 	public void onAddExistingTextGrid() {
 		final OpenDialogProperties props = new OpenDialogProperties();
 		props.setParentWindow(CommonModuleFrame.getCurrentFrame());
@@ -685,15 +691,27 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					}
 				}
 				
+				final PhonUIAction genTextGridAct = new PhonUIAction(TextGridViewer.this, "onGenerateTextGrid");
+				genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
+				genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for current record...");
+				textGridMenu.add(genTextGridAct);
+
 				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridViewer.this, "onAddExistingTextGrid");
 				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
 				addExistingTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Copy existing TextGrid to TextGrid folder for session");
 				textGridMenu.add(addExistingTextGridAct);
 				
+				textGridMenu.addSeparator();
 				final PhonUIAction showTextGridFolderAct = new PhonUIAction(TextGridViewer.this, "onShowTextGridFolder");
 				showTextGridFolderAct.putValue(PhonUIAction.NAME, "Show TextGrid folder");
 				showTextGridFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, tgManager.textGridFolder(session.getCorpus(), session.getName()));
 				textGridMenu.add(showTextGridFolderAct);
+				
+				textGridMenu.addSeparator();
+				PhonUIAction createRecordsAct = new PhonUIAction(TextGridViewer.this, "onCreateRecordsFromTextGrid");
+				createRecordsAct.putValue(PhonUIAction.NAME, "Create records from TextGrid...");
+				createRecordsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Create records from a session TextGrid");
+				textGridMenu.add(createRecordsAct);
 			}
 			
 			@Override
@@ -708,17 +726,14 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		});
 		praatMenu.add(textGridMenu);
 		
+		
+		praatMenu.addSeparator();
+		
 		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid");
-		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid in an open instance of Praat");
+		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat");
 		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat");
 		praatMenu.add(openTextGridAct);
 		
-		final PhonUIAction genTextGridAct = new PhonUIAction(this, "onGenerateTextGrid");
-		genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
-		genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for current record...");
-		praatMenu.add(genTextGridAct);
-		
-		praatMenu.addSeparator();
 		
 		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
 		sendPraatAct.putValue(PhonUIAction.NAME, "SendPraat...");
