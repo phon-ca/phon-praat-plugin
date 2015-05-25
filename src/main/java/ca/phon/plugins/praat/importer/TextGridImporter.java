@@ -31,6 +31,7 @@ import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.extensions.UnvalidatedValue;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.ipa.alignment.PhoneAligner;
 import ca.phon.ipa.alignment.PhoneMap;
@@ -194,6 +195,10 @@ public class TextGridImporter {
 						final Orthography ortho = Orthography.parseOrthography(grpVal);
 						grp.setOrthography(ortho);
 					} catch (ParseException pe) {
+						final Orthography ortho = new Orthography();
+						final UnvalidatedValue uv = new UnvalidatedValue(grpVal, pe);
+						ortho.putExtension(UnvalidatedValue.class, uv);
+						grp.setOrthography(ortho);
 						LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
 					}
 				} else if(systemTier == SystemTierType.IPATarget) {
@@ -201,6 +206,10 @@ public class TextGridImporter {
 						final IPATranscript ipa = IPATranscript.parseIPATranscript(grpVal);
 						grp.setIPATarget(ipa);
 					} catch (ParseException e) {
+						final IPATranscript ipa = new IPATranscript();
+						final UnvalidatedValue uv = new UnvalidatedValue(grpVal, e);
+						ipa.putExtension(UnvalidatedValue.class, uv);
+						grp.setIPATarget(ipa);
 						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 					}
 				} else if(systemTier == SystemTierType.IPAActual) {
@@ -208,6 +217,10 @@ public class TextGridImporter {
 						final IPATranscript ipa = IPATranscript.parseIPATranscript(grpVal);
 						grp.setIPAActual(ipa);
 					} catch (ParseException e) {
+						final IPATranscript ipa = new IPATranscript();
+						final UnvalidatedValue uv = new UnvalidatedValue(grpVal, e);
+						ipa.putExtension(UnvalidatedValue.class, uv);
+						grp.setIPAActual(ipa);
 						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 					}
 				} else if(systemTier == SystemTierType.Notes) {
