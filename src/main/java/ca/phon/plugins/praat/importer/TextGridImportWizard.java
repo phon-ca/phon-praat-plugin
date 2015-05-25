@@ -210,7 +210,8 @@ public class TextGridImportWizard extends WizardFrame {
 				
 				int rIdx = session.getRecordCount();
 				final List<TextInterval> contiguousIntervals = 
-						TextGridUtils.getContiguousIntervals(textGrid, step1.getSelectedTier(), step1.getThreshold());
+						TextGridUtils.getContiguousIntervals(textGrid, step1.getSelectedTier(), step1.getThreshold(),
+								step1.getMaxLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
 				for(TextInterval recordInterval:contiguousIntervals) {
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
 					// create a new record for each interval

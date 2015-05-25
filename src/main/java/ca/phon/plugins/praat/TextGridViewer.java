@@ -574,7 +574,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					}
 					FileUtil.copyFile(tgFile, newFile);
 					// select new TextGrid
-					showTextGrid(tgName);
+//					showTextGrid(tgName);
+					onTextGridChanged(new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, this, tgName));
 				} catch (IOException ex) {
 					LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
 				}

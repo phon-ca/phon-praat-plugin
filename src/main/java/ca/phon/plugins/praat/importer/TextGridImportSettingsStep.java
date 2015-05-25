@@ -32,12 +32,14 @@ import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
@@ -45,7 +47,11 @@ import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
 import ca.hedlund.jpraat.binding.fon.Function;
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.session.TierNameTextCompleterModel;
 import ca.phon.formatter.Formatter;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.session.Session;
@@ -54,7 +60,10 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.text.DefaultTextCompleterModel;
 import ca.phon.ui.text.FormatterTextField;
+import ca.phon.ui.text.PromptedTextField;
+import ca.phon.ui.text.TextCompleter;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardStep;
@@ -68,10 +77,13 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	private static final long serialVersionUID = 4032976189938565114L;
 	
-	private final static String HIDABLE_PANEL_PROP = TextGridImportSettingsStep.class.getName() + ".hideInfoPanel";
-	
+	private final static String MSG1_PROP = TextGridImportSettingsStep.class.getName() + ".msg1";
 	private final static String INFO_MESSAGE = 
-			"<html><p>Generate records from a TextGrid for this session.</p></html>";
+			"<html><p>This function will identify blocks of contiguous intervals in the reference tier.<br>Each block will become a single record.</p></html>";
+	
+	private final static String MSG2_PROP = TextGridImportSettingsStep.class.getName() + "msg2";
+	private final static String INFO_MESSAGE2 = 
+			"<html><p>For each TextGrid tier you wish to import, enter Phon tier name and group options.</p></html>";
 	
 	private JComboBox<String> textGridSelector;
 	
@@ -82,8 +94,15 @@ public class TextGridImportSettingsStep extends WizardStep {
 	private JRadioButton addRecordsButton;
 	
 	private JRadioButton replaceRecordsButton;
-	
+
 	private FormatterTextField<Double> thresholdField;
+	
+	private FormatterTextField<Double> maxLengthField;
+	
+	private PromptedTextField delimField;
+	private DefaultTextCompleterModel delimModel = new DefaultTextCompleterModel();
+	
+	private DefaultTextCompleterModel tierNameModel;
 	
 	private JXTable table;
 	
@@ -106,20 +125,26 @@ public class TextGridImportSettingsStep extends WizardStep {
 		this.session = session;
 		this.tgManager = tgManager;
 		
+		this.tierNameModel = new TierNameTextCompleterModel(session);
+		
 		init();
 	}
 	
 	private void init() {
 		setLayout(new BorderLayout());
 		
-		final HidablePanel infoPanel = new HidablePanel(HIDABLE_PANEL_PROP);
+		final HidablePanel infoPanel = new HidablePanel(MSG1_PROP);
 		infoPanel.setBottomLabelText(INFO_MESSAGE);
+		
+		final HidablePanel tblInfoPanel = new HidablePanel(MSG2_PROP);
+		tblInfoPanel.setBottomLabelText(INFO_MESSAGE2);
 		
 		final List<String> tgNames = tgManager.textGridNamesForSession(session.getCorpus(), session.getName());
 		textGridSelector = new JComboBox<>(tgNames.toArray(new String[0]));
 		textGridSelector.addItemListener( this::onSelectTextGrid );
 		
 		tierNameSelector = new JComboBox<>();
+		tierNameSelector.addItemListener( this::onSelectTierName );
 		
 		Formatter<Double> formatter = new Formatter<Double>() {
 
@@ -141,19 +166,43 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		thresholdField = new FormatterTextField<Double>(formatter);
 		thresholdField.setValue(0.05);
-		thresholdField.setToolTipText("Mac interval distance in seconds");
+		thresholdField.setToolTipText("Max interval distance in seconds");
+		
+		maxLengthField = new FormatterTextField<Double>(formatter);
+		maxLengthField.setValue(0.0);
+		maxLengthField.setToolTipText("Max record length in seconds");
+		
+		delimField = new PromptedTextField();
+		delimField.setPrompt("Enter record delimiter");
+		final TextCompleter delimCompleter = new TextCompleter(delimModel);
+		delimCompleter.install(delimField);
 		
 		JPanel textGridOptionsPanel = new JPanel();
-		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("TextGrid Options"));
-		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", "pref, 3dlu, pref, 3dlu, pref"));
+		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("Record Detection Options"));
+		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", "pref, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref"));
 		final CellConstraints cc = new CellConstraints();
-		textGridOptionsPanel.add(new JLabel("TextGrid"), cc.xy(1,1));
-		textGridOptionsPanel.add(textGridSelector, cc.xy(3,1));
-		textGridOptionsPanel.add(new JLabel("Tier"), cc.xy(1, 3));
-		textGridOptionsPanel.add(tierNameSelector, cc.xy(3,3));
-		textGridOptionsPanel.add(new JLabel("Max interval distance"), cc.xy(1, 5));
-		textGridOptionsPanel.add(thresholdField, cc.xy(3, 5));
 		
+		int row = 1;
+		textGridOptionsPanel.add(infoPanel, cc.xyw(1,row++,3));
+		
+		textGridOptionsPanel.add(new JLabel("TextGrid"), cc.xy(1,row));
+		textGridOptionsPanel.add(textGridSelector, cc.xy(3,row++));
+		row++;
+		
+		textGridOptionsPanel.add(new JLabel("Reference tier"), cc.xy(1, row));
+		textGridOptionsPanel.add(tierNameSelector, cc.xy(3,row++));
+		row++;
+		
+		textGridOptionsPanel.add(new JLabel("Max interval distance"), cc.xy(1, row));
+		textGridOptionsPanel.add(thresholdField, cc.xy(3, row++));
+		row++;
+		
+		textGridOptionsPanel.add(new JLabel("Max record length"), cc.xy(1, row));
+		textGridOptionsPanel.add(maxLengthField, cc.xy(3, row++));
+		row++;
+		
+		textGridOptionsPanel.add(new JLabel("Record delimiter"), cc.xy(1, row));
+		textGridOptionsPanel.add(delimField, cc.xy(3, row++));
 		
 		recordOptionsGroup = new ButtonGroup();
 		addRecordsButton = new JRadioButton("Add records to session");
@@ -171,22 +220,46 @@ public class TextGridImportSettingsStep extends WizardStep {
 		final DialogHeader header = new DialogHeader("Create Records", "Create records from TextGrid data");
 		final JPanel topPanel = new JPanel(new VerticalLayout());
 		topPanel.add(header);
-		topPanel.add(infoPanel);
 		topPanel.add(textGridOptionsPanel);
-//		topPanel.add(recordOptionsPanel);
+		
+		add(topPanel, BorderLayout.NORTH);
 		
 		tableModel = new TextGridImportTableModel();
 		table = new JXTable(tableModel);
-		final JScrollPane scroller = new JScrollPane(table);
-		scroller.setBorder(BorderFactory.createTitledBorder("Tier Options"));
 		
-		add(topPanel, BorderLayout.NORTH);
-		add(scroller, BorderLayout.CENTER);
+		final JTextField tierNameField = new JTextField();
+		table.getColumn(1).setCellEditor(new TierNameCellEditor(tierNameField));
+		
+		final JScrollPane scroller = new JScrollPane(table);
+		
+		
+		final JPanel btmPanel = new JPanel(new BorderLayout());
+		btmPanel.add(tblInfoPanel, BorderLayout.NORTH);
+		btmPanel.add(scroller, BorderLayout.CENTER);
+		btmPanel.setBorder(BorderFactory.createTitledBorder("Tier Names & Options"));
+		add(btmPanel, BorderLayout.CENTER);
 		
 		SwingUtilities.invokeLater( () -> {
 			textGridSelector.setSelectedItem(tgManager.defaultTextGridName(session.getCorpus(), session.getName()));
 			onSelectTextGrid(new ItemEvent(textGridSelector, -1, textGridSelector.getSelectedItem(), ItemEvent.SELECTED));
 		});
+	}
+	
+	public void onSelectTierName(ItemEvent itemEvent) {
+		delimModel.clearCompletions();
+		final String textGridName = textGridSelector.getSelectedItem().toString();
+		final long selectedTierIdx = (long)tierNameSelector.getSelectedIndex()+1;
+		try {
+			final TextGrid textGrid = tgManager.openTextGrid(session.getCorpus(), session.getName(), textGridName);
+			final IntervalTier it = textGrid.checkSpecifiedTierIsIntervalTier(selectedTierIdx);
+			
+			for(long i = 1; i <= it.numberOfIntervals(); i++) {
+				final TextInterval interval = it.interval(i);
+				delimModel.addCompletion(interval.getText());
+			}
+		} catch (IOException | PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+		}
 	}
 	
 	public void onSelectTextGrid(ItemEvent itemEvent) {
@@ -200,6 +273,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 				tierNames.add(tier.getName().toString());
 			}
 			tierNameSelector.setModel(new DefaultComboBoxModel<>(tierNames.toArray(new String[0])));
+			if(tierNames.size() > 0) {
+				tierNameSelector.setSelectedIndex(0);
+				onSelectTierName(itemEvent);
+			}
 			textGridTiers.clear();
 			textGridTiers.addAll(tierNames);
 			
@@ -228,6 +305,14 @@ public class TextGridImportSettingsStep extends WizardStep {
 		return thresholdField.getValue();
 	}
 	
+	public double getMaxLength() {
+		return maxLengthField.getValue();
+	}
+	
+	public String getRecordDelimiter() {
+		return delimField.getText();
+	}
+	
 	public boolean isDeleteAllRecords() {
 		return replaceRecordsButton.isSelected();
 	}
@@ -244,7 +329,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		TG_TIER("TextGrid Tier"),
 		PHON_TIER("Phon Tier"),
 		GROUPED("Grouped"),
-		GROUP_MARKER("Group Marker");
+		GROUP_MARKER("Group Delimiter");
 		
 		private String name;
 		
@@ -253,6 +338,16 @@ public class TextGridImportSettingsStep extends WizardStep {
 		}
 		
 		public String getName() { return this.name; }
+		
+	}
+	
+	private class TierNameCellEditor extends DefaultCellEditor {
+
+		public TierNameCellEditor(JTextField textField) {
+			super(textField);
+			final TextCompleter completer = new TextCompleter(tierNameModel);
+			completer.install(textField);
+		}
 		
 	}
 	
