@@ -31,6 +31,7 @@ import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ui.painter.BufferedPainter;
@@ -162,7 +163,37 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 	}
 	
 	public void paintPointTier(TextTier textTier, Graphics2D g2d, Rectangle2D bounds) {
+		double contentWidth = bounds.getWidth();
+		double tgLen = textTier.getXmax() - textTier.getXmin();
+		double pxPerSec = contentWidth / tgLen;
+		double xoffset = textTier.getXmin();
 		
+		for(long i = 1; i <= textTier.numberOfPoints(); i++) {
+			final TextPoint tp = textTier.point(i);
+			
+			double lineX = (tp.getNumber() - xoffset) * pxPerSec;
+			
+			g2d.setColor(Color.DARK_GRAY);
+			final Line2D pointLine = new Line2D.Double(lineX, bounds.getY(), lineX,
+					bounds.getY() + bounds.getHeight());
+			g2d.draw(pointLine);
+			
+			final Rectangle2D textBounds = 
+					g2d.getFontMetrics().getStringBounds(tp.getText(), g2d);
+			
+			float x = (float)(lineX - textBounds.getCenterX());
+			float y = (float)((bounds.getY() + (bounds.getHeight() / 2.0)) - (textBounds.getHeight()/2.0));
+
+			g2d.setColor(Color.white);
+			textBounds.setRect(x, y, textBounds.getWidth(), textBounds.getHeight());
+			g2d.fill(textBounds);
+			
+			g2d.setColor(Color.black);
+			g2d.drawString(tp.getText(), x, (float)(textBounds.getY() + textBounds.getHeight() - g2d.getFontMetrics().getDescent()));
+		}
+		
+		if(paintTierLabels)
+			paintTierLabel(textTier, g2d, bounds);
 	}
 
 }
