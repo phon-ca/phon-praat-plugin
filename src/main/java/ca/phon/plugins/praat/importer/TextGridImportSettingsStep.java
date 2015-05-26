@@ -46,7 +46,6 @@ import javax.swing.table.AbstractTableModel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
@@ -269,8 +268,12 @@ public class TextGridImportSettingsStep extends WizardStep {
 			final TextGrid textGrid = tgManager.openTextGrid(session.getCorpus(), session.getName(), textGridName);
 			final List<String> tierNames = new ArrayList<>();
 			for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
-				final Function tier = textGrid.tier(i);
-				tierNames.add(tier.getName().toString());
+				try {
+					final IntervalTier it = textGrid.checkSpecifiedTierIsIntervalTier(i);
+					tierNames.add(it.getName());
+				} catch (PraatException pe) {
+					// ignore point tiers
+				}
 			}
 			tierNameSelector.setModel(new DefaultComboBoxModel<>(tierNames.toArray(new String[0])));
 			if(tierNames.size() > 0) {
@@ -297,8 +300,8 @@ public class TextGridImportSettingsStep extends WizardStep {
 				(textGridSelector.getSelectedItem() != null ? textGridSelector.getSelectedItem().toString() : "");
 	}
 	
-	public long getSelectedTier() {
-		return (long)(tierNameSelector.getSelectedIndex() >= 0 ? tierNameSelector.getSelectedIndex() + 1 : 0);
+	public String getSelectedTier() {
+		return (String)tierNameSelector.getSelectedItem();
 	}
 	
 	public double getThreshold() {

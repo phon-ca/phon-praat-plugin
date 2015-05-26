@@ -30,6 +30,7 @@ import javax.swing.undo.CompoundEdit;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import ca.hedlund.jpraat.TextGridUtils;
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.exceptions.PraatException;
@@ -209,8 +210,20 @@ public class TextGridImportWizard extends WizardFrame {
 				csvWriter.flush();
 				
 				int rIdx = session.getRecordCount();
+				
+				final String tgTierName = step1.getSelectedTier();
+				long tgTierIdx = 0;
+				for(long tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
+					try {
+						IntervalTier intervalTier = textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+						if(intervalTier.getName().equals(tgTierName)) {
+							tgTierIdx = tierIdx;
+							break;
+						}
+					} catch (PraatException pe) {}
+				}
 				final List<TextInterval> contiguousIntervals = 
-						TextGridUtils.getContiguousIntervals(textGrid, step1.getSelectedTier(), step1.getThreshold(),
+						TextGridUtils.getContiguousIntervals(textGrid, tgTierIdx, step1.getThreshold(),
 								step1.getMaxLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
 				for(TextInterval recordInterval:contiguousIntervals) {
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);

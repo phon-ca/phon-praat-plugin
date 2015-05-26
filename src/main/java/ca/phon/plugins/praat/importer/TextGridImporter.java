@@ -173,9 +173,11 @@ public class TextGridImporter {
 					}
 				}
 			}
+			if(buffer.length() > 0)
+				grpVals.add(buffer.toString());
 		}
 		
-		if(!r.hasTier(td.getName())) {
+		if(!SystemTierType.isSystemTier(td.getName()) && !r.hasTier(td.getName())) {
 			final Tier<String> depTier = SessionFactory.newFactory().createTier(td.getName(), String.class, td.isGrouped());
 			r.putTier(depTier);
 		}
