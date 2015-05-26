@@ -17,7 +17,11 @@
  */
 package ca.phon.plugins.praat;
 
+import java.awt.Toolkit;
+import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ca.phon.app.modules.EntryPointArgs;
 import ca.phon.app.project.ProjectWindow;
@@ -30,6 +34,8 @@ import ca.phon.session.Session;
 
 @PhonPlugin(name="phon-textgrid-plugin",version="0.1",author="Greg J. Hedlund")
 public class GenerateTextGridsEP implements IPluginEntryPoint {
+	
+	private final static Logger LOGGER = Logger.getLogger(GenerateTextGridsEP.class.getName());
 
 	private final static String EP_NAME = "GenerateTextGrids";
 	
@@ -47,23 +53,29 @@ public class GenerateTextGridsEP implements IPluginEntryPoint {
 			final ProjectWindow pw = (ProjectWindow)args.get("projectWindow");
 			project = pw.getProject();
 		}
-		Session session = args.getSession();
-		if(session == null && editor != null) {
-			project = editor.getProject();
-			session = editor.getSession();
+		Session session;
+		try {
+			session = args.getSession();
+			if(session == null && editor != null) {
+				project = editor.getProject();
+				session = editor.getSession();
+			}
+			
+			TextGridExportWizard wizard = null;
+			if(session != null) {
+				wizard = new TextGridExportWizard(project, session);
+			} else {
+				wizard = new TextGridExportWizard(project);
+			}
+			wizard.setSize(500, 550);
+			wizard.centerWindow();
+			if(editor != null)
+				wizard.setLocationRelativeTo(editor);
+			wizard.showWizard();
+		} catch (IOException e) {
+			Toolkit.getDefaultToolkit().beep();
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
-		
-		TextGridExportWizard wizard = null;
-		if(session != null) {
-			wizard = new TextGridExportWizard(project, session);
-		} else {
-			wizard = new TextGridExportWizard(project);
-		}
-		wizard.setSize(500, 550);
-		wizard.centerWindow();
-		if(editor != null)
-			wizard.setLocationRelativeTo(editor);
-		wizard.showWizard();
 	}
 
 }
