@@ -96,6 +96,8 @@ public class TextGridImportSettingsStep extends WizardStep {
 
 	private FormatterTextField<Double> thresholdField;
 	
+	private FormatterTextField<Double> prefLengthField;
+	
 	private FormatterTextField<Double> maxLengthField;
 	
 	private PromptedTextField delimField;
@@ -167,8 +169,12 @@ public class TextGridImportSettingsStep extends WizardStep {
 		thresholdField.setValue(0.05);
 		thresholdField.setToolTipText("Max interval distance in seconds");
 		
+		prefLengthField = new FormatterTextField<Double>(formatter);
+		prefLengthField.setValue(0.0);
+		prefLengthField.setToolTipText("Preferred record length in seconds, 0 = unspecified");
+		
 		maxLengthField = new FormatterTextField<Double>(formatter);
-		maxLengthField.setValue(0.0);
+		maxLengthField.setValue(10.0);
 		maxLengthField.setToolTipText("Max record length in seconds");
 		
 		delimField = new PromptedTextField();
@@ -178,7 +184,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		JPanel textGridOptionsPanel = new JPanel();
 		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("Record Detection Options"));
-		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", "pref, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref"));
+		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", "pref, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref"));
 		final CellConstraints cc = new CellConstraints();
 		
 		int row = 1;
@@ -194,6 +200,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		textGridOptionsPanel.add(new JLabel("Max interval distance"), cc.xy(1, row));
 		textGridOptionsPanel.add(thresholdField, cc.xy(3, row++));
+		row++;
+		
+		textGridOptionsPanel.add(new JLabel("Preferred record length"), cc.xy(1, row));
+		textGridOptionsPanel.add(prefLengthField, cc.xy(3, row++));
 		row++;
 		
 		textGridOptionsPanel.add(new JLabel("Max record length"), cc.xy(1, row));
@@ -254,10 +264,11 @@ public class TextGridImportSettingsStep extends WizardStep {
 			
 			for(long i = 1; i <= it.numberOfIntervals(); i++) {
 				final TextInterval interval = it.interval(i);
-				delimModel.addCompletion(interval.getText());
+				if(interval.getText() != null && interval.getText().length() > 0)
+					delimModel.addCompletion(interval.getText());
 			}
 		} catch (IOException | PraatException pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+//			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
 		}
 	}
 	
@@ -306,6 +317,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	public double getThreshold() {
 		return thresholdField.getValue();
+	}
+	
+	public double getPrefLength() {
+		return prefLengthField.getValue();
 	}
 	
 	public double getMaxLength() {

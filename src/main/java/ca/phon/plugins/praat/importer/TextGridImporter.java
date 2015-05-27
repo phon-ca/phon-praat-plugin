@@ -137,6 +137,11 @@ public class TextGridImporter {
 			g.setPhoneAlignment(pm);
 		}
 		
+		// if we didn't import anything - create a group!
+		if(r.numberOfGroups() == 0) {
+			r.addGroup();
+		}
+		
 		return r;
 	}
 	

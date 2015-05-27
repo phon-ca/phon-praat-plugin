@@ -26,6 +26,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.SwingUtilities;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.CompoundEdit;
 
 import au.com.bytecode.opencsv.CSVWriter;
@@ -37,6 +41,8 @@ import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.BufferPanel;
 import ca.phon.app.log.LogBuffer;
 import ca.phon.app.modules.EntryPointArgs;
+import ca.phon.app.session.editor.EditorEvent;
+import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.undo.AddRecordEdit;
 import ca.phon.plugin.PluginEntryPointRunner;
@@ -224,8 +230,13 @@ public class TextGridImportWizard extends WizardFrame {
 				}
 				final List<TextInterval> contiguousIntervals = 
 						TextGridUtils.getContiguousIntervals(textGrid, tgTierIdx, step1.getThreshold(),
-								step1.getMaxLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
+								step1.getPrefLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
 				for(TextInterval recordInterval:contiguousIntervals) {
+					double length = recordInterval.getXmax() - recordInterval.getXmin();
+					if(length > step1.getMaxLength()) {
+						continue;
+					}
+					
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
 					// create a new record for each interval
 					final Record newRecord =
@@ -244,6 +255,7 @@ public class TextGridImportWizard extends WizardFrame {
 					csvWriter.flush();
 					
 					final AddRecordEdit addRecordEdit = new AddRecordEdit(editor, newRecord);
+					addRecordEdit.setFireEvent(false);
 					cmpEdit.addEdit(addRecordEdit);
 					addRecordEdit.doIt();
 				}
@@ -258,8 +270,34 @@ public class TextGridImportWizard extends WizardFrame {
 				
 				setStatus(TaskStatus.ERROR);
 			} finally {
+				cmpEdit.addEdit(new AbstractUndoableEdit() {
+
+					@Override
+					public void undo() throws CannotUndoException {
+						SwingUtilities.invokeLater(() -> {
+							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+									editor.getSession().getRecord(0));
+							editor.getEventManager().queueEvent(sessionModifiedEvent);
+						});
+					}
+
+					@Override
+					public void redo() throws CannotRedoException {
+						SwingUtilities.invokeLater(() -> {
+							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+									editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
+							editor.getEventManager().queueEvent(sessionModifiedEvent);
+						});
+					}
+					
+				});
 				cmpEdit.end();
 				editor.getUndoSupport().postEdit(cmpEdit);
+				
+				final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+						editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
+				editor.getEventManager().queueEvent(sessionModifiedEvent);
+				
 				btnCancel.setEnabled(true);
 				
 				try {
