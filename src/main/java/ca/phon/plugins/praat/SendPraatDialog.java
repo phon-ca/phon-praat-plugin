@@ -127,6 +127,10 @@ public class SendPraatDialog extends CommonModuleFrame {
 
 		final JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0,
 				0));
+		
+		final PhonUIAction previewAct = new PhonUIAction(this, "onPreviewScript");
+		previewAct.putValue(PhonUIAction.NAME, "Preview Script");
+		previewButton = new JButton(previewAct);
 
 		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
 		sendPraatAct.putValue(PhonUIAction.NAME, "SendPraat");
@@ -134,10 +138,25 @@ public class SendPraatDialog extends CommonModuleFrame {
 				.getInstance().getIcon("apps/praat", IconSize.SMALL));
 		sendPraatButton = new JButton(sendPraatAct);
 		btnPanel.add(waitForResponseBox);
+		btnPanel.add(previewButton);
 		btnPanel.add(sendPraatButton);
 		contentPane.add(btnPanel, BorderLayout.SOUTH);
 
 		add(contentPane, BorderLayout.CENTER);
+	}
+	
+	public void onPreviewScript() {
+		final String script = generateScript();
+		
+		final BufferWindow bufferWindow = BufferWindow.getInstance();
+		final BufferPanel panel = bufferWindow.createBuffer("SendPraat - Preview Script");
+		panel.getLogBuffer().setText(script);
+		
+		if(!bufferWindow.isVisible()) {
+			bufferWindow.pack();
+			bufferWindow.centerWindow();
+			bufferWindow.setVisible(true);
+		}
 	}
 
 	public void onSendPraat() {
