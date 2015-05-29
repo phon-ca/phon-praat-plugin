@@ -543,7 +543,15 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	public void onCreateRecordsFromTextGrid() {
 		final TextGridImportWizard wizard = new TextGridImportWizard(parent.getEditor());
-		wizard.showWizard();
+		Dimension size = new Dimension(600, 600);
+		Dimension screenSize =
+			Toolkit.getDefaultToolkit().getScreenSize();
+		
+		int posX = screenSize.width / 2 - size.width / 2;
+		int posY = screenSize.height / 2 - size.height / 2;
+		
+		wizard.setBounds(posX, posY, size.width, size.height);
+		wizard.setVisible(true);
 	}
 	
 	public void onAddExistingTextGrid() {
