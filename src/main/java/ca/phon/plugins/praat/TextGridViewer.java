@@ -666,15 +666,17 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				for(String textGridName:manager.textGridNamesForSession(session.getCorpus(), session.getName())) {
 					boolean isDefault = textGridName.equals(defaultTgName);
 					boolean isCurrent = (currentTextGridName != null && textGridName.equals(currentTextGridName));
-					String menuTxt = textGridName + 
-							(isDefault  && !textGridName.equals(TextGridManager.DEFAULT_TEXTGRID_NAME) ? " (default)" : "");
-					if(isCurrent) {
-						menuTxt = "<html><b>" + menuTxt + "</b></html>";
+					String menuTxt = textGridName;
+					if(isDefault) {
+						menuTxt = "<i>" + menuTxt + "</i>";
 					}
+					if(isCurrent) {
+						menuTxt = "<b>" + menuTxt + "</b>";
+					}
+					menuTxt = "<html>" + menuTxt + "</html>";
 					
 					final PhonUIAction showTgAct = new PhonUIAction(TextGridViewer.this, "showTextGrid", textGridName);
-					showTgAct.putValue(PhonUIAction.NAME, menuTxt);
-					showTgAct.putValue(PhonUIAction.SHORT_DESCRIPTION,
+					showTgAct.putValue(PhonUIAction.NAME, menuTxt);					showTgAct.putValue(PhonUIAction.SHORT_DESCRIPTION,
 							tgManager.textGridPath(session.getCorpus(), session.getName(), textGridName));
 					if(serverMap.containsKey(textGridName)) {
 						showTgAct.putValue(PhonUIAction.SMALL_ICON, lockIcon);
