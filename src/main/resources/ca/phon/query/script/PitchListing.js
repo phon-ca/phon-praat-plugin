@@ -151,8 +151,8 @@ function annotateRecord(r) {
 	if(r.segment.numberOfGroups() == 0) return;
 	mediaSeg = r.segment.getGroup(0);
 	
-	startTime = r.startTime / 1000.0;
-	endTime = r.endTime / 1000.0;
+	startTime = mediaSeg.startValue / 1000.0;
+	endTime = mediaSeg.endValue / 1000.0;
 	if(endTime - startTime <= 0) return;
 	
 	if(startTime <= textGrid.xmin || endTime >= textGrid.xmax) return;
