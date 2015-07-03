@@ -181,6 +181,8 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 	len = tgi.getXmax() - tgi.getXmin();
 	timeStep = len / 10.0;
 	numFormants = filters.formantOpts.maxFormants;
+	var nf = java.text.NumberFormat.getNumberInstance();
+	nf.setMaximumFractionDigits(6);
 	
 	if(!printedTableHeader) {
 		printedTableHeader = true;
@@ -202,14 +204,14 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
     out.print("\"" + (recordIndex+1) + "\",");
     out.print("\"" + (groupIndex+1) + "\",");
 	out.print("\"" + ipa.toString() + "\",");
-	out.print("\"" + tgi.getXmin() + "\",");
-	out.print("\"" + tgi.getXmax() + "\"");
+	out.print("\"" + nf.format(tgi.getXmin()) + "\",");
+	out.print("\"" + nf.format(tgi.getXmax()) + "\"");
 	
 	for(fnum = 1; fnum <= numFormants; fnum++) {
 		for(i = 10; i < 100; i += 10) {
 			time = tgi.getXmin() + (timeStep * (i/10));
 			fval = formants.getValueAtTime(fnum, time, 0);
-			out.print(",\"" + fval + "\"");
+			out.print(",\"" + nf.format(fval) + "\"");
 		}
 	}
 	out.println();
