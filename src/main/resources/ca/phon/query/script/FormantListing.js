@@ -178,46 +178,41 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 		}
 	}
 	
-	var formantTable = formants.downto_Table(
-		false, // never include frame numbers
-		true, // always include times
-		6,
-		filters.formantOpts.includeIntensity, 6,
-		filters.formantOpts.includeNumFormants, 6,
-		filters.formantOpts.includeBandwidths);
+	len = tgi.getXmax() - tgi.getXmin();
+	timeStep = len / 10.0;
+	numFormants = filters.formantOpts.maxFormants;
 	
 	if(!printedTableHeader) {
 		printedTableHeader = true;
 		
 		// print ipa column
-		out.print("\"record\",\"group\",\"ipa\"");
+		out.print("\"session\",\"media\",\"record\",\"group\",\"ipa\",\"start\",\"end\"");
 		
-		for(col = 1; col <= formantTable.getNcol(); col++) {
-			out.print(",\"" + formantTable.getColStr(col) + "\"");
+		for(fcol = 1; fcol <= numFormants; fcol++) {
+			for(i = 10; i < 100; i += 10) {
+				colName = "F" + fcol + "" + i;
+				out.print(",\"" + colName + "\"");
+			}
 		}
+		
 		out.println();
 	}
-	var printedPrefix = false;
-	for(row = 1; row < formantTable.getNrow(); row++) {
-		// get time
-		rowTime = formantTable.getNumericValue(row, 1);
-		if(rowTime > tgi.getXmax()) break;
-		if(rowTime >= tgi.getXmin()) {
-		    if(!printedPrefix) {
-		        out.print("\"" + (recordIndex+1) + "\",");
-		        out.print("\"" + (groupIndex+1) + "\",");
-		        printedPrefix = true;
-		    } else {
-		        out.print("\"\",");
-		        out.print("\"\",");
-		    }
-			out.print("\"" + ipa.toString() + "\"");
-			for(col = 1; col <= formantTable.getNcol(); col++) {
-				out.print(",\"" + formantTable.getNumericValue(row, col) + "\"");
-			}
-			out.println();
+    out.print("\"" + session.corpus + "." + session.name + "\",");
+    out.print("\"" + session.mediaLocation + "\",");
+    out.print("\"" + (recordIndex+1) + "\",");
+    out.print("\"" + (groupIndex+1) + "\",");
+	out.print("\"" + ipa.toString() + "\",");
+	out.print("\"" + tgi.getXmin() + "\",");
+	out.print("\"" + tgi.getXmax() + "\"");
+	
+	for(fnum = 1; fnum <= numFormants; fnum++) {
+		for(i = 10; i < 100; i += 10) {
+			time = tgi.getXmin() + (timeStep * (i/10));
+			fval = formants.getValueAtTime(fnum, time, 0);
+			out.print(",\"" + fval + "\"");
 		}
 	}
+	out.println();
 	out.flush();
 }
 

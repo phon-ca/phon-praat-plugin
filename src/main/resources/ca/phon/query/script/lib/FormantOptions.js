@@ -5,7 +5,7 @@ exports.FormantOptions = function(id) {
 		"id": id+".maxFormants",
 		"title": "",
 		"desc": "Max formants",
-		"def": "5"
+		"def": "4"
 	};
 	var maxFormantsParam;
 	this.maxFormants = maxFormantsParamInfo.def;
