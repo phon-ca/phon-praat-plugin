@@ -194,6 +194,11 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 			for(i = 10; i < 100; i += 10) {
 				colName = "F" + fcol + "" + i;
 				out.print(",\"" + colName + "\"");
+				
+				if(filters.formantOpts.includeBandwidths == true) {
+					colName = "B" + fcol + "" + i;
+					out.print(",\"" + colName + "\"");
+				}
 			}
 		}
 		
@@ -212,6 +217,11 @@ function listFormants(recordIndex, groupIndex, formants, ipa) {
 			time = tgi.getXmin() + (timeStep * (i/10));
 			fval = formants.getValueAtTime(fnum, time, 0);
 			out.print(",\"" + nf.format(fval) + "\"");
+			
+			if(filters.formantOpts.includeBandwidths == true) {
+				bval = formants.getBandwidthAtTime(fnum, time, 0);
+				out.print(",\"" + nf.format(bval) + "\"");
+			}
 		}
 	}
 	out.println();

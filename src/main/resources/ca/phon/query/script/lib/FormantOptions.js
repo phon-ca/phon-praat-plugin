@@ -47,16 +47,14 @@ exports.FormantOptions = function(id) {
 	this.preEmp = preEmpParamInfo.def;
 	
 	var tableOptsParamInfo = {
-        "id":[id + ".includeIntensity", id+ ".includeNumFormants", id + ".includeBandwidths"],
+        "id":[id + ".includeBandwidths"],
         "title": "",
-        "desc":[ "Include intensity", "Include numbers of formants", "Include bandwidths"],
-        "def":[ true, true, true],
-        "numCols": 3
+        "desc":["Include bandwidths"],
+        "def":[false],
+        "numCols": 1
     };
     var tableOptsParam;
-    this.includeIntensity = tableOptsParamInfo.def[0];
-    this.includeNumFormants = tableOptsParamInfo.def[1];
-    this.includeBandwidths = tableOptsParamInfo.def[2];
+    this.includeBandwidths = tableOptsParamInfo.def[0];
 	
 	this.param_setup = function(params) {
 		maxFormantsParam = new StringScriptParam(
