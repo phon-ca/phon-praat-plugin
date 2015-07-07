@@ -249,9 +249,11 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, recordChangedAct);
 		
 		final EditorAction segmentChangedAct = new DelegateEditorAction(this, "onSegmentChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGE_EVT, segmentChangedAct);
+		
 	}
 
 	private void setupToolbar() {
