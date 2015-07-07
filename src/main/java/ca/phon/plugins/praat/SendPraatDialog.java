@@ -292,7 +292,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 
 		final TextGridManager manager = new TextGridManager(editor.getProject());
 		context.put("textGridPath",
-				manager.textGridPath(r.getUuid().toString()));
+				manager.defaultTextGridFile(editor.getSession().getCorpus(), editor.getSession().getName()));
 
 		context.put("spectrogramSettings", new SpectrogramSettings());
 		context.put("formantSettingsd", new FormantSettings());
