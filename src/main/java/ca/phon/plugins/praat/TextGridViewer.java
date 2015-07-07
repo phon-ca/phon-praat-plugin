@@ -507,20 +507,18 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(ee.getEventData() != null && ee.getEventData() instanceof String) {
 			final String name = ee.getEventData().toString();
 		
-			if(currentTextGridName == null || !currentTextGridName.equals(name)) {
-				// load TextGrid
-				final Session session = parent.getEditor().getSession();
-				try {
-					contentPane.removeAll();
-					contentPane.add(buttonPane, BorderLayout.NORTH);
-					
-					final TextGrid tg = tgManager.openTextGrid(session.getCorpus(), session.getName(), name);
-					currentTextGridName = name;
-					setTextGrid(tg);
-				} catch (IOException e) {
-					ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				}
+			// load TextGrid
+			final Session session = parent.getEditor().getSession();
+			try {
+				contentPane.removeAll();
+				contentPane.add(buttonPane, BorderLayout.NORTH);
+				
+				final TextGrid tg = tgManager.openTextGrid(session.getCorpus(), session.getName(), name);
+				currentTextGridName = name;
+				setTextGrid(tg);
+			} catch (IOException e) {
+				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 			update();
 		}
