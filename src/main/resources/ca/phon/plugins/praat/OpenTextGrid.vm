@@ -1,10 +1,13 @@
 ## Setup interval, Phon stores values in ms
-start = $segment.startValue / 1000.0
-end = $segment.endValue / 1000.0
+segStart = $segment.startValue / 1000.0
+segEnd = $segment.endValue / 1000.0
 preserveTimes$ = "yes"
 
 ## Load objects in Praat Object window
 snd = Open long sound file... $audioPath
+select snd
+start = Get start time
+end = Get end time
 segment = Extract part... start end 'preserveTimes$'
 textGrid = Read from file... $textGridPath
 
@@ -21,4 +24,4 @@ View & Edit
 #end
 
 editor: "TextGrid $textGridName"
-	Zoom... start end
+	Zoom... segStart segEnd
