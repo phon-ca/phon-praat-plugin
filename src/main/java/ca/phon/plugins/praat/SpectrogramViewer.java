@@ -69,6 +69,7 @@ import ca.hedlund.jpraat.binding.fon.LongSound;
 import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.Sound;
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
+import ca.hedlund.jpraat.binding.jna.Str32;
 import ca.hedlund.jpraat.binding.stat.Table;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
@@ -629,7 +630,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			final char sc = ',';
 			sb.append(qc).append("Time(s)").append(qc);
 			sb.append(sc).append(qc).append("F0(");
-			final WString unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
+			final Str32 unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
 					pitchSettings.getUnits(), Function.UNIT_TEXT_SHORT);
 			sb.append(unitText.toString()).append(')').append(qc);
 			out.println(sb.toString());
