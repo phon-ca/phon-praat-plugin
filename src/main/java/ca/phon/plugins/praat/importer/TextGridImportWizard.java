@@ -233,7 +233,7 @@ public class TextGridImportWizard extends WizardFrame {
 								step1.getPrefLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
 				for(TextInterval recordInterval:contiguousIntervals) {
 					double length = recordInterval.getXmax() - recordInterval.getXmin();
-					if(length > step1.getMaxLength()) {
+					if(step1.getMaxLength() > 0 && length > step1.getMaxLength()) {
 						continue;
 					}
 					
