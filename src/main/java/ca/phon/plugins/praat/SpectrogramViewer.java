@@ -874,7 +874,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0,
 					(double)segment.getEndValue()/1000.0, 1);
 		
-			spectrogram = part.toSpectrogram(
+			spectrogram = part.to_Spectrogram(
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
 				spectrogramSettings.getTimeStep(), spectrogramSettings.getFrequencyStep(), 
 				spectrogramSettings.getWindowShape(), 8.0, 8.0);
