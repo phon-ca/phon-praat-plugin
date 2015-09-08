@@ -81,6 +81,7 @@ import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.RunInBackground;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisDivider;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.media.sampled.PCMSegmentView;
@@ -195,10 +196,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		contentPane.setPreferredSize(prefSize);
 		
 		add(contentPane, BorderLayout.CENTER);
-		sizer = new JSeparator(SwingConstants.HORIZONTAL);
-		sizer.setOpaque(true);
-		sizer.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
-		sizer.setPreferredSize(new Dimension(0, 5));
+		sizer = new SpeechAnalysisDivider();
 		sizer.addMouseMotionListener(new MouseAdapter() {
 
 			boolean changingSize = false;
@@ -215,7 +213,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				PrefHelper.getUserPreferences().putInt(DISPLAY_HEIGHT, displayHeight);
 				
 				contentPane.setPreferredSize(prefSize);
-				revalidate();
+				contentPane.revalidate();
 			}
 
 			@Override
