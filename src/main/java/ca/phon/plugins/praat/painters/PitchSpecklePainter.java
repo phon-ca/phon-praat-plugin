@@ -121,7 +121,7 @@ public class PitchSpecklePainter extends BufferedPainter<Pitch> implements Praat
 
 	@Override
 	public void paintGarnish(Pitch pitch, Graphics2D g2d, Rectangle2D bounds, int location) {
-		final Str32 unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
+		final String unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
 				settings.getUnits(), Function.UNIT_TEXT_SHORT);
 		final double startValue = 
 				pitch.convertStandardToSpecialUnit(settings.getRangeStart(), Pitch.LEVEL_FREQUENCY, 
@@ -137,7 +137,7 @@ public class PitchSpecklePainter extends BufferedPainter<Pitch> implements Praat
 		
 		final FontMetrics fm = g2d.getFontMetrics();
 		
-		final String startTxt = nf.format(startValue) + " " + unitText.toString();
+		final String startTxt = nf.format(startValue) + " " + unitText;
 		int y = 
 				(int)Math.round(
 						(bounds.getY() + bounds.getHeight())) - fm.getDescent();
@@ -145,7 +145,7 @@ public class PitchSpecklePainter extends BufferedPainter<Pitch> implements Praat
 		g2d.setColor(Color.blue);
 		g2d.drawString(startTxt, x, y);
 		
-		final String endTxt = nf.format(endValue) + " " + unitText.toString();
+		final String endTxt = nf.format(endValue) + " " + unitText;
 		final Rectangle2D endBounds = fm.getStringBounds(endTxt, g2d);
 		y = 
 				(int)Math.round(
