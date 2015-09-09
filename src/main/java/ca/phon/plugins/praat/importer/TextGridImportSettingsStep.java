@@ -82,7 +82,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	private final static String MSG2_PROP = TextGridImportSettingsStep.class.getName() + "msg2";
 	private final static String INFO_MESSAGE2 = 
-			"<html><p>For each TextGrid tier you wish to import, enter Phon tier name and group options.</p></html>";
+			"<html><p>For each TextGrid tier you wish to import, enter the corresponding Phon tier name and group options.</p></html>";
 	
 	private JComboBox<String> textGridSelector;
 	
@@ -174,7 +174,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		prefLengthField.setToolTipText("Preferred record length in seconds, 0 = unspecified");
 		
 		maxLengthField = new FormatterTextField<Double>(formatter);
-		maxLengthField.setValue(10.0);
+		maxLengthField.setValue(0.0);
 		maxLengthField.setToolTipText("Max record length in seconds");
 		
 		delimField = new PromptedTextField();
@@ -184,7 +184,8 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		JPanel textGridOptionsPanel = new JPanel();
 		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("Record Detection Options"));
-		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", "pref, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref, 3dlu, pref"));
+		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", 
+				"pref, pref, 3dlu, pref, 3dlu, pref, pref, 3dlu, pref, pref, 3dlu, pref, pref, 3dlu, pref"));
 		final CellConstraints cc = new CellConstraints();
 		
 		int row = 1;
@@ -194,20 +195,23 @@ public class TextGridImportSettingsStep extends WizardStep {
 		textGridOptionsPanel.add(textGridSelector, cc.xy(3,row++));
 		row++;
 		
-		textGridOptionsPanel.add(new JLabel("Reference tier"), cc.xy(1, row));
+		textGridOptionsPanel.add(new JLabel("Record reference tier"), cc.xy(1, row));
 		textGridOptionsPanel.add(tierNameSelector, cc.xy(3,row++));
 		row++;
 		
-		textGridOptionsPanel.add(new JLabel("Max interval distance"), cc.xy(1, row));
+		textGridOptionsPanel.add(new JLabel("Interval threshold (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(thresholdField, cc.xy(3, row++));
+		textGridOptionsPanel.add(new JLabel("Gap between intervals which will yield a new record.  0 for unspecified."), cc.xy(3, row++));
 		row++;
 		
-		textGridOptionsPanel.add(new JLabel("Preferred record length"), cc.xy(1, row));
+		textGridOptionsPanel.add(new JLabel("Preferred record length (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(prefLengthField, cc.xy(3, row++));
+		textGridOptionsPanel.add(new JLabel("Attempt to keep records under this length when possible.  0 for unspecified."), cc.xy(3, row++));
 		row++;
 		
-		textGridOptionsPanel.add(new JLabel("Max record length"), cc.xy(1, row));
+		textGridOptionsPanel.add(new JLabel("Max record length (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(maxLengthField, cc.xy(3, row++));
+		textGridOptionsPanel.add(new JLabel("Records longer than this value are discarded. 0 for unspecified."), cc.xy(3, row++));
 		row++;
 		
 		textGridOptionsPanel.add(new JLabel("Record delimiter"), cc.xy(1, row));
