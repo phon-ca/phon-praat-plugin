@@ -59,6 +59,7 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.text.DefaultTextCompleterModel;
 import ca.phon.ui.text.FormatterTextField;
 import ca.phon.ui.text.PromptedTextField;
@@ -201,17 +202,23 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		textGridOptionsPanel.add(new JLabel("Interval threshold (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(thresholdField, cc.xy(3, row++));
-		textGridOptionsPanel.add(new JLabel("Gap between intervals which will yield a new record.  0 for unspecified."), cc.xy(3, row++));
+		final JLabel subl1 = new JLabel("Gap between intervals which will yield a new record. 0 for unspecified.");
+		subl1.setFont(FontPreferences.getSmallFont());
+		textGridOptionsPanel.add(subl1, cc.xy(3, row++));
 		row++;
 		
 		textGridOptionsPanel.add(new JLabel("Preferred record length (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(prefLengthField, cc.xy(3, row++));
-		textGridOptionsPanel.add(new JLabel("Attempt to keep records under this length when possible.  0 for unspecified."), cc.xy(3, row++));
+		final JLabel subl2 = new JLabel("Keep records under this length when possible. 0 for unspecified.");
+		subl2.setFont(FontPreferences.getSmallFont());
+		textGridOptionsPanel.add(subl2, cc.xy(3, row++));
 		row++;
 		
 		textGridOptionsPanel.add(new JLabel("Max record length (s)"), cc.xy(1, row));
 		textGridOptionsPanel.add(maxLengthField, cc.xy(3, row++));
-		textGridOptionsPanel.add(new JLabel("Records longer than this value are discarded. 0 for unspecified."), cc.xy(3, row++));
+		final JLabel subl3 = new JLabel("Records longer than this value are not created. 0 for unspecified.");
+		subl3.setFont(FontPreferences.getSmallFont());
+		textGridOptionsPanel.add(subl3, cc.xy(3, row++));
 		row++;
 		
 		textGridOptionsPanel.add(new JLabel("Record delimiter"), cc.xy(1, row));
