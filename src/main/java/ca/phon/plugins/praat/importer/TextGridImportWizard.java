@@ -45,6 +45,7 @@ import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.undo.AddRecordEdit;
+import ca.phon.app.session.editor.undo.AddTierEdit;
 import ca.phon.plugin.PluginEntryPointRunner;
 import ca.phon.plugin.PluginException;
 import ca.phon.plugins.praat.TextGridManager;
@@ -152,6 +153,7 @@ public class TextGridImportWizard extends WizardFrame {
 			// add user defined tiers to session
 			final Map<String, TierDescription> tierMap = step1.getTierMap();
 			for(TierDescription td:tierMap.values()) {
+				if(td.getName() == null || td.getName().length() == 0) continue;
 				if(!SystemTierType.isSystemTier(td.getName())) {
 					boolean doImport = true;
 					for(TierDescription tierDesc:descs) {
@@ -162,11 +164,10 @@ public class TextGridImportWizard extends WizardFrame {
 					}
 					
 					if(doImport) {
-						session.addUserTier(td);
 						final TierViewItem tvi = SessionFactory.newFactory().createTierViewItem(td.getName(), true);
-						final List<TierViewItem> newView = new ArrayList<TierViewItem>(session.getTierView());
-						newView.add(tvi);
-						session.setTierView(newView);
+						final AddTierEdit addTierEdit = new AddTierEdit(editor, td, tvi);
+						addTierEdit.doIt();
+						cmpEdit.addEdit(addTierEdit);
 					}
 				}
 			}
