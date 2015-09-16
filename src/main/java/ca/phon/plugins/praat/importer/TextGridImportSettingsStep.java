@@ -449,12 +449,16 @@ public class TextGridImportSettingsStep extends WizardStep {
 				}
 			} else if(columnIndex == Col.GROUPED.ordinal()) {
 				final String tierName = (String)getValueAt(rowIndex, Col.PHON_TIER.ordinal());
-				final TierDescription td = (SessionFactory.newFactory()).createTierDescription(tierName, (Boolean)aValue);
-				tierMap.put((String)getValueAt(rowIndex, Col.TG_TIER.ordinal()), td);
-				super.fireTableCellUpdated(rowIndex, columnIndex);
+				if(tierName != null && tierName.trim().length() > 0) {
+					final TierDescription td = (SessionFactory.newFactory()).createTierDescription(tierName, (Boolean)aValue);
+					tierMap.put((String)getValueAt(rowIndex, Col.TG_TIER.ordinal()), td);
+					super.fireTableCellUpdated(rowIndex, columnIndex);
+				}
 			} else if(columnIndex == Col.GROUP_MARKER.ordinal()) {
 				final String tierName = (String)getValueAt(rowIndex, Col.TG_TIER.ordinal());
-				groupMarkers.put(tierName, (String)aValue);
+				if(tierName != null && tierName.trim().length() > 0) {
+					groupMarkers.put(tierName, (String)aValue);
+				}
 			}
 		}
 
