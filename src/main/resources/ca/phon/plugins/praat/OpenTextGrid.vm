@@ -5,9 +5,13 @@ preserveTimes$ = "yes"
 
 ## Load objects in Praat Object window
 snd = Open long sound file... $audioPath
+start = segStart;
+end = segEnd;
+#if($useFullAudio)
 select snd
 start = Get start time
 end = Get end time
+#end
 segment = Extract part... start end 'preserveTimes$'
 textGrid = Read from file... $textGridPath
 

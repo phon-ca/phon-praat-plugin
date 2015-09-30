@@ -217,8 +217,13 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		setupEditorActions();
 	}
 	
+	@Deprecated
 	private boolean hasOldTextGridFiles() {
-		boolean hasRecordTextGrids = false;
+		// deprecated as scanning for old TextGrids is expensive (i.e., it loads all record data during 
+		// editor startup)
+		return false;
+		
+		/*boolean hasRecordTextGrids = false;
 		for(Record r:parent.getEditor().getSession().getRecords()) {
 			final String recordTgPath = tgManager.textGridPath(r.getUuid().toString());
 			final File recordTgFile = new File(recordTgPath);
@@ -227,7 +232,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				break;
 			}
 		}
-		return hasRecordTextGrids;
+		return hasRecordTextGrids;*/
 	}
 	
 	private void setupEditorActions() {
@@ -397,7 +402,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	/**
 	 * Send TextGrid to Praat.
 	 */
-	public void openTextGrid() {
+	public void openTextGrid(boolean useFullAudio) {
 		File mediaFile =
 				getAudioFile();
 		if(mediaFile == null) return;
@@ -429,6 +434,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		map.put("textGridPath", tgPath);
 		map.put("textGridName", tgName);
 		map.put("segment", media);
+		map.put("useFullAudio", useFullAudio);
 		
 		try {
 			server.startServer();
@@ -740,11 +746,15 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		
 		praatMenu.addSeparator();
 		
-		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid");
-		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat");
-		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat");
+		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid", Boolean.TRUE);
+		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with full audio. High memory usage.");
+		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - full audio");
 		praatMenu.add(openTextGridAct);
 		
+		PhonUIAction openTextGridAct2 = new PhonUIAction(this, "openTextGrid", Boolean.FALSE);
+		openTextGridAct2.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with segment only. Low memory usage.");
+		openTextGridAct2.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - segment only");
+		praatMenu.add(openTextGridAct2);
 		
 		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
 		sendPraatAct.putValue(PhonUIAction.NAME, "SendPraat...");
