@@ -171,7 +171,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		thresholdField.setToolTipText("Max interval distance in seconds");
 		
 		prefLengthField = new FormatterTextField<Double>(formatter);
-		prefLengthField.setValue(0.0);
+		prefLengthField.setValue(10.0);
 		prefLengthField.setToolTipText("Preferred record length in seconds, 0 = unspecified");
 		
 		maxLengthField = new FormatterTextField<Double>(formatter);
