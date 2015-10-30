@@ -908,6 +908,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					}
 				} catch (PraatException | IOException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridViewer.this);
 				}
 				
 			}
