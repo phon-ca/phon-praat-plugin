@@ -92,10 +92,10 @@ function begin_search(s) {
 		tgName = (filters.textGridName.name.length() > 0 ? filters.textGridName.name : textGridManager.defaultTextGridName(s.corpus, s.name));
 		textGrid = textGridManager.openTextGrid(s.corpus, s.name, tgName);
 		if(textGrid == null) {
-			err.println("No TextGrid found for session with name " + tgName);
+			java.lang.System.err.println("No TextGrid found for session with name " + tgName);
 		}
 	} catch (e) {
-		err.println(e.message);
+		java.lang.System.err.println(e.message);
 	}
 }
 
@@ -124,7 +124,7 @@ function listDuration(recordIndex, groupIndex, ipa) {
 	if(tgi == null && ipa.length() > 0) {
 		tgi = ipa.elementAt(0).textInterval;
 		if(tgi == null) {
-			err.println("No TextGrid information for " + ipa);
+			java.lang.System.err.println("No TextGrid information for " + ipa);
 			return;
 		}
 		if(ipa.length() > 1 && ipa.elementAt(ipa.length()-1).textInterval) {

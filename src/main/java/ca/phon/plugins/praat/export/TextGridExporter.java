@@ -65,12 +65,6 @@ public class TextGridExporter {
 	private static final Logger LOGGER = Logger
 			.getLogger(TextGridExporter.class.getName());
 	
-	/** Default hash length in ms */
-	public final static float MARKER_MAX_LENGTH = 0.1f;
-	
-	/** Default marker interval/point text */
-	public final static String MARKER_TEXT = "#";
-
 	/** Default space length in ms */
 	public final static float SPACER_LENGTH = 0.01f;
 	
@@ -147,28 +141,20 @@ public class TextGridExporter {
 		
 		// calculate some values for interval times
 		final double totalTime = endTime - startTime;
-		final double hashSize = Math.min(MARKER_MAX_LENGTH, 0.05 * totalTime);
-		final int numHashes = record.numberOfGroups() + 1;
-		final float hashLength = (float)(hashSize * numHashes);
-		final double dataLength = totalTime - hashLength;
-		final double groupLength = dataLength / record.numberOfGroups();
+		final double groupLength = totalTime / record.numberOfGroups();
 		
 		// if the exportType is TIER, we create a 3-interval tier
 		// this takes care of all flat tiers
 		if(type == Segmentation.TIER) {
 			final Tier<String> t = record.getTier(tier, String.class);
 			final String tierData = (t == null ? "" : t.toString());
-			setupThreeIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
+			setupSingleIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
 		} else {
 			double currentStart = startTime;
-			double dataEnd = endTime - hashSize;
+			double dataEnd = endTime;
 			
 			for(int i = 0; i < record.numberOfGroups(); i++) {
 				final Group group = record.getGroup(i);
-				
-				// add group marker
-				tgTier.addInterval(currentStart, currentStart + hashSize, MARKER_TEXT);
-				currentStart += hashSize;
 				
 				final double groupStart = currentStart;
 				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
@@ -224,8 +210,6 @@ public class TextGridExporter {
 					}
 				}
 			}
-			// add final marker
-			tgTier.addInterval(dataEnd, endTime, MARKER_TEXT);
 		}
 	}
 	
@@ -353,18 +337,10 @@ public class TextGridExporter {
 	/*
 	 * Helper methods for adding tiers to TextGrids
 	 */
-	private void setupThreeIntervalTier(TextGrid textgrid, IntervalTier tier, String data, double startTime, double endTime) {
-		double totalTime = endTime - startTime;
-		double hashSize = Math.min(MARKER_MAX_LENGTH, 0.05 * totalTime);
+	private void setupSingleIntervalTier(TextGrid textgrid, IntervalTier tier, String data, double startTime, double endTime) {
 		double currentStart = startTime;
-		tier.addInterval(startTime, startTime+hashSize, MARKER_TEXT);
-		currentStart += hashSize;
-		
-		final double dataEnd = endTime - hashSize;
+		final double dataEnd = endTime;
 		tier.addInterval(currentStart, dataEnd, data);
-		currentStart = dataEnd;
-		
-		tier.addInterval(currentStart, endTime, MARKER_TEXT);
 	}
 	
 	/**

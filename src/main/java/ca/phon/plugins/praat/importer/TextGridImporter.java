@@ -87,7 +87,7 @@ public class TextGridImporter {
 	}
 	
 	public Record createRecordFromTextGrid(Session session, TextGrid textGrid, 
-			Map<String, TierDescription> tierMap, Map<String, String> groupMarkers) {
+			Map<String, TierDescription> tierMap) {
 		final SessionFactory factory = SessionFactory.newFactory();
 		final Record r = factory.createRecord();
 		final MediaSegment segment = factory.createMediaSegment();
@@ -114,7 +114,7 @@ public class TextGridImporter {
 				final IntervalTier tier = textGrid.checkSpecifiedTierIsIntervalTier(i);
 				final TierDescription td = tierMap.get(tier.getName().toString());
 				if(td != null) {
-					importTextGridTier(r, tier, td, groupMarkers.get(tier.getName().toString()) == null ? "#" : groupMarkers.get(tier.getName().toString()));
+					importTextGridTier(r, tier, td);
 				}
 			} catch (PraatException e) {
 				// not an interval tier
@@ -145,38 +145,29 @@ public class TextGridImporter {
 		return r;
 	}
 	
-	public void importTextGridTier(Record r, IntervalTier tgTier, TierDescription td, String groupMarker) {
+	public void importTextGridTier(Record r, IntervalTier tgTier, TierDescription td) {
 		final List<String> grpVals = new ArrayList<String>();
 		
 		if(tgTier.getName().toString().endsWith(": Tier")) {
-			String fullTierData = "[]";
-			for(long i = 1; i <= tgTier.numberOfIntervals(); i++) {
-				final TextInterval interval = tgTier.interval(i);
-				if(!interval.getText().equals(groupMarker)) {
-					fullTierData = interval.getText();
-					break; // only one interval with data expected
-				}
-			}
+			String fullTierData = 
+					(tgTier.numberOfIntervals() > 0 ? tgTier.interval(1).getText() : "[]");
 			
 			final String[] vals = fullTierData.split("\\[");
 			for(int i = 1; i < vals.length; i++) {
 				String val = vals[i].replaceAll("\\]", "").trim();
 				grpVals.add(val);
 			}
+		} else if(tgTier.getName().endsWith(": Group")) {
+			for(long i = 1; i <= tgTier.numberOfIntervals(); i++) {
+				final TextInterval interval = tgTier.interval(i);
+				grpVals.add(interval.getText().trim());
+			}
 		} else {
 			StringBuffer buffer = new StringBuffer();
 			for(long i = 1; i <= tgTier.numberOfIntervals(); i++) {
 				final TextInterval interval = tgTier.interval(i);
-				if(!interval.getText().equals(groupMarker)) {
-					if(buffer.length() > 0) buffer.append(" ");
-					buffer.append(interval.getText());
-				} else {
-					if(i > 1) {
-						String val = buffer.toString();
-						grpVals.add(val);
-						buffer.setLength(0);
-					}
-				}
+				if(buffer.length() > 0) buffer.append(" ");
+				buffer.append(interval.getText().trim());
 			}
 			if(buffer.length() > 0)
 				grpVals.add(buffer.toString());

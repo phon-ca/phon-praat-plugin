@@ -122,6 +122,7 @@ public class TextGridImportWizard extends WizardFrame {
 			// import text grids
 			btnCancel.setEnabled(false);
 			btnBack.setEnabled(false);
+//			generateTask.performTask();
 			PhonWorker.getInstance().invokeLater(generateTask);
 		}
 	}
@@ -184,27 +185,6 @@ public class TextGridImportWizard extends WizardFrame {
 					console.getLogBuffer().getStdOutStream().flush();
 				} catch (IOException e) {}
 				
-				// TODO
-//				if(step1.isDeleteAllRecords()) {
-//					MessageDialogProperties props = new MessageDialogProperties();
-//					props.setParentWindow(TextGridImportWizard.this);
-//					props.setRunAsync(false);
-//					props.setOptions(MessageDialogProperties.okCancelOptions);
-//					props.setTitle("Delete all records");
-//					props.setHeader("Delete all records");
-//					props.setMessage("This will delete all current record data, do you wish to continue?");
-//					
-//					int retVal = NativeDialogs.showMessageDialog(props);
-//					if(retVal != 0) {
-//						throw new IOException("User canceled record replacement");
-//					}
-//					
-//					while(session.getRecordCount() > 0) {
-//						DeleteRecordEdit edit = new DeleteRecordEdit(editor);
-//						edit.doIt();
-//						cmpEdit.addEdit(edit);
-//					}
-//				}
 				List<String> colNames = new ArrayList<>();
 				colNames.add("Record #");
 				colNames.add("Segment");
@@ -220,28 +200,24 @@ public class TextGridImportWizard extends WizardFrame {
 				
 				final String tgTierName = step1.getSelectedTier();
 				long tgTierIdx = 0;
+				IntervalTier intervalTier = new IntervalTier();
 				for(long tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
 					try {
-						IntervalTier intervalTier = textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+						intervalTier = textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
 						if(intervalTier.getName().equals(tgTierName)) {
 							tgTierIdx = tierIdx;
 							break;
 						}
 					} catch (PraatException pe) {}
 				}
-				final List<TextInterval> contiguousIntervals = 
-						TextGridUtils.getContiguousIntervals(textGrid, tgTierIdx, step1.getThreshold(),
-								step1.getPrefLength(), (step1.getRecordDelimiter().length() > 0 ? step1.getRecordDelimiter() : null));
-				for(TextInterval recordInterval:contiguousIntervals) {
-					double length = recordInterval.getXmax() - recordInterval.getXmin();
-					if(step1.getMaxLength() > 0 && length > step1.getMaxLength()) {
-						continue;
-					}
+
+				for(int i = 1; i <= intervalTier.numberOfIntervals(); i++) {
+					TextInterval recordInterval = intervalTier.interval(i);
 					
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
 					// create a new record for each interval
 					final Record newRecord =
-							importer.createRecordFromTextGrid(session, tg, step1.getTierMap(), step1.getMarkerMap());
+							importer.createRecordFromTextGrid(session, tg, step1.getTierMap());
 					
 					List<String> rowData = new ArrayList<>();
 					rowData.add( (++rIdx) + "");

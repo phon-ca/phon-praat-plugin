@@ -20,8 +20,6 @@ package ca.phon.plugins.praat.importer;
 import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -46,12 +44,13 @@ import javax.swing.table.AbstractTableModel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
+
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.session.TierNameTextCompleterModel;
-import ca.phon.formatter.Formatter;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.session.Session;
 import ca.phon.session.SessionFactory;
@@ -59,17 +58,11 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.text.DefaultTextCompleterModel;
-import ca.phon.ui.text.FormatterTextField;
-import ca.phon.ui.text.PromptedTextField;
 import ca.phon.ui.text.TextCompleter;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardStep;
-
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 
 public class TextGridImportSettingsStep extends WizardStep {
 
@@ -79,7 +72,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	private final static String MSG1_PROP = TextGridImportSettingsStep.class.getName() + ".msg1";
 	private final static String INFO_MESSAGE = 
-			"<html><p>This function will identify blocks of contiguous intervals in the reference tier.<br>Each block will become a single record.</p></html>";
+			"<html><p>This function will create a record for each interval in the reference tier.</p></html>";
 	
 	private final static String MSG2_PROP = TextGridImportSettingsStep.class.getName() + "msg2";
 	private final static String INFO_MESSAGE2 = 
@@ -95,15 +88,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	private JRadioButton replaceRecordsButton;
 
-	private FormatterTextField<Double> thresholdField;
-	
-	private FormatterTextField<Double> prefLengthField;
-	
-	private FormatterTextField<Double> maxLengthField;
-	
-	private PromptedTextField delimField;
-	private DefaultTextCompleterModel delimModel = new DefaultTextCompleterModel();
-	
 	private DefaultTextCompleterModel tierNameModel;
 	
 	private JXTable table;
@@ -113,8 +97,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 	private List<String> textGridTiers = new ArrayList<String>();
 	
 	private Map<String, TierDescription> tierMap = new LinkedHashMap<String, TierDescription>();
-	
-	private Map<String, String> groupMarkers = new LinkedHashMap<String, String>();
 	
 	private Session session;
 	
@@ -146,42 +128,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		textGridSelector.addItemListener( this::onSelectTextGrid );
 		
 		tierNameSelector = new JComboBox<>();
-		tierNameSelector.addItemListener( this::onSelectTierName );
-		
-		Formatter<Double> formatter = new Formatter<Double>() {
-
-			private NumberFormat nf = 
-					NumberFormat.getNumberInstance();
-			
-			@Override
-			public String format(Double arg0) {
-				nf.setMaximumFractionDigits(6);
-				return nf.format(arg0);
-			}
-
-			@Override
-			public Double parse(String arg0) throws ParseException {
-				return Double.parseDouble(arg0);
-			}
-			
-		};
-		
-		thresholdField = new FormatterTextField<Double>(formatter);
-		thresholdField.setValue(0.05);
-		thresholdField.setToolTipText("Max interval distance in seconds");
-		
-		prefLengthField = new FormatterTextField<Double>(formatter);
-		prefLengthField.setValue(10.0);
-		prefLengthField.setToolTipText("Preferred record length in seconds, 0 = unspecified");
-		
-		maxLengthField = new FormatterTextField<Double>(formatter);
-		maxLengthField.setValue(0.0);
-		maxLengthField.setToolTipText("Max record length in seconds");
-		
-		delimField = new PromptedTextField();
-		delimField.setPrompt("Enter record delimiter");
-		final TextCompleter delimCompleter = new TextCompleter(delimModel);
-		delimCompleter.install(delimField);
 		
 		JPanel textGridOptionsPanel = new JPanel();
 		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("Record Detection Options"));
@@ -199,30 +145,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		textGridOptionsPanel.add(new JLabel("Record reference tier"), cc.xy(1, row));
 		textGridOptionsPanel.add(tierNameSelector, cc.xy(3,row++));
 		row++;
-		
-		textGridOptionsPanel.add(new JLabel("Interval threshold (s)"), cc.xy(1, row));
-		textGridOptionsPanel.add(thresholdField, cc.xy(3, row++));
-		final JLabel subl1 = new JLabel("Gap between intervals which will yield a new record. 0 for unspecified.");
-		subl1.setFont(FontPreferences.getSmallFont());
-		textGridOptionsPanel.add(subl1, cc.xy(3, row++));
-		row++;
-		
-		textGridOptionsPanel.add(new JLabel("Preferred record length (s)"), cc.xy(1, row));
-		textGridOptionsPanel.add(prefLengthField, cc.xy(3, row++));
-		final JLabel subl2 = new JLabel("Keep records under this length when possible. 0 for unspecified.");
-		subl2.setFont(FontPreferences.getSmallFont());
-		textGridOptionsPanel.add(subl2, cc.xy(3, row++));
-		row++;
-		
-		textGridOptionsPanel.add(new JLabel("Max record length (s)"), cc.xy(1, row));
-		textGridOptionsPanel.add(maxLengthField, cc.xy(3, row++));
-		final JLabel subl3 = new JLabel("Records longer than this value are not created. 0 for unspecified.");
-		subl3.setFont(FontPreferences.getSmallFont());
-		textGridOptionsPanel.add(subl3, cc.xy(3, row++));
-		row++;
-		
-		textGridOptionsPanel.add(new JLabel("Record delimiter"), cc.xy(1, row));
-		textGridOptionsPanel.add(delimField, cc.xy(3, row++));
 		
 		recordOptionsGroup = new ButtonGroup();
 		addRecordsButton = new JRadioButton("Add records to session");
@@ -265,24 +187,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		});
 	}
 	
-	public void onSelectTierName(ItemEvent itemEvent) {
-		delimModel.clearCompletions();
-		final String textGridName = textGridSelector.getSelectedItem().toString();
-		final long selectedTierIdx = (long)tierNameSelector.getSelectedIndex()+1;
-		try {
-			final TextGrid textGrid = tgManager.openTextGrid(session.getCorpus(), session.getName(), textGridName);
-			final IntervalTier it = textGrid.checkSpecifiedTierIsIntervalTier(selectedTierIdx);
-			
-			for(long i = 1; i <= it.numberOfIntervals(); i++) {
-				final TextInterval interval = it.interval(i);
-				if(interval.getText() != null && interval.getText().length() > 0)
-					delimModel.addCompletion(interval.getText());
-			}
-		} catch (IOException | PraatException pe) {
-//			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
-		}
-	}
-	
 	public void onSelectTextGrid(ItemEvent itemEvent) {
 		final String textGridName = textGridSelector.getSelectedItem().toString();
 		
@@ -300,7 +204,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 			tierNameSelector.setModel(new DefaultComboBoxModel<>(tierNames.toArray(new String[0])));
 			if(tierNames.size() > 0) {
 				tierNameSelector.setSelectedIndex(0);
-				onSelectTierName(itemEvent);
 			}
 			textGridTiers.clear();
 			textGridTiers.addAll(tierNames);
@@ -326,22 +229,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		return (String)tierNameSelector.getSelectedItem();
 	}
 	
-	public double getThreshold() {
-		return thresholdField.getValue();
-	}
-	
-	public double getPrefLength() {
-		return prefLengthField.getValue();
-	}
-	
-	public double getMaxLength() {
-		return maxLengthField.getValue();
-	}
-	
-	public String getRecordDelimiter() {
-		return delimField.getText();
-	}
-	
 	public boolean isDeleteAllRecords() {
 		return replaceRecordsButton.isSelected();
 	}
@@ -349,16 +236,11 @@ public class TextGridImportSettingsStep extends WizardStep {
 	public Map<String, TierDescription> getTierMap() {
 		return this.tierMap;
 	}
-	
-	public Map<String, String> getMarkerMap() {
-		return this.groupMarkers;
-	}
 
 	public enum Col {
 		TG_TIER("TextGrid Tier"),
 		PHON_TIER("Phon Tier"),
-		GROUPED("Grouped"),
-		GROUP_MARKER("Group Delimiter");
+		GROUPED("Grouped");
 		
 		private String name;
 		
@@ -454,11 +336,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 					tierMap.put((String)getValueAt(rowIndex, Col.TG_TIER.ordinal()), td);
 					super.fireTableCellUpdated(rowIndex, columnIndex);
 				}
-			} else if(columnIndex == Col.GROUP_MARKER.ordinal()) {
-				final String tierName = (String)getValueAt(rowIndex, Col.TG_TIER.ordinal());
-				if(tierName != null && tierName.trim().length() > 0) {
-					groupMarkers.put(tierName, (String)aValue);
-				}
 			}
 		}
 
@@ -474,9 +351,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 				} else {
 					return true;
 				}
-			} else if(col == Col.GROUP_MARKER.ordinal()) {
-				final Boolean isGrouped = (Boolean)getValueAt(row, Col.GROUPED.ordinal());
-				return isGrouped;
 			}
 			return false;
 		}
@@ -500,9 +374,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 			} else if(col == Col.GROUPED.ordinal()) {
 				final TierDescription td = tierMap.get(tgTier);
 				retVal = (td != null ? td.isGrouped() : false);
-			} else if(col == Col.GROUP_MARKER.ordinal()) {
-				final String gm = groupMarkers.get(tgTier);
-				retVal = (gm != null ? gm : "#");
 			}
 			
 			return retVal;
