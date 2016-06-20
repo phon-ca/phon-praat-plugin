@@ -209,8 +209,7 @@ public class FormantSettings {
 		setIncludeIntensity(DEFAULT_INCLUDE_INTENSITY);
 	}
 	
-	public void saveAsDefaults() {
-		final Preferences prefs = PrefHelper.getUserPreferences();
+	public void saveToPreferences(Preferences prefs) {
 		prefs.putInt(NUM_FORMANTS_PROP, getNumFormants());
 		prefs.putDouble(MAX_FREQ_PROP, getMaxFrequency());
 		prefs.putDouble(TIME_STEP_PROP, getTimeStep());
@@ -221,6 +220,11 @@ public class FormantSettings {
 		prefs.putBoolean(INCLUDE_NUMFORMANTS_PROP, isIncludeNumFormants());
 		prefs.putBoolean(INCLUDE_INTENSITY_PROP, isIncludeIntensity());
 		prefs.putBoolean(INCLUDE_BANDWIDTHS_PROP, isIncludeBandwidths());
+	}
+	
+	public void saveAsDefaults() {
+		final Preferences prefs = PrefHelper.getUserPreferences();
+		saveToPreferences(prefs);
 	}
 	
 }

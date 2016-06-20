@@ -55,12 +55,12 @@ public class TextGridManager {
 	 * 
 	 * @deprecated since ver 15
 	 */
-	private final static String RECORD_TEXTGRID_FOLDER = "__res/plugin_data/textgrid/data";
+	private final static String RECORD_TEXTGRID_FOLDER = "plugin_data/textgrid/data";
 	
 	/**
 	 * Location of textgrid files in project folder for sessions
 	 */
-	private final static String SESSION_TEXTGRID_FOLDER = "__res/textgrids/";
+	private final static String SESSION_TEXTGRID_FOLDER = "textgrids/";
 	
 	public final static String DEFAULT_TEXTGRID_NAME = "default";
 	
@@ -282,7 +282,7 @@ public class TextGridManager {
 	 */
 	public String textGridPath(String recordId) {
 		final StringBuilder sb = new StringBuilder();
-		sb.append(project.getLocation());
+		sb.append(project.getResourceLocation());
 		sb.append(File.separator);
 		sb.append(RECORD_TEXTGRID_FOLDER);
 		sb.append(File.separator);
@@ -303,7 +303,7 @@ public class TextGridManager {
 	public String textGridFolder(String corpus, String session) {
 		final StringBuilder sb = new StringBuilder();
 		
-		sb.append(project.getLocation()).append(File.separator);
+		sb.append(project.getResourceLocation()).append(File.separator);
 		sb.append(SESSION_TEXTGRID_FOLDER).append(File.separator);
 		sb.append(corpus).append(File.separator);
 		sb.append(session);

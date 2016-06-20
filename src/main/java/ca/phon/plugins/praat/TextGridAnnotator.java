@@ -125,6 +125,8 @@ public class TextGridAnnotator {
 			for(int i = 0; i < ipaTier.numberOfGroups(); i++) {
 				final IPATranscript ipaGrp = ipaTier.getGroup(i);
 				for(IPAElement ele:ipaGrp.removePunctuation()) {
+					if(ele.getScType() == SyllableConstituentType.WORDBOUNDARYMARKER
+							|| ele.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER) continue;
 					final int eleIdx = ipaGrp.indexOf(ele);
 					String txt = ele.getText();
 					if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
