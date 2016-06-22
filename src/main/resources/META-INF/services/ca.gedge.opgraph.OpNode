@@ -1,2 +1,4 @@
 ca.phon.plugins.praat.opgraph.DurationNode
 ca.phon.plugins.praat.opgraph.FormantsNode
+ca.phon.plugins.praat.opgraph.PitchNode
+ca.phon.plugins.praat.opgraph.IntensityNode

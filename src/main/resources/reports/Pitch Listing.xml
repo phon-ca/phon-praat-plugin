@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<opgraph xmlns="http://gedge.ca/ns/opgraph" xmlns:nes="https://www.phon.ca/ns/node_editor" xmlns:oga="http://gedge.ca/ns/opgraph-app" xmlns:opqry="https://phon.ca/ns/opgraph_query">
+    <graph id="root">
+        <node id="d510549" type="class:ca.phon.app.opgraph.nodes.query.QueryHistoryNode">
+            <extensions>
+                <oga:meta x="15" y="15"/>
+            </extensions>
+        </node>
+        <node id="2e67bb53" type="class:ca.phon.app.opgraph.nodes.query.ResultsToTableNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="includeMetadata"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeTierInfo"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeExtraColumns"><![CDATA[true]]></oga:property>
+                </oga:settings>
+                <oga:meta x="229" y="14"/>
+            </extensions>
+        </node>
+        <node id="24ddbc67" type="class:ca.phon.plugins.praat.opgraph.PitchNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.dotSize"><![CDATA[1.0]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.voicingThreshold"><![CDATA[0.45]]></oga:property>
+                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.autoCorrelate"><![CDATA[true]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.maxCandidates"><![CDATA[15]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.silenceThreshold"><![CDATA[0.03]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.timStep"><![CDATA[0.0]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.units"><![CDATA[HERTZ]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.rangeStart"><![CDATA[75.0]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.rangeEnd"><![CDATA[500.0]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettingsvoicedUnvoicedCost"><![CDATA[0.14]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.octaveJumpCost"><![CDATA[0.35]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.veryAccurate"><![CDATA[false]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.octaveCost"><![CDATA[0.35]]></oga:property>
+                </oga:settings>
+                <oga:meta x="225" y="137"/>
+            </extensions>
+        </node>
+        <node id="2c77bffd" type="class:ca.phon.app.opgraph.nodes.log.PrintBufferNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="showTable"><![CDATA[true]]></oga:property>
+                </oga:settings>
+                <oga:meta x="398" y="141"/>
+            </extensions>
+        </node>
+        <link dest="2e67bb53" destField="project" source="d510549" sourceField="project"/>
+        <link dest="2e67bb53" destField="results" source="d510549" sourceField="result sets"/>
+        <link dest="24ddbc67" destField="table" source="2e67bb53" sourceField="table"/>
+        <link dest="24ddbc67" destField="project" source="d510549" sourceField="project"/>
+        <link dest="2c77bffd" destField="data" source="24ddbc67" sourceField="table"/>
+        <extensions>
+            <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
+                <opqry:info title="Pitch Listing">
+                    <opqry:message/>
+                </opqry:info>
+                <opqry:node ref="24ddbc67" showAsStep="true">
+                    <opqry:info title="Pitch">
+                        <opqry:message/>
+                    </opqry:info>
+                </opqry:node>
+            </opqry:nodewizard>
+            <nes:settings type="ca.phon.app.opgraph.report.ReportOpGraphEditorModel"/>
+        </extensions>
+    </graph>
+</opgraph>

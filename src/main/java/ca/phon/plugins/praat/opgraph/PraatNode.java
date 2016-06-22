@@ -102,7 +102,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 				}
 			} else if(obj instanceof IPATranscript) {
-				final IPATranscript ipa = (IPATranscript)obj;
+				final IPATranscript ipa = ((IPATranscript)obj).removePunctuation();
+				
 				if(ipa.length() > 0) {
 					// check first and last phones
 					TextInterval firstInterval = ipa.elementAt(0).getExtension(TextInterval.class);
