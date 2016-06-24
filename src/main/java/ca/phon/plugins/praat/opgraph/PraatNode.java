@@ -254,7 +254,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			if(textInterval == null) continue;
 			
 			// add formants row
-			addRowToTable(longSound, textInterval, sessionName, result, rv, resultValue, outputTable);
+			addRowToTable(longSound, textInterval, sessionName, segment, result, rv, resultValue, outputTable);
 		}
 		
 		List<String> colNames = getColumnNames();
@@ -291,7 +291,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	 * @param table
 	 */
 	public abstract void addRowToTable(LongSound longSound, TextInterval textInerval,
-			SessionPath sessionPath, Result result, ResultValue rv, Object value,
+			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table);
 	
 	public abstract List<String> getColumnNames();

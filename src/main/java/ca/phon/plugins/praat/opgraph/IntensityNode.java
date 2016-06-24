@@ -26,6 +26,7 @@ import ca.phon.plugins.praat.PitchSettings;
 import ca.phon.query.db.Result;
 import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.session.MediaSegment;
 import ca.phon.session.SessionPath;
 
 @OpNodeInfo(
@@ -43,11 +44,15 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 	private IntensitySettingsPanel intensitySettingsPanel;
 
 	@Override
-	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath, Result result,
+	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath,
+			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
 		final IntensitySettings intensitySettings = getIntensitySettings();
 		try {
-			final Sound sound = longSound.extractPart(textInterval.getXmin(), textInterval.getXmax(), 1);
+			final double xmin = segment.getStartValue()/1000.0;
+			final double xmax = segment.getEndValue()/1000.0;
+			
+			final Sound sound = longSound.extractPart(xmin, xmax, 1);
 			final Intensity intensity = 
 					sound.to_Intensity(intensitySettings.getViewRangeMin(), 0.0, 
 							(intensitySettings.getSubtractMean() ? 1 : 0));

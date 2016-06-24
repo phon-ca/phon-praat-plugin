@@ -9,6 +9,7 @@ import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.phon.query.db.Result;
 import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.session.MediaSegment;
 import ca.phon.session.SessionPath;
 
 @OpNodeInfo(
@@ -20,7 +21,8 @@ import ca.phon.session.SessionPath;
 public class DurationNode extends PraatNode {
 
 	@Override
-	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath, Result result,
+	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath,
+			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
 		// columns
 		int cols = 5  + // session + record + tier + group + rv

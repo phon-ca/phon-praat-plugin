@@ -41,6 +41,7 @@ import ca.phon.plugins.praat.FormantSettingsPanel;
 import ca.phon.query.db.Result;
 import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.session.MediaSegment;
 import ca.phon.session.SessionPath;
 
 /**
@@ -84,12 +85,15 @@ public class FormantsNode extends PraatNode implements NodeSettings {
 	
 	@Override
 	public void addRowToTable(LongSound longSound, TextInterval textInterval,
-			SessionPath sessionPath, Result result, ResultValue rv, Object value,
+			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table) {
 		final FormantSettings formantSettings = getFormantSettings();
 		
 		try {
-			final Sound sound = longSound.extractPart(textInterval.getXmin(), textInterval.getXmax(), 1);
+			final double xmin = segment.getStartValue()/1000.0;
+			final double xmax = segment.getEndValue()/1000.0;
+			
+			final Sound sound = longSound.extractPart(xmin, xmax, 1);
 			final Formant formants = sound.to_Formant_burg(
 					formantSettings.getTimeStep(),
 					formantSettings.getNumFormants(),
