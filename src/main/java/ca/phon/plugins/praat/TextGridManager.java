@@ -35,7 +35,7 @@ import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
-import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.Daata;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.project.Project;
@@ -261,7 +261,7 @@ public class TextGridManager {
 		
 		try {
 			LOGGER.info(tgFile.getAbsolutePath());
-			retVal = Data.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
+			retVal = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
 		} catch (PraatException e) {
 			throw new IOException(e);
 		}

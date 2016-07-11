@@ -799,8 +799,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			return;
 		}
 		
-		final Intensity intensity = sound.to_Intensity(intensitySettings.getViewRangeMin(), 
+		Intensity intensity = null;
+		try {
+			intensity = sound.to_Intensity(intensitySettings.getViewRangeMin(), 
 				0.0, intensitySettings.getSubtractMean() ? 1 : 0);
+		} catch (PraatException pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			return;
+		}
 		
 		final AtomicReference<Long> ixminRef = new AtomicReference<Long>();
 		final AtomicReference<Long> ixmaxRef = new AtomicReference<Long>();
@@ -1120,7 +1126,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				if(showPitch && pitch != null && !wavDisplay.hasSelection()) {
 					// get pitch at current x
 					double pitchVal = pitch.getValueAtX(time, Pitch.LEVEL_FREQUENCY,
-							pitchSettings.getUnits().ordinal(), 1);
+							pitchSettings.getUnits().ordinal(), true);
 					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
 						final double hzPerPixel = 
 								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();
@@ -1141,7 +1147,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				}
 				
 				if(showIntensity && intensity != null && !wavDisplay.hasSelection()) {
-					double intensityVal = intensity.getValueAtX(time, 1, Intensity.UNITS_DB, 1);
+					double intensityVal = intensity.getValueAtX(time, 1, Intensity.UNITS_DB, true);
 					
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel = 
@@ -1185,7 +1191,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					// draw avg pitch
 					double pitchVal = pitch.getMean(wavDisplay.getSelectionStart(), 
 							wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength(), Pitch.LEVEL_FREQUENCY,
-							pitchSettings.getUnits().ordinal(), 1);
+							pitchSettings.getUnits().ordinal(), true);
 					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
 						final double hzPerPixel = 
 								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();

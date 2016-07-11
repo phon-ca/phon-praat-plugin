@@ -98,7 +98,7 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			for(int i = 1; i <= 9; i++) {
 				double f0 = 
 						pitch.getValueAtTime(
-								textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits().ordinal(), 1);
+								textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits().ordinal(), true);
 				f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
 				rowData[colIdx++] = f0;
 			}

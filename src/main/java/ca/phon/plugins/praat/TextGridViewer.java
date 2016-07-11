@@ -54,7 +54,7 @@ import org.jdesktop.swingx.VerticalLayout;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.Daata;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.binding.sys.PraatDir;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
@@ -898,7 +898,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			if(tgFile.exists() && tgFile.isFile()) {
 				
 				try {
-					TextGrid tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
+					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
 					final SessionEditor model = parent.getEditor();
 					tgManager.saveTextGrid(model.getSession().getCorpus(), model.getSession().getName(), tg, textGridName);
 					

@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.sys.Data;
+import ca.hedlund.jpraat.binding.sys.Daata;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
 
@@ -58,7 +58,7 @@ public class TextGridScanner {
 		for(File f:textGridFolder.listFiles(tgFilter)) {
 			TextGrid tg = null;
 			try {
-				tg = Data.readFromFile(TextGrid.class, MelderFile.fromPath(f.getAbsolutePath()));
+				tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(f.getAbsolutePath()));
 				for(long i = 0; i < tg.numberOfTiers(); i++) {
 					final Function tgTier = tg.tier(i);
 					retVal.add(tgTier.getName().toString());
