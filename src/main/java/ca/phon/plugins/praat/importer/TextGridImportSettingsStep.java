@@ -18,6 +18,9 @@
 package ca.phon.plugins.praat.importer;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -41,6 +45,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
+import org.apache.batik.ext.swing.GridBagConstants;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
@@ -58,11 +63,13 @@ import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.ipamap.io.Grid;
 import ca.phon.ui.text.DefaultTextCompleterModel;
 import ca.phon.ui.text.TextCompleter;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardStep;
+import ca.phon.util.PrefHelper;
 
 public class TextGridImportSettingsStep extends WizardStep {
 
@@ -81,6 +88,8 @@ public class TextGridImportSettingsStep extends WizardStep {
 	private JComboBox<String> textGridSelector;
 	
 	private JComboBox<String> tierNameSelector;
+	
+	private JCheckBox ignoreEmptyIntervalsBox;
 	
 	private ButtonGroup recordOptionsGroup;
 	
@@ -131,20 +140,51 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		JPanel textGridOptionsPanel = new JPanel();
 		textGridOptionsPanel.setBorder(BorderFactory.createTitledBorder("Record Detection Options"));
-		textGridOptionsPanel.setLayout(new FormLayout("right:pref, 3dlu, fill:pref:grow", 
-				"pref, pref, 3dlu, pref, 3dlu, pref, pref, 3dlu, pref, pref, 3dlu, pref, pref, 3dlu, pref"));
-		final CellConstraints cc = new CellConstraints();
+		final GridBagLayout textGridOptionsLayout = new GridBagLayout();
+		textGridOptionsPanel.setLayout(textGridOptionsLayout);
+		final GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.gridheight = 1;
+		gbc.gridwidth = 1;
+		gbc.anchor = GridBagConstraints.EAST;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 0.0;
+		gbc.weighty = 0.0;
+		gbc.insets = new Insets(2, 2, 2, 2);
 		
-		int row = 1;
-		textGridOptionsPanel.add(infoPanel, cc.xyw(1,row++,3));
+		gbc.weightx = 1.0;
+		gbc.gridwidth = 2;
+		textGridOptionsPanel.add(infoPanel, gbc);
 		
-		textGridOptionsPanel.add(new JLabel("TextGrid"), cc.xy(1,row));
-		textGridOptionsPanel.add(textGridSelector, cc.xy(3,row++));
-		row++;
+		gbc.weightx = 0.0;
+		gbc.gridwidth = 1;
+		++gbc.gridy;
+		textGridOptionsPanel.add(new JLabel("TextGrid"), gbc);
+		gbc.weightx = 1.0;
+		++gbc.gridx;
+		gbc.anchor = GridBagConstraints.WEST;
+		textGridOptionsPanel.add(textGridSelector, gbc);
+
+		++gbc.gridy;
+		gbc.gridx = 0;
+		gbc.weightx = 0.0;
+		gbc.anchor = GridBagConstraints.EAST;
+		textGridOptionsPanel.add(new JLabel("Record reference tier"), gbc);
+		gbc.weightx = 1.0;
+		++gbc.gridx;
+		gbc.anchor = GridBagConstraints.WEST;
+		textGridOptionsPanel.add(tierNameSelector, gbc);
 		
-		textGridOptionsPanel.add(new JLabel("Record reference tier"), cc.xy(1, row));
-		textGridOptionsPanel.add(tierNameSelector, cc.xy(3,row++));
-		row++;
+		++gbc.gridy;
+		gbc.weightx = 1.0;
+		gbc.anchor = GridBagConstraints.WEST;
+		ignoreEmptyIntervalsBox = new JCheckBox("Ignore empty intervals");
+		ignoreEmptyIntervalsBox.setSelected(
+				PrefHelper.getBoolean(TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, Boolean.TRUE));
+		ignoreEmptyIntervalsBox.addActionListener( (e) -> PrefHelper.getUserPreferences().putBoolean(
+				TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, ignoreEmptyIntervalsBox.isSelected()) );
+		textGridOptionsPanel.add(ignoreEmptyIntervalsBox, gbc);
 		
 		recordOptionsGroup = new ButtonGroup();
 		addRecordsButton = new JRadioButton("Add records to session");
@@ -185,6 +225,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 			textGridSelector.setSelectedItem(tgManager.defaultTextGridName(session.getCorpus(), session.getName()));
 			onSelectTextGrid(new ItemEvent(textGridSelector, -1, textGridSelector.getSelectedItem(), ItemEvent.SELECTED));
 		});
+	}
+	
+	public boolean isIgnoreEmptyIntervals() {
+		return this.ignoreEmptyIntervalsBox.isSelected();
 	}
 	
 	public void onSelectTextGrid(ItemEvent itemEvent) {

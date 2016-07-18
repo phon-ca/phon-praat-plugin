@@ -31,11 +31,13 @@ import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.session.editor.undo.AddRecordEdit;
 import ca.phon.extensions.UnvalidatedValue;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.ipa.alignment.PhoneAligner;
 import ca.phon.ipa.alignment.PhoneMap;
 import ca.phon.orthography.Orthography;
+import ca.phon.project.Project;
 import ca.phon.session.Group;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.MediaUnit;
@@ -50,6 +52,9 @@ import ca.phon.syllabifier.Syllabifier;
 import ca.phon.syllabifier.SyllabifierLibrary;
 
 public class TextGridImporter {
+	
+	public static final String IGNORE_EMPTY_INTERVALS_PROP = 
+			TextGridImporter.class.getName() + ".ignoreEmptyIntervals";
 	
 	private final static Logger LOGGER = 
 			Logger.getLogger(TextGridImporter.class.getName());
@@ -86,6 +91,46 @@ public class TextGridImporter {
 		return retVal;
 	}
 	
+	public List<Record> importTextGridRecords(Project project, Session session, TextGrid textGrid,
+			String referenceTier, boolean ignoreEmptyIntervals, Map<String, TierDescription> tierMap) {
+		List<Record> retVal = new ArrayList<>();
+		
+		long tgTierIdx = 0;
+		IntervalTier intervalTier = new IntervalTier();
+		for(long tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
+			try {
+				intervalTier = textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+				if(intervalTier.getName().equals(referenceTier)) {
+					tgTierIdx = tierIdx;
+					break;
+				}
+			} catch (PraatException pe) {}
+		}
+		if(tgTierIdx <= 0) {
+			throw new IllegalArgumentException(referenceTier + " not found");
+		}
+
+		for(int i = 1; i <= intervalTier.numberOfIntervals(); i++) {
+			TextInterval recordInterval = intervalTier.interval(i);
+			
+			if(recordInterval.getText().trim().length() == 0 &&
+					ignoreEmptyIntervals) continue;
+			try {
+				TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
+				// create a new record for each interval
+				final Record newRecord =
+						createRecordFromTextGrid(session, tg, tierMap);
+				session.addRecord(newRecord);
+				
+				retVal.add(newRecord);
+			} catch (PraatException e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			}
+		}
+		
+		return retVal;
+	}
+	
 	public Record createRecordFromTextGrid(Session session, TextGrid textGrid, 
 			Map<String, TierDescription> tierMap) {
 		final SessionFactory factory = SessionFactory.newFactory();
@@ -104,7 +149,8 @@ public class TextGridImporter {
 			info.setSyllabifierLanguageForTier(SystemTierType.IPAActual.getName(), library.defaultSyllabifierLanguage());
 			session.putExtension(SyllabifierInfo.class, info);
 		}
-		final Syllabifier targetSyllabifier = library.getSyllabifierForLanguage(info.getSyllabifierLanguageForTier(SystemTierType.IPATarget.getName()));
+		final Syllabifier targetSyllabifier = 
+				library.getSyllabifierForLanguage(info.getSyllabifierLanguageForTier(SystemTierType.IPATarget.getName()));
 		final Syllabifier actualSyllabifier = library.getSyllabifierForLanguage(info.getSyllabifierLanguageForTier(SystemTierType.IPAActual.getName()));
 		
 		final PhoneAligner aligner = new PhoneAligner();

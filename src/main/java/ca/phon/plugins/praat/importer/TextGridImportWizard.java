@@ -214,6 +214,9 @@ public class TextGridImportWizard extends WizardFrame {
 				for(int i = 1; i <= intervalTier.numberOfIntervals(); i++) {
 					TextInterval recordInterval = intervalTier.interval(i);
 					
+					if(recordInterval.getText().trim().length() == 0 &&
+							step1.isIgnoreEmptyIntervals()) continue;
+					
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
 					// create a new record for each interval
 					final Record newRecord =
