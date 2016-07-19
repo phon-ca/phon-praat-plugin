@@ -29,14 +29,23 @@ public class DurationNode extends PraatNode {
 				3; // start/end time + length;
 		
 		Object[] rowData = new Object[cols];
-		rowData[0] = sessionPath;
-		rowData[1] = result.getRecordIndex()+1;
-		rowData[2] = rv.getTierName();
-		rowData[3] = rv.getGroupIndex()+1;
-		rowData[4] = value;
-		rowData[5] = textInterval.getXmin();
-		rowData[6] = textInterval.getXmax();
-		rowData[7] = textInterval.getXmax() - textInterval.getXmin();
+		int col = 0;
+		rowData[col++] = sessionPath;
+		rowData[col++] = result.getRecordIndex()+1;
+		
+		if(isUseRecordInterval()) {
+			// add nothing
+		} else if(isUseTextGridInterval()) {
+			rowData[col++] = textInterval.getText();
+		} else {
+			rowData[col++] = rv.getTierName();
+			rowData[col++] = rv.getGroupIndex()+1;
+			rowData[col++] = value;
+		}
+		
+		rowData[col++] = textInterval.getXmin();
+		rowData[col++] = textInterval.getXmax();
+		rowData[col++] = textInterval.getXmax() - textInterval.getXmin();
 		
 		table.addRow(rowData);
 	}
@@ -47,9 +56,17 @@ public class DurationNode extends PraatNode {
 		
 		colNames.add("Session");
 		colNames.add("Record");
-		colNames.add("Tier");
-		colNames.add("Group");
-		colNames.add(getColumn());
+		
+		if(isUseRecordInterval()) {
+			// no extra tiers
+		} else if (isUseTextGridInterval()) {
+			colNames.add("Text");
+		} else {
+			colNames.add("Tier");
+			colNames.add("Group");
+			colNames.add(getColumn());
+		}
+		
 		colNames.add("Start Time");
 		colNames.add("End Time");
 		colNames.add("Duration");

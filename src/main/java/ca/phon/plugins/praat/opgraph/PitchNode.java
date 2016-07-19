@@ -1,6 +1,8 @@
 package ca.phon.plugins.praat.opgraph;
 
 import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -87,9 +89,17 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			int colIdx = 0;
 			rowData[colIdx++] = sessionPath;
 			rowData[colIdx++] = result.getRecordIndex()+1;
-			rowData[colIdx++] = rv.getTierName();
-			rowData[colIdx++] = rv.getGroupIndex()+1;
-			rowData[colIdx++] = value;
+			
+			if(isUseRecordInterval()) {
+				// add nothing
+			} else if(isUseTextGridInterval()) {
+				rowData[colIdx++] = textInterval.getText();
+			} else {
+				rowData[colIdx++] = rv.getTierName();
+				rowData[colIdx++] = rv.getGroupIndex()+1;
+				rowData[colIdx++] = value;
+			}
+			
 			rowData[colIdx++] = textInterval.getXmin();
 			rowData[colIdx++] = textInterval.getXmax();
 			
@@ -115,9 +125,17 @@ public class PitchNode extends PraatNode implements NodeSettings {
 		
 		colNames.add("Session");
 		colNames.add("Record #");
-		colNames.add("Tier");
-		colNames.add("Group #");
-		colNames.add(getColumn());
+		
+		if(isUseRecordInterval()) {
+			// no extra tiers
+		} else if (isUseTextGridInterval()) {
+			colNames.add("Text");
+		} else {
+			colNames.add("Tier");
+			colNames.add("Group");
+			colNames.add(getColumn());
+		}
+		
 		colNames.add("Start Time");
 		colNames.add("End Time");
 		
@@ -143,8 +161,22 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			settingsPanel = (JPanel)super.getComponent(document);
 			pitchSettingsPanel = new PitchSettingsPanel();
 			pitchSettingsPanel.loadSettings(pitchSettings);
-			settingsPanel.add(new JXTitledSeparator("Pitch Settings"));
-			settingsPanel.add(pitchSettingsPanel);
+
+			final GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 7;
+			gbc.weightx = 1.0;
+			gbc.weighty = 0.0;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.insets = new Insets(5, 2, 2, 2);
+			settingsPanel.add(new JXTitledSeparator("Pitch Settings"), gbc);
+			
+			++gbc.gridy;
+			gbc.weightx = 1.0;
+			gbc.weighty = 1.0;
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.insets = new Insets(2, 2, 2, 2);
+			settingsPanel.add(pitchSettingsPanel, gbc);
 		}
 		return settingsPanel;
 	}
