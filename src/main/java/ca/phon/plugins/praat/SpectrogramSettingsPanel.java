@@ -29,6 +29,7 @@ import javax.swing.JPanel;
 import org.jdesktop.swingx.VerticalLayout;
 
 import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
+import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
 import ca.phon.ui.action.PhonUIAction;
 
 import com.jgoodies.forms.layout.CellConstraints;
@@ -50,7 +51,7 @@ public class SpectrogramSettingsPanel extends JPanel {
 	
 	private JFormattedTextField freqStepField;
 	
-	private JComboBox windowShapeBox;
+	private JComboBox<kSound_to_Spectrogram_windowShape> windowShapeBox;
 	
 	private JFormattedTextField preEmphasisField;
 	
@@ -99,7 +100,7 @@ public class SpectrogramSettingsPanel extends JPanel {
 		formPanel.add(freqStepField, cc.xy(3, 7));
 		formPanel.add(new JLabel("(Hz)"), cc.xy(4, 7));
 		
-		windowShapeBox = new JComboBox(kSound_to_Spectrogram_windowShape.values());
+		windowShapeBox = new JComboBox<>(kSound_to_Spectrogram_windowShape.values());
 		formPanel.add(new JLabel("Window shape:"), cc.xy(1, 9));
 		formPanel.add(windowShapeBox, cc.xy(3, 9));
 		

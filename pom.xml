@@ -66,7 +66,7 @@
     <project.build.targetVersion>1.8</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.13.2</ca.hedlund.jpraat.version>
+    <ca.hedlund.jpraat.version>0.13.4</ca.hedlund.jpraat.version>
     <ca.phon.phon-app.version>2.2.0-SNAPSHOT</ca.phon.phon-app.version>
     <ca.phon.native-dialogs.version>4</ca.phon.native-dialogs.version>
     <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>

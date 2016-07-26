@@ -57,8 +57,15 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		return hiddenTiers.contains(tierName);
 	}
 	
-	public void setHidden(String tierName) {
-		hiddenTiers.add(tierName);
+	public void setHidden(String tierName, boolean hidden) {
+		if(hidden)
+			hiddenTiers.add(tierName);
+		else
+			hiddenTiers.remove(tierName);
+	}
+	
+	public void clearHiddenTiers() {
+		this.hiddenTiers.clear();
 	}
 	
 	public boolean isPaintTierLabels() {
@@ -75,25 +82,29 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
 		double contentHeight = bounds.getHeight();
-		double tierHeight = contentHeight / obj.numberOfTiers();
+		double tierHeight = contentHeight / (obj.numberOfTiers() - hiddenTiers.size());
 		
 		g2d.setColor(Color.WHITE);
 		g2d.fill(bounds);
 		
+		int visibleTierIdx = 0;
 		for(long tIdx = 1; tIdx <= obj.numberOfTiers(); tIdx++) {
+			final Function tier = obj.tier(tIdx);
+			if(isHidden(tier.getName())) continue;
+			
 			// tier rect
 			final Rectangle2D tierRect = new Rectangle2D.Double(
-					bounds.getX(), bounds.getY() + ((tIdx-1)*tierHeight),
+					bounds.getX(), bounds.getY() + (visibleTierIdx*tierHeight),
 					bounds.getWidth(), tierHeight);
+			visibleTierIdx++;
+			
 			try {
 				final IntervalTier intervalTier = obj.checkSpecifiedTierIsIntervalTier(tIdx);
-				if(!isHidden(intervalTier.getName().toString())) 
-					paintIntervalTier(intervalTier, g2d, tierRect);
+				paintIntervalTier(intervalTier, g2d, tierRect);
 			} catch (PraatException pe) {
 				try {
 					final TextTier pointTier = obj.checkSpecifiedTierIsPointTier(tIdx);
-					if(!isHidden(pointTier.getName().toString()))
-						paintPointTier(pointTier, g2d, tierRect);
+					paintPointTier(pointTier, g2d, tierRect);
 				} catch (PraatException pe1) {
 					LOGGER.log(Level.SEVERE, pe1.getLocalizedMessage(), pe1);
 				}

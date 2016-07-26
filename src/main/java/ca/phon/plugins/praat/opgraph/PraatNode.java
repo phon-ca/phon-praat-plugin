@@ -28,6 +28,7 @@ import ca.gedge.opgraph.InputField;
 import ca.gedge.opgraph.OpContext;
 import ca.gedge.opgraph.app.GraphDocument;
 import ca.gedge.opgraph.app.extensions.NodeSettings;
+import ca.gedge.opgraph.exceptions.BreakpointEncountered;
 import ca.gedge.opgraph.exceptions.ProcessingException;
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
@@ -172,6 +173,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		List<Integer> recordList = new ArrayList<>();
 		
 		for(int row = 0; row < table.getRowCount(); row++) {
+			if(super.isCanceled()) throw new BreakpointEncountered(null, this);
+			
 			final SessionPath sessionName = (SessionPath)table.getValueAt(row, sessionNameCol);
 			if(session == null || !lastSessionName.equals(sessionName)) {
 				try {
@@ -197,8 +200,9 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			final MediaSegment segment = segTier.getGroup(0);
 			double startTime = segment.getStartValue() / 1000.0;
 			double endTime = segment.getEndValue() / 1000.0;
+			TextGrid recordTextGrid = textGrid;
 			try {
-				TextGrid recordTextGrid = textGrid.extractPart(startTime, endTime, 1);
+				recordTextGrid = textGrid.extractPart(startTime, endTime, 1);
 				annotator.annotateRecord(recordTextGrid, record);
 			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -217,11 +221,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			} else if(isUseTextGridInterval()) {
 				if(recordList.contains(result.getRecordIndex())) continue;
 				String textGridTier = getTextGridTier();
-				final long tierNum = TextGridUtils.tierNumberFromName(textGrid, textGridTier);
+				final long tierNum = TextGridUtils.tierNumberFromName(recordTextGrid, textGridTier);
 				if(tierNum <= 0) continue;
 				
 				try {
-					final IntervalTier intervalTier = textGrid.checkSpecifiedTierIsIntervalTier(tierNum);
+					final IntervalTier intervalTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierNum);
 					recordList.add(result.getRecordIndex());
 					
 					for(long i = 1; i <= intervalTier.numberOfIntervals(); i++) {
@@ -380,11 +384,13 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	}
 
 	public boolean isUseColumnInterval() {
-		return useColumnInterval;
+		return (fromColumnBox != null ? fromColumnBox.isSelected() : useColumnInterval);
 	}
 
 	public void setUseColumnInterval(boolean useColumnInterval) {
 		this.useColumnInterval = useColumnInterval;
+		if(fromColumnBox != null)
+			fromColumnBox.setSelected(useColumnInterval);
 	}
 	
 	public String getTextGridTier() {
@@ -504,7 +510,6 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		retVal.put("column", getColumn());
 		return retVal;
 	}
-
 
 	@Override
 	public void loadSettings(Properties properties) {

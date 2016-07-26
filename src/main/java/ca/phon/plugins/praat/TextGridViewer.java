@@ -33,8 +33,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,14 +46,17 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.event.MouseInputAdapter;
 
 import org.jdesktop.swingx.VerticalLayout;
 
+import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
@@ -77,7 +83,6 @@ import ca.phon.plugins.praat.script.PraatScriptContext;
 import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
 import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
-import ca.phon.session.Record;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
@@ -85,7 +90,9 @@ import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.fonts.FontPreferences;
+import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.ui.nativedialogs.FileFilter;
 import ca.phon.ui.nativedialogs.NativeDialogEvent;
 import ca.phon.ui.nativedialogs.NativeDialogs;
@@ -167,9 +174,9 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		if(defaultTextGridFile != null) {
 			try {
 				final TextGrid tg = TextGridManager.loadTextGrid(defaultTextGridFile);
-				setTextGrid(tg);
 				currentTextGridName = tgManager.defaultTextGridName(parent.getEditor().getSession().getCorpus(),
 						parent.getEditor().getSession().getName());
+				setTextGrid(tg);
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
@@ -250,11 +257,16 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	
 	public void setTextGrid(TextGrid tg) {
 		this.tg = tg;
+		updateHiddenTiers();
 		setupTextGrid();
 	}
 	
 	public TextGrid getTextGrid() {
 		return this.tg;
+	}
+	
+	public TextGridPainter getTextGridPainter() {
+		return this.tgPainter;
 	}
 	
 	private final PropertyChangeListener tierUpdater = new PropertyChangeListener() {
@@ -381,8 +393,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			final TextGrid textGrid = manager.openTextGrid(parent.getEditor().getSession().getCorpus(), 
 					parent.getEditor().getSession().getName(), textGridName);
 			if(textGrid != null) {
-				setTextGrid(textGrid);
 				currentTextGridName = textGridName;
+				setTextGrid(textGrid);
 				
 				// lock textgrid if necessary
 				if(serverMap.containsKey(textGridName)) {
@@ -624,6 +636,70 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		update();
 	}
 	
+	public void onShowHideTiers() {
+		final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame(), "Show/Hide TextGrid Tiers");
+		dialog.setModal(true);
+		
+		dialog.getContentPane().setLayout(new BorderLayout());
+		dialog.getContentPane().add(new DialogHeader("Show/Hide TextGrid Tiers", 
+				currentTextGridName), BorderLayout.NORTH);
+		
+		final ShowHideTierTable table = new ShowHideTierTable(this);
+		dialog.getContentPane().add(new JScrollPane(table), BorderLayout.CENTER);
+		
+		final JButton okBtn = new JButton("Ok");
+		okBtn.addActionListener((e) -> dialog.setVisible(false));
+		dialog.getContentPane().add(ButtonBarBuilder.buildOkBar(okBtn), BorderLayout.SOUTH);
+		
+		dialog.pack();
+		dialog.setSize(600, 500);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
+		
+		saveHiddenTiers();
+		
+		tgPainter.setRepaintBuffer(true);
+		revalidate();
+		repaint();
+	}
+	
+	private void updateHiddenTiers() {
+		if(tg == null) return;
+		getTextGridPainter().clearHiddenTiers();
+		final String propName = parent.getEditor().getSession().getCorpus() + "." + 
+				parent.getEditor().getSession().getName() + "." + currentTextGridName + ".hiddenTiers";
+		
+		final String hiddenTiers = 
+				PrefHelper.getUserPreferences().get(propName, "");
+		final List<String> tierNames = Arrays.asList(hiddenTiers.split(","));
+		for(int i = 1; i <= tg.numberOfTiers(); i++) {
+			final Function tier = tg.tier(i);
+			if(tierNames.contains(tier.getName())) {
+				getTextGridPainter().setHidden(tier.getName(), true);
+			} else {
+				getTextGridPainter().setHidden(tier.getName(), false);
+			}
+		}
+	}
+	
+	private void saveHiddenTiers() {
+		if(tg == null) return;
+		final String propName = parent.getEditor().getSession().getCorpus() + "." + 
+				parent.getEditor().getSession().getName() + "." + currentTextGridName + ".hiddenTiers";
+		
+		final StringBuffer buffer = new StringBuffer();
+		for(int i = 1; i <= tg.numberOfTiers(); i++) {
+			final Function tier = tg.tier(i);
+			if(getTextGridPainter().isHidden(tier.getName())) {
+				if(buffer.length() > 0) buffer.append(',');
+				buffer.append(tier.getName());
+			}
+		}
+		final String hiddenTiers = buffer.toString();
+		
+		PrefHelper.getUserPreferences().put(propName, hiddenTiers);
+	}
+	
 	public void onPlayInterval() {
 		parent.getWavDisplay().play();
 	}
@@ -665,6 +741,10 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		toggleLabelsAct.putValue(PhonUIAction.SELECTED_KEY, TextGridViewer.this.showTierLabels);
 		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
 		praatMenu.add(toggleLabelsItem);
+		
+		final PhonUIAction showHideTiersAct = new PhonUIAction(this, "onShowHideTiers");
+		showHideTiersAct.putValue(PhonUIAction.NAME, "Show/hide TextGrid tiers...");
+		praatMenu.add(showHideTiersAct);
 		
 		final ImageIcon lockIcon = IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL);
 		
@@ -808,6 +888,19 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		
 	}
 	
+	public List<String> getVisibleTiers() {
+		final List<String> visibleTiers = new ArrayList<>();
+		
+		for(long i = 1; i <= tg.numberOfTiers(); i++) {
+			final Function tier = tg.tier(i);
+			if(!tgPainter.isHidden(tier.getName())) {
+				visibleTiers.add(tier.getName());
+			}
+		}
+		
+		return visibleTiers;
+	}
+	
 	private class TextGridContentPanel extends JPanel {
 
 		private static final long serialVersionUID = 1370029937245278277L;
@@ -825,7 +918,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			Dimension retVal = super.getPreferredSize();
 			
 			if(tg != null) {
-				retVal.height = 50 * (int)tg.numberOfTiers();
+				retVal.height = 50 * getVisibleTiers().size();
 			}
 			
 			return retVal;

@@ -95,7 +95,7 @@ public class PitchSpecklePainter extends BufferedPainter<Pitch> implements Praat
 		final int lastFrame = imaxRef.get().intValue();
 		
 		final double radius =
-				Math.ceil(0.5 * settings.getDotSize() * Toolkit.getDefaultToolkit().getScreenResolution() / 25.4);
+				((0.5 * settings.getDotSize()) * Toolkit.getDefaultToolkit().getScreenResolution()) / 25.4;
 		
 		for(int i = firstFrame; i <= lastFrame; i++) {
 			double time = pitch.indexToX(i);

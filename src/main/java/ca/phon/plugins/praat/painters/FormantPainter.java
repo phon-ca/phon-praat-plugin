@@ -90,7 +90,7 @@ public class FormantPainter extends BufferedPainter<Formant> implements PraatPai
 		}
 		
 		final double radius =
-				Math.ceil(0.5 * settings.getDotSize() * Toolkit.getDefaultToolkit().getScreenResolution() / 25.4);
+				((0.5 * settings.getDotSize()) * Toolkit.getDefaultToolkit().getScreenResolution()) / 25.4;
 		
 		g2d.setColor(Color.red);
 		for(int i = firstFrame; i <= lastFrame; i++) {
