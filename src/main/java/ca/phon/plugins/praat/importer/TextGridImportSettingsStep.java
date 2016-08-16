@@ -18,12 +18,14 @@
 package ca.phon.plugins.praat.importer;
 
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,10 +33,12 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -56,11 +60,16 @@ import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.session.TierNameTextCompleterModel;
+import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.view.tier_management.TierEditorDialog;
+import ca.phon.formatter.Formatter;
+import ca.phon.formatter.FormatterFactory;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.session.Session;
 import ca.phon.session.SessionFactory;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
+import ca.phon.session.TierViewItem;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.ipamap.io.Grid;
@@ -97,8 +106,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 	
 	private JRadioButton replaceRecordsButton;
 
-	private DefaultTextCompleterModel tierNameModel;
-	
 	private JXTable table;
 	
 	private TextGridImportTableModel tableModel;
@@ -117,8 +124,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		this.session = session;
 		this.tgManager = tgManager;
-		
-		this.tierNameModel = new TierNameTextCompleterModel(session);
 		
 		init();
 	}
@@ -208,12 +213,18 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 		tableModel = new TextGridImportTableModel();
 		table = new JXTable(tableModel);
-		
-		final JTextField tierNameField = new JTextField();
-		table.getColumn(1).setCellEditor(new TierNameCellEditor(tierNameField));
-		
 		final JScrollPane scroller = new JScrollPane(table);
 		
+		
+		final JComboBox<String> tierNameBox = new JComboBox<>(new TierNameModel());
+		tierNameBox.addItemListener( e -> {
+			if(tierNameBox.getSelectedItem() != null 
+					&& tierNameBox.getSelectedItem().equals("New tier...")) {
+				showNewTierDialog();
+			}
+		});
+		
+		table.getColumn(Col.PHON_TIER.ordinal()).setCellEditor(new DefaultCellEditor(tierNameBox));
 		
 		final JPanel btmPanel = new JPanel(new BorderLayout());
 		btmPanel.add(tblInfoPanel, BorderLayout.NORTH);
@@ -225,6 +236,41 @@ public class TextGridImportSettingsStep extends WizardStep {
 			textGridSelector.setSelectedItem(tgManager.defaultTextGridName(session.getCorpus(), session.getName()));
 			onSelectTextGrid(new ItemEvent(textGridSelector, -1, textGridSelector.getSelectedItem(), ItemEvent.SELECTED));
 		});
+	}
+	
+	private void showNewTierDialog() {
+		final int row = table.getSelectedRow();
+		if(row <= 0) return;
+		
+		final String tgTier = (String)table.getValueAt(row, Col.TG_TIER.ordinal());
+		
+		final TierEditorDialog ted = new TierEditorDialog(false);
+		ted.getTierEditor().setTierName(tgTier);
+		ted.setModal(true);
+		ted.pack();
+		if(ted.showDialog()) {
+			final SessionFactory factory = SessionFactory.newFactory();
+			// add tier to session
+			final TierDescription tierDesc = factory.createTierDescription(
+					ted.getTierEditor().getTierName(), ted.getTierEditor().isGrouped(), String.class);
+			session.addUserTier(tierDesc);
+			
+			final Formatter<Font> fontFormatter = FormatterFactory.createFormatter(Font.class);
+			final String fontString = fontFormatter.format(ted.getTierEditor().getTierFont());
+			final TierViewItem tvi = factory.createTierViewItem(
+					ted.getTierEditor().getTierName(), true, fontString, false);
+			final List<TierViewItem> tierView = new ArrayList<>(session.getTierView());
+			tierView.add(tvi);
+			session.setTierView(tierView);
+			
+			firePropertyChange(EditorEventType.TIER_VIEW_CHANGED_EVT, true, false);
+			
+			SwingUtilities.invokeLater( () ->
+				table.setValueAt(ted.getTierEditor().getTierName(), row, Col.PHON_TIER.ordinal()) );
+		} else {
+			SwingUtilities.invokeLater( () -> 
+				table.setValueAt("", row, Col.PHON_TIER.ordinal()) );
+		}
 	}
 	
 	public boolean isIgnoreEmptyIntervals() {
@@ -296,12 +342,37 @@ public class TextGridImportSettingsStep extends WizardStep {
 		
 	}
 	
-	private class TierNameCellEditor extends DefaultCellEditor {
+	private class TierNameModel extends DefaultComboBoxModel<String> {
+		
+		public List<String> getTierList() {
+			List<String> retVal = new ArrayList<>();
+			
+			retVal.add("");
+			retVal.add(SystemTierType.Orthography.getName());
+			retVal.add(SystemTierType.IPATarget.getName());
+			retVal.add(SystemTierType.IPAActual.getName());
+			retVal.add(SystemTierType.Notes.getName());
+			
+			session.getUserTiers().forEach( tier -> retVal.add(tier.getName()) );
+			
+			retVal.add("New tier...");
+			
+			return retVal;
+		}
 
-		public TierNameCellEditor(JTextField textField) {
-			super(textField);
-			final TextCompleter completer = new TextCompleter(tierNameModel);
-			completer.install(textField);
+		@Override
+		public int getSize() {
+			int retVal = 2; // blank + New tier...
+			
+			retVal += 4; // default tiers
+			retVal += session.getUserTierCount();
+			
+			return retVal;
+		}
+
+		@Override
+		public String getElementAt(int index) {
+			return getTierList().get(index);
 		}
 		
 	}
@@ -335,6 +406,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 			if(columnIndex == Col.PHON_TIER.ordinal()) {
 				final String selectedTier = (String)aValue;
+				if(selectedTier == null) return;
 				if(selectedTier.length() == 0) {
 					tierMap.remove((String)getValueAt(rowIndex, Col.TG_TIER.ordinal()));
 					super.fireTableRowsUpdated(rowIndex, rowIndex);

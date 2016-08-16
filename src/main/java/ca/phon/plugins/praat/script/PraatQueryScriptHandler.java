@@ -22,6 +22,7 @@ import java.net.URL;
 
 import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
+import ca.phon.query.db.ScriptLibrary;
 import ca.phon.query.script.QueryName;
 import ca.phon.query.script.QueryScript;
 import ca.phon.query.script.QueryScriptHandler;
@@ -44,6 +45,7 @@ public class PraatQueryScriptHandler extends ClassLoaderHandler<QueryScript> imp
 		final QueryName qn = retVal.getExtension(QueryName.class);
 		if(qn != null) {
 			qn.setCategory("Praat");
+			qn.setScriptLibrary(ScriptLibrary.PLUGINS);
 		}
 		return retVal;
 	}

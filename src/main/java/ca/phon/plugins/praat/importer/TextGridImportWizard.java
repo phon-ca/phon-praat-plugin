@@ -99,6 +99,10 @@ public class TextGridImportWizard extends WizardFrame {
 
 	private void init() {
 		addWizardStep(step1);
+		step1.addPropertyChangeListener(EditorEventType.TIER_VIEW_CHANGED_EVT, e -> {
+			final EditorEvent ee = new EditorEvent(EditorEventType.TIER_VIEW_CHANGED_EVT, step1);
+			editor.getEventManager().queueEvent(ee);
+		});
 		
 		step3 = new WizardStep();
 		step3.setLayout(new BorderLayout());
