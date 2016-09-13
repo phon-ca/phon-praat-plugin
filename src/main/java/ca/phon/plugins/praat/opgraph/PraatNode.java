@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -55,6 +56,7 @@ import ca.phon.session.Session;
 import ca.phon.session.SessionPath;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
+import ca.phon.session.TierString;
 import ca.phon.ui.text.PromptedTextField;
 
 public abstract class PraatNode extends TableOpNode implements NodeSettings {
@@ -136,6 +138,24 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					TextInterval firstInterval = ipa.elementAt(0).getExtension(TextInterval.class);
 					TextInterval lastInterval = ipa.elementAt(ipa.length()-1).getExtension(TextInterval.class);
 					
+					if(firstInterval != null && lastInterval != null) {
+						try {
+							retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
+						} catch (PraatException e) {
+							LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+						}
+					}
+				}
+			} else if(obj instanceof TierString) {
+				final TierString tierString = (TierString)obj;
+				
+				TextInterval interval = tierString.getExtension(TextInterval.class);
+				if(interval == null && tierString.numberOfWords() > 0) {
+					TierString firstWord = tierString.getWord(0);
+					TierString lastWord = tierString.getWord(tierString.numberOfWords()-1);
+					
+					TextInterval firstInterval = firstWord.getExtension(TextInterval.class);
+					TextInterval lastInterval = lastWord.getExtension(TextInterval.class);
 					if(firstInterval != null && lastInterval != null) {
 						try {
 							retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
@@ -287,17 +307,54 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 							&& rv.getRange().getRange() == ortho.toString().length()) {
 						resultValue = ortho;
 					} else {
-						// try to copy whole words if possible to retain annotations
-						List<OrthoElement> orthoEles = new ArrayList<>();
+						// try to copy whole elements if possible to retain annotations
+						int startEleIdx = -1;
+						int endEleIdx = -1;
+						// rv.getRange().getFirst() must start at the beginning of an element
 						int startIdx = 0;
-						for(OrthoElement ele:ortho) {
-							if(rv.getRange().getFirst() <= startIdx &&
-									rv.getRange().getLast() >= (startIdx + ele.text().length())) {
-								orthoEles.add(ele);
+						for(int i = 0; i < ortho.length(); i++) {
+							final OrthoElement ele = ortho.elementAt(i);
+							if(startIdx == rv.getRange().getFirst()) {
+								startEleIdx = i;
+								break;
+							} else if (rv.getRange().getFirst() > startIdx + ele.text().length()) {
+								// continue
+								startIdx += ele.text().length()+1;
+							} else {
+								// inside element, break
+								break;
 							}
-							startIdx += ele.text().length()+1;
 						}
-						resultValue = new Orthography(orthoEles);
+						if(startEleIdx >= 0) {
+							// rv.getRange.getLast() must be at the end of an element
+							for(int i = startEleIdx; i < ortho.length(); i++) {
+								final OrthoElement ele = ortho.elementAt(i);
+								if(rv.getRange().getLast() == startIdx + ele.text().length()) {
+									endEleIdx = i;
+									break;
+								} else if(rv.getRange().getLast() > startIdx + ele.text().length()) {
+									startIdx += ele.text().length()+1;
+								} else {
+									break;
+								}
+							}
+						}
+						if(startEleIdx >= 0 && endEleIdx >= 0) {
+							resultValue = ortho.subsection(startEleIdx, endEleIdx+1);
+						} else {
+							final String tierTxt = ortho.toString();
+							
+							final String resultTxt = 
+									(rv.getRange().getFirst() >= 0 && rv.getRange().getLast() >= rv.getRange().getFirst() ?
+									tierTxt.substring(
+											Math.max(0, rv.getRange().getFirst()), 
+											Math.max(0, Math.min(rv.getRange().getLast(), tierTxt.length()))) : "");
+							try {
+								resultValue = Orthography.parseOrthography(resultTxt);
+							} catch (ParseException e) {
+								// ignore
+							}
+						}
 					}
 				} else if(tierVal instanceof IPATranscript) {
 					IPATranscript ipa = (IPATranscript)tierVal;
@@ -308,6 +365,50 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 						int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
 						int endPhone = ipa.ipaIndexOf(rv.getRange().getLast()-1);
 						resultValue = ipa.subsection(startPhone, endPhone+1);
+					}
+				} else if (tierVal instanceof TierString) {
+					TierString tierString = (TierString)tierVal;
+					
+					if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == tierString.length()) {
+						resultValue = tierString;
+					} else {
+						int startWordIdx = -1;
+						int endWordIdx = -1;
+						for(int i = 0; i < tierString.numberOfWords(); i++) {
+							TierString word = tierString.getWord(i);
+							if(rv.getRange().getFirst() == tierString.getWordOffset(i)) {
+								startWordIdx = i;
+								break;
+							} else if(rv.getRange().getFirst() > tierString.getWordOffset(i) + word.length()) {
+								continue;
+							} else {
+								break;
+							}
+						}
+						if(startWordIdx >= 0) {
+							for(int i = startWordIdx; i < tierString.numberOfWords(); i++) {
+								TierString word = tierString.getWord(i);
+								if(rv.getRange().getLast() == tierString.getWordOffset(i) + word.length()) {
+									endWordIdx = i;
+									break;
+								} else if(rv.getRange().getLast() > tierString.getWordOffset(i) + word.length()) {
+									continue;
+								} else {
+									break;
+								}
+							}
+						}
+						TierString resultTierString = new TierString(tierString.substring(rv.getRange().getFirst(), rv.getRange().getLast()));
+						if(startWordIdx >= 0 && endWordIdx >= 0) {
+							// copy TextInverval extensions
+							int wIdx = 0;
+							for(int i = startWordIdx; i <= endWordIdx && wIdx < resultTierString.numberOfWords(); i++) {
+								TierString word = tierString.getWord(i);
+								TierString resultWord = resultTierString.getWord(wIdx++);
+								resultWord.putExtension(TextInterval.class, word.getExtension(TextInterval.class));
+							}
+						}
+						resultValue = resultTierString;
 					}
 				} else {
 					String txt = tierVal.toString();

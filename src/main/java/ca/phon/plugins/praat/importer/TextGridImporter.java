@@ -48,6 +48,7 @@ import ca.phon.session.SyllabifierInfo;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.session.TierDescription;
+import ca.phon.session.TierString;
 import ca.phon.syllabifier.Syllabifier;
 import ca.phon.syllabifier.SyllabifierLibrary;
 
@@ -268,7 +269,8 @@ public class TextGridImporter {
 						LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 					}
 				} else if(systemTier == SystemTierType.Notes) {
-					grp.setNotes(new String(grp.getNotes() + " " + grpVal).trim());
+					grp.setNotes(
+							new TierString(new String(grp.getNotes() + " " + grpVal).trim()));
 				} else {
 					LOGGER.warning("Cannot import into tier " + systemTier.getName());
 				}
