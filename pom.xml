@@ -68,12 +68,7 @@
     <!-- Dependency versions -->
     <ca.hedlund.jpraat.version>0.13.6</ca.hedlund.jpraat.version>
     <ca.phon.phon-app.version>2.2.0-SNAPSHOT</ca.phon.phon-app.version>
-    <ca.phon.native-dialogs.version>4</ca.phon.native-dialogs.version>
-    <it.cnr.imaa.essi.lablib-checkboxtree.version>3.0.2</it.cnr.imaa.essi.lablib-checkboxtree.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
-    <org.swinglabs.swingx.version>1.6.1</org.swinglabs.swingx.version>
-    <com.orientechnologies.orient-commons.version>1.7-rc1</com.orientechnologies.orient-commons.version>
-    <com.orientechnologies.orientdb-core.version>1.7-rc1</com.orientechnologies.orientdb-core.version>
     
     <!-- Plugin versions -->
     <org.apache.maven.plugins.maven-compiler-plugin.version>3.1</org.apache.maven.plugins.maven-compiler-plugin.version>
@@ -81,16 +76,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.swinglabs</groupId>
-      <artifactId>swingx</artifactId>
-      <version>${org.swinglabs.swingx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>it.cnr.imaa.essi</groupId>
-      <artifactId>lablib-checkboxtree</artifactId>
-      <version>${it.cnr.imaa.essi.lablib-checkboxtree.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.velocity</groupId>
       <artifactId>velocity</artifactId>
@@ -124,5 +109,5 @@
 
     </plugins>
   </build>
-  <version>27</version>
+  <version>28</version>
 </project>
