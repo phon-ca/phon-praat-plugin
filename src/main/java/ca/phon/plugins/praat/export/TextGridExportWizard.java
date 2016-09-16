@@ -17,8 +17,6 @@
  */
 package ca.phon.plugins.praat.export;
 
-import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel.CheckingMode;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -167,7 +165,7 @@ public class TextGridExportWizard extends WizardFrame {
 		
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select a single session.");
 		sessionSelector = new SessionSelector(getProject());
-		sessionSelector.getCheckingModel().setCheckingMode(CheckingMode.SINGLE);
+		//sessionSelector.getCheckingModel().setCheckingMode(CheckingMode.SINGLE);
 		
 		final JScrollPane sp = new JScrollPane(sessionSelector);
 		

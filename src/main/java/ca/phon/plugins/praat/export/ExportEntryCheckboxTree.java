@@ -17,8 +17,6 @@
  */
 package ca.phon.plugins.praat.export;
 
-import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,29 +27,31 @@ import ca.phon.plugins.praat.Segmentation;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierViewItem;
-import ca.phon.ui.CheckedTreeNode;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxState;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTree;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeNode;
 
-public class ExportEntryCheckboxTree extends CheckboxTree {
+public class ExportEntryCheckboxTree extends TristateCheckBoxTree {
 
 	private static final long serialVersionUID = -3255582087058770263L;
 
 	/**
 	 * Root node
 	 */
-	private CheckedTreeNode rootNode;
+	private TristateCheckBoxTreeNode rootNode;
 	
 	private Session session;
 	
 	public ExportEntryCheckboxTree() {
-		super(new CheckedTreeNode());
+		super(new TristateCheckBoxTreeNode());
 		
-		rootNode = (CheckedTreeNode)super.getModel().getRoot();
+		rootNode = (TristateCheckBoxTreeNode)super.getModel().getRoot();
 	}
 	
 	public ExportEntryCheckboxTree(Session session) {
-		super(new CheckedTreeNode());
+		super(new TristateCheckBoxTreeNode());
 		
-		rootNode = (CheckedTreeNode)super.getModel().getRoot();
+		rootNode = (TristateCheckBoxTreeNode)super.getModel().getRoot();
 		if(session != null)
 			setSession(session);
 	}
@@ -80,7 +80,7 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 			final String tierName = tierView.getTierName();
 			final SystemTierType systemTier = SystemTierType.tierFromString(tierName);
 			
-			final CheckedTreeNode tierNode = new CheckedTreeNode(tierName);
+			final TristateCheckBoxTreeNode tierNode = new TristateCheckBoxTreeNode(tierName);
 			rootNode.add(tierNode);
 			
 			// setup export entries
@@ -91,7 +91,7 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 					if(!isIPA) continue;
 				}
 				
-				final CheckedTreeNode typeNode = new CheckedTreeNode(type);
+				final TristateCheckBoxTreeNode typeNode = new TristateCheckBoxTreeNode(type);
 				tierNode.add(typeNode);
 			}
 		}
@@ -105,10 +105,10 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	 */
 	public void setChecked(List<TextGridExportEntry> exports) {
 		for(TextGridExportEntry export:exports) {
-			final CheckedTreeNode exportNode = nodeForEntry(export);
+			final TristateCheckBoxTreeNode exportNode = nodeForEntry(export);
 			if(exportNode != null) {
 				final TreePath tp = new TreePath(new Object[]{ rootNode, exportNode.getParent(), exportNode});
-				getCheckingModel().addCheckingPath(tp);
+				setCheckingStateForPath(tp, TristateCheckBoxState.CHECKED);
 				expandPath(tp.getParentPath());
 			}
 		}
@@ -120,14 +120,14 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 	 * @param entry
 	 * @return tree node or <code>null</code> if not found
 	 */
-	public CheckedTreeNode nodeForEntry(TextGridExportEntry entry) {
+	public TristateCheckBoxTreeNode nodeForEntry(TextGridExportEntry entry) {
 		final String tierName = entry.getPhonTier();
 		final Segmentation type = entry.getExportType();
 		
 		// find tier
-		CheckedTreeNode tierNode = null;
+		TristateCheckBoxTreeNode tierNode = null;
 		for(int i = 0; i < rootNode.getChildCount(); i++) {
-			final CheckedTreeNode cNode = (CheckedTreeNode)rootNode.getChildAt(i);
+			final TristateCheckBoxTreeNode cNode = (TristateCheckBoxTreeNode)rootNode.getChildAt(i);
 			if(cNode.getUserObject().toString().equals(tierName)) {
 				tierNode = cNode;
 				break;
@@ -138,7 +138,7 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 		
 		// now type
 		for(int i = 0; i < tierNode.getChildCount(); i++) {
-			final CheckedTreeNode cNode = (CheckedTreeNode)tierNode.getChildAt(i);
+			final TristateCheckBoxTreeNode cNode = (TristateCheckBoxTreeNode)tierNode.getChildAt(i);
 			if(cNode.getUserObject() == type) {
 				return cNode;
 			}
@@ -163,9 +163,9 @@ public class ExportEntryCheckboxTree extends CheckboxTree {
 				final TreeNode typeNode = tierNode.getChildAt(j);
 				
 				final TreePath tp = new TreePath(new Object[]{ rootNode, tierNode, typeNode });
-				if(getCheckingModel().isPathChecked(tp)) {
+				if(isPathChecked(tp)) {
 					final String tierName = tierNode.toString();
-					final Segmentation type = (Segmentation) ((CheckedTreeNode)typeNode).getUserObject();
+					final Segmentation type = (Segmentation) ((TristateCheckBoxTreeNode)typeNode).getUserObject();
 					final String tgTier = tierName + ": " + type;
 					
 					final TextGridExportEntry entry = new TextGridExportEntry(tierName, type, tgTier);
