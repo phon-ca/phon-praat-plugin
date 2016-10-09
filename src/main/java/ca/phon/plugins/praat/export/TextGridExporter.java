@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
@@ -136,6 +137,18 @@ public class TextGridExporter {
 		double startTime = mediaSeg.getStartValue() / 1000.0;
 		double endTime = mediaSeg.getEndValue() / 1000.0;
 		
+		final TextInterval lastInterval = 
+				(tgTier.numberOfIntervals() > 0 ? tgTier.interval(tgTier.numberOfIntervals()) : null);
+		final double lastIntervalEnd = 
+				(lastInterval != null ? lastInterval.getXmax() : 0.0);
+		if(lastIntervalEnd < startTime) {
+			// add a new empty interval
+			tgTier.addInterval(lastIntervalEnd, startTime, "");
+		} else if(lastIntervalEnd > startTime) {
+			// adjust start time for this record
+			startTime = lastIntervalEnd;
+		}
+		
 		// check if we a processing a built-in tier
 		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
 		
@@ -158,6 +171,7 @@ public class TextGridExporter {
 				
 				final double groupStart = currentStart;
 				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
+				
 				if(type == Segmentation.GROUP) {
 					String data = "";
 					if(systemTier != null) {
@@ -199,13 +213,25 @@ public class TextGridExporter {
 				} else if(type == Segmentation.SYLLABLE) {
 					if(systemTier == SystemTierType.IPATarget ||
 							systemTier == SystemTierType.IPAActual) {
-						addSyllables(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+						final IPATranscript ipa = 
+								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
+						if(ipa.length() == 0) {
+							tgTier.addInterval(groupStart, groupEnd, "");
+						} else {
+							addSyllables(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+						}
 						currentStart = groupEnd;
 					}
 				} else if(type == Segmentation.PHONE) {
 					if(systemTier == SystemTierType.IPATarget ||
 							systemTier == SystemTierType.IPAActual) {
-						addPhones(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+						final IPATranscript ipa = 
+								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
+						if(ipa.length() == 0) {
+							tgTier.addInterval(groupStart, groupEnd, "");
+						} else {
+							addPhones(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+						}
 						currentStart = groupEnd;
 					}
 				}
@@ -447,6 +473,23 @@ public class TextGridExporter {
 				exports.forEach( (TextGridExportEntry entry) -> {
 					addTierToTextGrid(record, textGrid, entry);
 				} );
+			}
+			
+			for(int tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
+				try {
+					final IntervalTier intervalTier = 
+							textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+					final TextInterval lastInterval = 
+							(intervalTier.numberOfIntervals() > 0 ? intervalTier.interval(intervalTier.numberOfIntervals()) : null);
+					double lastIntervalStart = 
+							(lastInterval != null ? lastInterval.getXmax() : 0.0);
+					double lastIntervalEnd = intervalTier.getXmax();
+					if(lastIntervalStart < lastIntervalEnd) {
+						intervalTier.addInterval(lastIntervalStart, lastIntervalEnd, "");
+					}
+				} catch (PraatException e) {
+					// ignore
+				}
 			}
 			
 			manager.saveTextGrid(session.getCorpus(), session.getName(), textGrid, name);

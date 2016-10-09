@@ -81,6 +81,7 @@ public class ExportEntryCheckboxTree extends TristateCheckBoxTree {
 			final SystemTierType systemTier = SystemTierType.tierFromString(tierName);
 			
 			final TristateCheckBoxTreeNode tierNode = new TristateCheckBoxTreeNode(tierName);
+			tierNode.setEnablePartialCheck(false);
 			rootNode.add(tierNode);
 			
 			// setup export entries
@@ -92,6 +93,7 @@ public class ExportEntryCheckboxTree extends TristateCheckBoxTree {
 				}
 				
 				final TristateCheckBoxTreeNode typeNode = new TristateCheckBoxTreeNode(type);
+				typeNode.setEnablePartialCheck(false);
 				tierNode.add(typeNode);
 			}
 		}

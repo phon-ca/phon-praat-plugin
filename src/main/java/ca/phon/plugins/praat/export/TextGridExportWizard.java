@@ -52,6 +52,8 @@ import ca.phon.session.SessionPath;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.toast.ToastFactory;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.CheckingMode;
 import ca.phon.ui.wizard.WizardFrame;
 import ca.phon.ui.wizard.WizardStep;
 import ca.phon.worker.PhonTask;
@@ -144,9 +146,11 @@ public class TextGridExportWizard extends WizardFrame {
 		selectSessionStep = setupSessionsStep();
 		selectSessionStep.setPrevStep(-1);
 		selectSessionStep.setNextStep(1);
+		
 		selectRecordsStep = setupRecordsStep();
 		selectRecordsStep.setPrevStep(0);
 		selectRecordsStep.setNextStep(2);
+		
 		exportOptionsStep = setupExportOptionsStep();
 		exportOptionsStep.setPrevStep(1);
 		exportOptionsStep.setNextStep(-1);
@@ -165,7 +169,7 @@ public class TextGridExportWizard extends WizardFrame {
 		
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select a single session.");
 		sessionSelector = new SessionSelector(getProject());
-		//sessionSelector.getCheckingModel().setCheckingMode(CheckingMode.SINGLE);
+		((TristateCheckBoxTreeModel)sessionSelector.getModel()).setCheckingMode(CheckingMode.SINGLE);
 		
 		final JScrollPane sp = new JScrollPane(sessionSelector);
 		
