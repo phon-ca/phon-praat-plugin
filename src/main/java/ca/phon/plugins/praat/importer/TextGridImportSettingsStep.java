@@ -49,7 +49,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
-import org.apache.batik.ext.swing.GridBagConstants;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
