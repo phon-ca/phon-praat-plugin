@@ -19,7 +19,7 @@ import org.jdesktop.swingx.VerticalLayout;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 
-public class SpectrumSettingsPanel extends JPanel {
+public class SpectralMomentsSettingsPanel extends JPanel {
 	
 	private static final long serialVersionUID = -5900183536297104022L;
 
@@ -41,13 +41,13 @@ public class SpectrumSettingsPanel extends JPanel {
 	
 	private JButton loadStandardsButton;
 
-	public SpectrumSettingsPanel() {
+	public SpectralMomentsSettingsPanel() {
 		super();
 		
 		init();
 	}
 	
-	public SpectrumSettingsPanel(SpectrumSettings settings) {
+	public SpectralMomentsSettingsPanel(SpectralMomentsSettings settings) {
 		super();
 		init();
 		loadSettings(settings);
@@ -110,10 +110,10 @@ public class SpectrumSettingsPanel extends JPanel {
 		add(formPanel, BorderLayout.CENTER);
 		add(btnPanel, BorderLayout.EAST);
 		
-		loadSettings(new SpectrumSettings());
+		loadSettings(new SpectralMomentsSettings());
 	}
 	
-	public void loadSettings(SpectrumSettings settings) {
+	public void loadSettings(SpectralMomentsSettings settings) {
 		windowShapeBox.setSelectedItem(settings.getWindowShape());
 		filterStartField.setValue(settings.getFilterStart());
 		filterEndField.setValue(settings.getFilterEnd());
@@ -122,8 +122,8 @@ public class SpectrumSettingsPanel extends JPanel {
 		preempFromField.setValue(settings.getPreempFrom());
 	}
 	
-	public SpectrumSettings getSettings() {
-		final SpectrumSettings retVal = new SpectrumSettings();
+	public SpectralMomentsSettings getSettings() {
+		final SpectralMomentsSettings retVal = new SpectralMomentsSettings();
 		
 		retVal.setWindowShape((kSound_windowShape)windowShapeBox.getSelectedItem());
 		retVal.setFilterStart((double)filterStartField.getValue());
@@ -140,13 +140,13 @@ public class SpectrumSettingsPanel extends JPanel {
 	}
 	
 	public void loadStandards() {
-		final SpectrumSettings settings = new SpectrumSettings();
+		final SpectralMomentsSettings settings = new SpectralMomentsSettings();
 		settings.loadStandards();
 		loadSettings(settings);
 	}
 	
 	public void loadDefaults() {
-		loadSettings(new SpectrumSettings());
+		loadSettings(new SpectralMomentsSettings());
 	}
 	
 }

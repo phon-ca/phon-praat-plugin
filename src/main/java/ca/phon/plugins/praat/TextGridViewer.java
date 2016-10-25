@@ -48,6 +48,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.event.MenuEvent;
@@ -56,6 +57,7 @@ import javax.swing.event.MouseInputAdapter;
 
 import org.jdesktop.swingx.VerticalLayout;
 
+import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
@@ -146,6 +148,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	private boolean showTierLabels = 
 			PrefHelper.getBoolean(SHOW_TIER_LABELS_PROP, true);
 	
+	private final HidablePanel textGridMessage = new HidablePanel("TextGridViewer.message");
+	
 	public TextGridViewer(SpeechAnalysisEditorView parent) {
 		super();
 		setVisible(showTextGrid);
@@ -153,6 +157,15 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		
 		this.parent = parent;
 		
+		init();
+		
+		// setup toolbar buttons
+		setupToolbar();
+		
+		setupEditorActions();
+	}
+	
+	private void init() {
 		buttonPane = new JPanel(new VerticalLayout());
 		contentPane = new TextGridContentPanel();
 		contentPane.setLayout(new BorderLayout());
@@ -184,7 +197,6 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		} else {
 			setTextGrid(null);
 			
-			final HidablePanel textGridMessage = new HidablePanel(TextGridViewer.class.getName() + ".showMergeMessage");
 			textGridMessage.setTopLabelText("<html><b>No TextGrid found</b></html>");
 			boolean hasRecordTextGrids = hasOldTextGridFiles();
 			if(hasRecordTextGrids) {
@@ -215,13 +227,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				
 				textGridMessage.setBottomLabelText("<html>Click here to generate a TextGrid.</html>");
 			}
-			contentPane.add(textGridMessage, BorderLayout.CENTER);
+			parent.getErrorPane().add(textGridMessage);
 		}
-		
-		// setup toolbar buttons
-		setupToolbar();
-		
-		setupEditorActions();
 	}
 	
 	@Deprecated
@@ -325,13 +332,23 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	 * Adds extra buttons to the segment panel toolbar
 	 */
 	private void setupToolbar() {
-		PraatMenuButton menuBtn = parent.getExtension(PraatMenuButton.class);
-		if(menuBtn == null) {
-			menuBtn = new PraatMenuButton(parent);
-			parent.getToolbar().addSeparator();
-			parent.getToolbar().add(menuBtn);
-			parent.putExtension(PraatMenuButton.class, menuBtn);
-		}
+		final PhonUIAction menuAct = new PhonUIAction(this, "onShowTextGridMenu");
+		menuAct.putValue(PhonUIAction.NAME, "TextGrid");
+		menuAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show TextGrid menu");
+		menuAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+		
+		final JButton textGridBtn = new JButton(menuAct);
+		parent.getToolbar().add(textGridBtn);
+	}
+
+	public void onShowTextGridMenu(PhonActionEvent pae) {
+		final JButton btn = (JButton)pae.getActionEvent().getSource();
+		final JMenu praatMenu = new JMenu("Praat");
+		final JMenu textGridMenu = new JMenu("TextGrid");
+		praatMenu.add(textGridMenu);
+		addMenuItems(praatMenu);
+		
+		textGridMenu.getPopupMenu().show(btn, 0, btn.getHeight());
 	}
 	
 	/**
@@ -529,6 +546,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			final Session session = parent.getEditor().getSession();
 			try {
 				contentPane.removeAll();
+				textGridMessage.setVisible(false);
 				contentPane.add(buttonPane, BorderLayout.NORTH);
 				
 				final TextGrid tg = tgManager.openTextGrid(session.getCorpus(), session.getName(), name);
@@ -663,6 +681,14 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		repaint();
 	}
 	
+	@RunOnEDT
+	public void onToggleTier(String tierName) {
+		final boolean isHidden = getTextGridPainter().isHidden(tierName);
+		getTextGridPainter().setHidden(tierName, !isHidden);
+		getTextGridPainter().setRepaintBuffer(true);
+		revalidate();
+	}
+	
 	private void updateHiddenTiers() {
 		if(tg == null) return;
 		getTextGridPainter().clearHiddenTiers();
@@ -714,17 +740,14 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		JMenu praatMenu = null;
 		for(int i = 0; i < menu.getItemCount(); i++) {
 			if(menu.getItem(i) != null && menu.getItem(i).getText() != null 
-					&& menu.getItem(i).getText().equals("Praat")) {
+					&& menu.getItem(i).getText().equals("TextGrid")) {
 				praatMenu = (JMenu)menu.getItem(i);
 			}
 		}
 		if(praatMenu == null) {
-			praatMenu = new JMenu("Praat");
+			praatMenu = new JMenu("TextGrid");
 			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
-			menu.addSeparator();
 			menu.add(praatMenu);
-		} else {
-			praatMenu.addSeparator();
 		}
 		
 		final Session session = parent.getEditor().getSession();
@@ -736,19 +759,10 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		final JCheckBoxMenuItem toggleItem = new JCheckBoxMenuItem(toggleAct);
 		praatMenu.add(toggleItem);
 		
-		final PhonUIAction toggleLabelsAct = new PhonUIAction(this, "onToggleTextGridLabels");
-		toggleLabelsAct.putValue(PhonUIAction.NAME, "Show Tier Labels");
-		toggleLabelsAct.putValue(PhonUIAction.SELECTED_KEY, TextGridViewer.this.showTierLabels);
-		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
-		praatMenu.add(toggleLabelsItem);
-		
-		final PhonUIAction showHideTiersAct = new PhonUIAction(this, "onShowHideTiers");
-		showHideTiersAct.putValue(PhonUIAction.NAME, "Show/hide TextGrid tiers...");
-		praatMenu.add(showHideTiersAct);
-		
 		final ImageIcon lockIcon = IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL);
+		final ImageIcon defaultTgIcon = IconManager.getInstance().getIcon("emblems/emblem-default", IconSize.SMALL);
 		
-		final JMenu textGridMenu = new JMenu("TextGrids");
+		final JMenu textGridMenu = new JMenu("Select TextGrid");
 		textGridMenu.addMenuListener(new MenuListener() {
 			
 			@Override
@@ -758,74 +772,104 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 				for(String textGridName:manager.textGridNamesForSession(session.getCorpus(), session.getName())) {
 					boolean isDefault = textGridName.equals(defaultTgName);
 					boolean isCurrent = (currentTextGridName != null && textGridName.equals(currentTextGridName));
+					ImageIcon icn = null;
 					String menuTxt = textGridName;
 					if(isDefault) {
-						menuTxt = "<i>" + menuTxt + "</i>";
+						icn = defaultTgIcon;
 					}
-					if(isCurrent) {
-						menuTxt = "<b>" + menuTxt + "</b>";
+					if(serverMap.containsKey(textGridName)) {
+						icn = lockIcon;
 					}
-					menuTxt = "<html>" + menuTxt + "</html>";
 					
 					final PhonUIAction showTgAct = new PhonUIAction(TextGridViewer.this, "showTextGrid", textGridName);
-					showTgAct.putValue(PhonUIAction.NAME, menuTxt);					showTgAct.putValue(PhonUIAction.SHORT_DESCRIPTION,
+					showTgAct.putValue(PhonUIAction.NAME, menuTxt);					
+					showTgAct.putValue(PhonUIAction.SHORT_DESCRIPTION,
 							tgManager.textGridPath(session.getCorpus(), session.getName(), textGridName));
-					if(serverMap.containsKey(textGridName)) {
-						showTgAct.putValue(PhonUIAction.SMALL_ICON, lockIcon);
+					showTgAct.putValue(PhonUIAction.SELECTED_KEY, isCurrent);
+					if(icn != null) {
+						showTgAct.putValue(PhonUIAction.SMALL_ICON, icn);
 					}
-					textGridMenu.add(showTgAct);
+					textGridMenu.add(new JCheckBoxMenuItem(showTgAct));
 				}
-				
-				if(textGridMenu.getItemCount() > 0) {
-					textGridMenu.addSeparator();
-				} else {
-					// add an item to merge previous textgrids
-					if(hasOldTextGridFiles()) {
-						final PhonUIAction mergeAct = new PhonUIAction(TextGridViewer.this, "mergeOldTextGrids");
-						mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
-						mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
-						textGridMenu.add(mergeAct);
-					}
-				}
-				
-				final PhonUIAction genTextGridAct = new PhonUIAction(TextGridViewer.this, "onGenerateTextGrid");
-				genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
-				genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for current record...");
-				textGridMenu.add(genTextGridAct);
-
-				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridViewer.this, "onAddExistingTextGrid");
-				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
-				addExistingTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Copy existing TextGrid to TextGrid folder for session");
-				textGridMenu.add(addExistingTextGridAct);
-				
 				textGridMenu.addSeparator();
 				final PhonUIAction showTextGridFolderAct = new PhonUIAction(TextGridViewer.this, "onShowTextGridFolder");
 				showTextGridFolderAct.putValue(PhonUIAction.NAME, "Show TextGrid folder");
 				showTextGridFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, tgManager.textGridFolder(session.getCorpus(), session.getName()));
 				textGridMenu.add(showTextGridFolderAct);
 				
-				textGridMenu.addSeparator();
-				PhonUIAction createRecordsAct = new PhonUIAction(TextGridViewer.this, "onCreateRecordsFromTextGrid");
-				createRecordsAct.putValue(PhonUIAction.NAME, "Create records from TextGrid...");
-				createRecordsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Create records from a session TextGrid");
-				textGridMenu.add(createRecordsAct);
+				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridViewer.this, "onAddExistingTextGrid");
+				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
+				addExistingTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Copy existing TextGrid to TextGrid folder");
+				textGridMenu.add(addExistingTextGridAct);
 			}
 			
 			@Override
 			public void menuDeselected(MenuEvent e) {
-				
 			}
 			
 			@Override
 			public void menuCanceled(MenuEvent e) {
-				
 			}
+			
 		});
 		praatMenu.add(textGridMenu);
 		
+		final PhonUIAction toggleLabelsAct = new PhonUIAction(this, "onToggleTextGridLabels");
+		toggleLabelsAct.putValue(PhonUIAction.NAME, "Show Tier Labels");
+		toggleLabelsAct.putValue(PhonUIAction.SELECTED_KEY, TextGridViewer.this.showTierLabels);
+		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
+		praatMenu.add(toggleLabelsItem);
+		
+		final JMenu tgTiersMenu = new JMenu("Toggle TextGrid tiers");
+		tgTiersMenu.addMenuListener(new MenuListener() {
+			
+			@Override
+			public void menuSelected(MenuEvent e) {
+				tgTiersMenu.removeAll();
+				if(tg == null) return;
+				
+				for(int i = 1; i <= tg.numberOfTiers(); i++) {
+					final Function tier = tg.tier(i);
+					final boolean isHidden = getTextGridPainter().isHidden(tier.getName());
+					
+					final PhonUIAction toggleTierAction = new PhonUIAction(TextGridViewer.this, "onToggleTier", tier.getName());
+					toggleTierAction.putValue(PhonUIAction.NAME, tier.getName());
+					toggleTierAction.putValue(PhonUIAction.SELECTED_KEY, !isHidden);
+					toggleTierAction.putValue(PhonUIAction.SHORT_DESCRIPTION, "Toggle tier " + tier.getName());
+					
+					tgTiersMenu.add(new JCheckBoxMenuItem(toggleTierAction));
+				}
+				
+				tgTiersMenu.addSeparator();
+				
+				final PhonUIAction showHideTiersAct = new PhonUIAction(TextGridViewer.this, "onShowHideTiers");
+				showHideTiersAct.putValue(PhonUIAction.NAME, "Show/hide TextGrid tiers...");
+				tgTiersMenu.add(showHideTiersAct);
+			}
+			
+			@Override
+			public void menuDeselected(MenuEvent e) {
+			}
+			
+			@Override
+			public void menuCanceled(MenuEvent e) {
+			}
+		});
+		praatMenu.add(tgTiersMenu);
 		
 		praatMenu.addSeparator();
+		final PhonUIAction genTextGridAct = new PhonUIAction(TextGridViewer.this, "onGenerateTextGrid");
+		genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
+		genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for session...");
+		praatMenu.add(genTextGridAct);
 		
+		PhonUIAction createRecordsAct = new PhonUIAction(TextGridViewer.this, "onCreateRecordsFromTextGrid");
+		createRecordsAct.putValue(PhonUIAction.NAME, "Create records from TextGrid...");
+		createRecordsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Create records from an existing TextGrid");
+		praatMenu.add(createRecordsAct);
+		
+		// sendpraat menu items
+		praatMenu.addSeparator();
 		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid", Boolean.TRUE);
 		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with full audio. High memory usage.");
 		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - full audio");
@@ -837,20 +881,88 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		praatMenu.add(openTextGridAct2);
 		
 		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
-		sendPraatAct.putValue(PhonUIAction.NAME, "SendPraat...");
-		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Execute Praat script...");
+		sendPraatAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - custom script...");
+		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid and audio in Praat and execute Praat script...");
 		praatMenu.add(sendPraatAct);
 	}
+	
+//	@Override
+//	public void addMenuItems(JMenu menu) {
+//		JMenu praatMenu = null;
+//		for(int i = 0; i < menu.getItemCount(); i++) {
+//			if(menu.getItem(i) != null && menu.getItem(i).getText() != null 
+//					&& menu.getItem(i).getText().equals("TextGrid")) {
+//				praatMenu = (JMenu)menu.getItem(i);
+//			}
+//		}
+//		if(praatMenu == null) {
+//			praatMenu = new JMenu("TextGrid");
+//			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+//			menu.addSeparator();
+//			menu.add(praatMenu);
+//		}
+//		
+//		final Session session = parent.getEditor().getSession();
+//		final TextGridManager manager = new TextGridManager(parent.getEditor().getProject());
+//		
+//		
+//		
+//		
+//		
+//		
+//		
+//		final JMenu textGridMenu = new JMenu("TextGrids");
+//		textGridMenu.addMenuListener(new MenuListener() {
+//			
+//			@Override
+//			public void menuSelected(MenuEvent e) {
+//				
+//				
+//				if(textGridMenu.getItemCount() > 0) {
+//					textGridMenu.addSeparator();
+//				} else {
+//					// add an item to merge previous textgrids
+//					if(hasOldTextGridFiles()) {
+//						final PhonUIAction mergeAct = new PhonUIAction(TextGridViewer.this, "mergeOldTextGrids");
+//						mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
+//						mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
+//						textGridMenu.add(mergeAct);
+//					}
+//				}
+//				
+//			}
+//			
+//			@Override
+//			public void menuDeselected(MenuEvent e) {
+//				
+//			}
+//			
+//			@Override
+//			public void menuCanceled(MenuEvent e) {
+//				
+//			}
+//		});
+//		praatMenu.add(textGridMenu);
+//		
+//		
+//		praatMenu.addSeparator();
+//		
+//		
+//	}
 
 	private class TextGridMouseListener extends MouseInputAdapter {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
 			if(!contentPane.isEnabled()) return;
+			if(tg == null) return;
 			
-			long tierIdx = tierForPoint(e.getPoint());
+			int tierNum = tierForPoint(e.getPoint());
+			String tierName = (tierNum >= 0 && tierNum < getVisibleTiers().size() ? 
+					getVisibleTiers().get(tierNum) : null);
+			long tierIdx = TextGridUtils.tierNumberFromName(tg, tierName);
 			
-			if(tg != null && tierIdx > 0 && tierIdx <= tg.numberOfTiers()) {
+			if(tierIdx > 0 && tierIdx <= tg.numberOfTiers()) {
 				try {
 					IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tierIdx);
 					long intervalIdx = 
@@ -876,11 +988,11 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			}
 		}
 		
-		private long tierForPoint(Point p) {
-			long retVal = -1;
+		private int tierForPoint(Point p) {
+			int retVal = -1;
 			
 			if(tg != null) {
-				retVal = (long)(p.getY() / 50) + 1;
+				retVal = (int)(p.getY() / 50);
 			}
 			
 			return retVal;

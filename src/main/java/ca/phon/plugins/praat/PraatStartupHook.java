@@ -74,16 +74,7 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 
 	@Override
 	public IPluginExtensionFactory<PhonStartupHook> getFactory() {
-		return factory;
+		return (args) -> this;
 	}
 	
-	private final IPluginExtensionFactory<PhonStartupHook> factory = new IPluginExtensionFactory<PhonStartupHook>() {
-		
-		@Override
-		public PhonStartupHook createObject(Object... args) {
-			return PraatStartupHook.this;
-		}
-		
-	};
-
 }

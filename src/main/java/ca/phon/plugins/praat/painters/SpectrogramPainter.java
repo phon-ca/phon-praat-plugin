@@ -107,13 +107,17 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
 		g2d.drawString(endFreqTxt, x, y);
 	}
 	
-	@Override
-	protected void paintBuffer(Spectrogram spectrogram, Graphics2D g2d,
-			Rectangle2D bounds) {
-		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-		
-		if(spectrogram == null) return;
-		
+	/**
+	 * Paint spectrogram to graphics context
+	 * 
+	 * @param spectrogram
+	 * @param g2d
+	 * @param bounds
+	 */
+	protected void paintSpectrogram(Spectrogram spectrogram, Graphics2D g2d, Rectangle2D bounds) {
+		/*
+		 * Paint method modified from fon/Spectrogram.cpp
+		 */
 		final int numFrames = (int)spectrogram.getNx();
     	final int numBins = (int)spectrogram.getNy();
     	final double[] preemphasisFactor = new double[numBins];
@@ -176,6 +180,16 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
                  g2d.fill(cellRect);
              }
          }
+	}
+	
+	@Override
+	protected void paintBuffer(Spectrogram spectrogram, Graphics2D g2d,
+			Rectangle2D bounds) {
+		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		
+		if(spectrogram != null) {
+			paintSpectrogram(spectrogram, g2d, bounds);
+		}
 	}
 	
 }

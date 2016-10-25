@@ -5,10 +5,10 @@ import java.util.prefs.Preferences;
 import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
 import ca.phon.util.PrefHelper;
 
-public class SpectrumSettings {
+public class SpectralMomentsSettings {
 	
 	private final kSound_windowShape DEFAULT_WINDOW_SHAPE = kSound_windowShape.KAISER_2;
-	private final static String WINDOW_SHAPE_PROP = SpectrumSettings.class.getName() + ".windowShape";
+	private final static String WINDOW_SHAPE_PROP = SpectralMomentsSettings.class.getName() + ".windowShape";
 	private kSound_windowShape windowShape = getDefaultWindowShape();
 	
 	public kSound_windowShape getDefaultWindowShape() {
@@ -25,7 +25,7 @@ public class SpectrumSettings {
 	}
 	
 	private final static double DEFAULT_FILTER_START = 500;
-	private final static String FILTER_START_PROP = SpectrumSettings.class.getName() + ".filterStart";
+	private final static String FILTER_START_PROP = SpectralMomentsSettings.class.getName() + ".filterStart";
 	private double filterStart = getDefaultFilterStart();
 	
 	public double getDefaultFilterStart() {
@@ -41,7 +41,7 @@ public class SpectrumSettings {
 	}
 	
 	private final static double DEFAULT_FILTER_END = 15000;
-	private final static String FILTER_END_PROP = SpectrumSettings.class.getName() + ".filterEnd";
+	private final static String FILTER_END_PROP = SpectralMomentsSettings.class.getName() + ".filterEnd";
 	private double filterEnd = getDefaultFilterEnd();
 	
 	public double getDefaultFilterEnd() {
@@ -57,7 +57,7 @@ public class SpectrumSettings {
 	}
 	
 	private final static double DEFAULT_FILTER_SMOOTHING = 100;
-	private final static String FILTER_SMOOTHING_PROP = SpectrumSettings.class.getName() + ".filterSmoothing";
+	private final static String FILTER_SMOOTHING_PROP = SpectralMomentsSettings.class.getName() + ".filterSmoothing";
 	private double filterSmoothing = getDefaultFilterSmoothing();
 	
 	public double getDefaultFilterSmoothing() {
@@ -73,7 +73,7 @@ public class SpectrumSettings {
 	}
 	
 	private final boolean DEFAULT_USE_PREEMPHASIS = true;
-	private final static String USE_PREEMPHASIS_PROP = SpectrumSettings.class.getName() + ".usePreemphasis";
+	private final static String USE_PREEMPHASIS_PROP = SpectralMomentsSettings.class.getName() + ".usePreemphasis";
 	private boolean usePreemphasis = getDefaultUsePreemphasis();
 	
 	public boolean getDefaultUsePreemphasis() {
@@ -89,7 +89,7 @@ public class SpectrumSettings {
 	}
 	
 	private final static double DEFAULT_PREEMP_FROM = 2000;
-	private final static String PREEMP_FROM_PROP = SpectrumSettings.class.getName() + ".preempFrom";
+	private final static String PREEMP_FROM_PROP = SpectralMomentsSettings.class.getName() + ".preempFrom";
 	private double preempFrom = getDefaultPreempFrom();
 	
 	public double getDefaultPreempFrom() {

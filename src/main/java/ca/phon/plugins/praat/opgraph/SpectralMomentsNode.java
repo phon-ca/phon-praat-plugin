@@ -23,8 +23,8 @@ import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
 import ca.hedlund.jpraat.binding.sys.Interpreter;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.plugins.praat.SpectrumSettings;
-import ca.phon.plugins.praat.SpectrumSettingsPanel;
+import ca.phon.plugins.praat.SpectralMomentsSettings;
+import ca.phon.plugins.praat.SpectralMomentsSettingsPanel;
 import ca.phon.query.db.Result;
 import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
@@ -43,8 +43,8 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	
 	private JPanel settingsPanel;
 	
-	private SpectrumSettingsPanel spectrumSettingsPanel;
-	private SpectrumSettings spectrumSettings = new SpectrumSettings();
+	private SpectralMomentsSettingsPanel spectralMomentsSettingsPanel;
+	private SpectralMomentsSettings spectralMomentsSettings = new SpectralMomentsSettings();
 	
 	public SpectralMomentsNode() {
 		super();
@@ -55,7 +55,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	@Override
 	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath,
 			MediaSegment segment, Result result, ResultValue rv, Object value, DefaultTableDataSource table) {
-		final SpectrumSettings settings = getSpectrumSettings();
+		final SpectralMomentsSettings settings = getSpectrumSettings();
 		try {
 			final double xmin = segment.getStartValue()/1000.0;
 			final double xmax = segment.getEndValue()/1000.0;
@@ -104,14 +104,14 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 		}
 	}
 	
-	public SpectrumSettings getSpectrumSettings() {
-		return (spectrumSettingsPanel != null ? spectrumSettingsPanel.getSettings() : spectrumSettings);
+	public SpectralMomentsSettings getSpectrumSettings() {
+		return (spectralMomentsSettingsPanel != null ? spectralMomentsSettingsPanel.getSettings() : spectralMomentsSettings);
 	}
 	
-	public void setSpectrumSettings(SpectrumSettings spectrumSettings) {
-		this.spectrumSettings = spectrumSettings;
-		if(spectrumSettingsPanel != null)
-			spectrumSettingsPanel.loadSettings(spectrumSettings);
+	public void setSpectrumSettings(SpectralMomentsSettings spectralMomentsSettings) {
+		this.spectralMomentsSettings = spectralMomentsSettings;
+		if(spectralMomentsSettingsPanel != null)
+			spectralMomentsSettingsPanel.loadSettings(spectralMomentsSettings);
 	}
 	
 	@Override
@@ -130,8 +130,8 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			colNames.add(getColumn());
 		}
 		
-		colNames.add("Start Time");
-		colNames.add("End Time");
+		colNames.add("Start Time(s)");
+		colNames.add("End Time(s)");
 		
 		colNames.add("Center of Gravity");
 		colNames.add("Standard Deviation");
@@ -154,7 +154,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			
 			settingsPanel = (JPanel)super.getComponent(document);
 			settingsPanel.add(new JXTitledSeparator("Spectrum Settings"), gbc);
-			spectrumSettingsPanel = new SpectrumSettingsPanel(spectrumSettings);
+			spectralMomentsSettingsPanel = new SpectralMomentsSettingsPanel(spectralMomentsSettings);
 			
 			++gbc.gridy;
 			gbc.weightx = 1.0;
@@ -162,7 +162,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			gbc.fill = GridBagConstraints.BOTH;
 			gbc.insets = new Insets(2, 2, 2, 2);
 			
-			settingsPanel.add(spectrumSettingsPanel, gbc);
+			settingsPanel.add(spectralMomentsSettingsPanel, gbc);
 		}
 		
 		return settingsPanel;
@@ -172,7 +172,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	public Properties getSettings() {
 		final Properties retVal = super.getSettings();
 		
-		final SpectrumSettings settings = getSpectrumSettings();
+		final SpectralMomentsSettings settings = getSpectrumSettings();
 		retVal.put("windowShape", settings.getWindowShape().toString());
 		retVal.put("filterStart", Double.toString(settings.getFilterStart()));
 		retVal.put("filterEnd", Double.toString(settings.getFilterEnd()));
@@ -187,33 +187,33 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	public void loadSettings(Properties properties) {
 		super.loadSettings(properties);
 		
-		final SpectrumSettings spectrumSettings = new SpectrumSettings();
+		final SpectralMomentsSettings spectralMomentsSettings = new SpectralMomentsSettings();
 		
 		final kSound_windowShape windowShape = 
-				kSound_windowShape.valueOf(properties.getProperty("windowShape", spectrumSettings.getDefaultWindowShape().toString()));
-		spectrumSettings.setWindowShape(windowShape);
+				kSound_windowShape.valueOf(properties.getProperty("windowShape", spectralMomentsSettings.getDefaultWindowShape().toString()));
+		spectralMomentsSettings.setWindowShape(windowShape);
 		
 		final double filterStart = 
-				Double.parseDouble(properties.getProperty("filterStart", Double.toString(spectrumSettings.getDefaultFilterStart())));
-		spectrumSettings.setFilterStart(filterStart);
+				Double.parseDouble(properties.getProperty("filterStart", Double.toString(spectralMomentsSettings.getDefaultFilterStart())));
+		spectralMomentsSettings.setFilterStart(filterStart);
 		
 		final double filterEnd = 
-				Double.parseDouble(properties.getProperty("filterEnd", Double.toString(spectrumSettings.getDefaultFilterEnd())));
-		spectrumSettings.setFilterEnd(filterEnd);
+				Double.parseDouble(properties.getProperty("filterEnd", Double.toString(spectralMomentsSettings.getDefaultFilterEnd())));
+		spectralMomentsSettings.setFilterEnd(filterEnd);
 		
 		final double filterSmoothing = 
-				Double.parseDouble(properties.getProperty("filterSmoothing", Double.toString(spectrumSettings.getFilterSmoothing())));
-		spectrumSettings.setFilterSmoothing(filterSmoothing);
+				Double.parseDouble(properties.getProperty("filterSmoothing", Double.toString(spectralMomentsSettings.getFilterSmoothing())));
+		spectralMomentsSettings.setFilterSmoothing(filterSmoothing);
 		
 		final boolean usePreemphasis = 
-				Boolean.parseBoolean(properties.getProperty("usePreemphasis", spectrumSettings.getDefaultUsePreemphasis()+""));
-		spectrumSettings.setUsePreemphasis(usePreemphasis);
+				Boolean.parseBoolean(properties.getProperty("usePreemphasis", spectralMomentsSettings.getDefaultUsePreemphasis()+""));
+		spectralMomentsSettings.setUsePreemphasis(usePreemphasis);
 		
 		final double preempFrom =
-			Double.parseDouble(properties.getProperty("preempFrom", Double.toString(spectrumSettings.getPreempFrom())));
-		spectrumSettings.setPreempFrom(preempFrom);
+			Double.parseDouble(properties.getProperty("preempFrom", Double.toString(spectralMomentsSettings.getPreempFrom())));
+		spectralMomentsSettings.setPreempFrom(preempFrom);
 		
-		setSpectrumSettings(spectrumSettings);
+		setSpectrumSettings(spectralMomentsSettings);
 	}
 	
 }
