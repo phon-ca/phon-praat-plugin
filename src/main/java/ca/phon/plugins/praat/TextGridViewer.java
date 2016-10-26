@@ -736,6 +736,14 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 	}
 	
 	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		if(!visible && textGridMessage.isVisible()) {
+			textGridMessage.setVisible(false);
+		}
+	}
+	
+	@Override
 	public void addMenuItems(JMenu menu) {
 		JMenu praatMenu = null;
 		for(int i = 0; i < menu.getItemCount(); i++) {
@@ -760,7 +768,7 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 		praatMenu.add(toggleItem);
 		
 		final ImageIcon lockIcon = IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL);
-		final ImageIcon defaultTgIcon = IconManager.getInstance().getIcon("emblems/emblem-default", IconSize.SMALL);
+		final ImageIcon defaultTgIcon = IconManager.getInstance().getIcon("emblems/emblem-generic", IconSize.SMALL);
 		
 		final JMenu textGridMenu = new JMenu("Select TextGrid");
 		textGridMenu.addMenuListener(new MenuListener() {

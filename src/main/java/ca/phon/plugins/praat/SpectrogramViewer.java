@@ -47,6 +47,7 @@ import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,6 +107,7 @@ import ca.phon.worker.PhonTask;
 import ca.phon.worker.PhonTask.TaskStatus;
 import ca.phon.worker.PhonTaskListener;
 import ca.phon.worker.PhonWorker;
+import ca.phon.worker.PhonWorkerGroup;
 
 /**
  * Adds a spectrogram tier to the waveform editor view.
@@ -191,11 +193,15 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	/*
 	 * UI 
 	 */
-	private Point currentPoint = null;
+	private transient Point currentPoint = null;
 	
 	private final static String DISPLAY_HEIGHT = "SpectrogramViewer.displayHeight";
 	private JComponent sizer;
 	private int displayHeight = PrefHelper.getInt(DISPLAY_HEIGHT, -1);
+	
+	private transient volatile double lastStartTime = 0.0;
+	private transient volatile double lastEndTime = 0.0;
+	private transient volatile boolean forceReload = false;
 	
 	public SpectrogramViewer(SpeechAnalysisEditorView p) {
 		super();
@@ -277,6 +283,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				String.format("<html>Record segment exceeds max analysis length of %.1fs. Click this message to force loading.</html>", maxAnalysisLength));
 		maxAnalysisMessage.addAction(forceUpdateAct);
 		maxAnalysisMessage.setDefaultAction(forceUpdateAct);
+		maxAnalysisMessage.setVisible(false);
 		
 		parent.getErrorPane().add(maxAnalysisMessage);
 	}
@@ -382,6 +389,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				if(!wasCanceled.get()) {
 					spectrogramSettings = settingsPanel.getSettings();
 					spectrogramPainter.setRepaintBuffer(true);
+					spectrogramPainter.setSettings(spectrogramSettings);
 				}
 				
 				setStatus(TaskStatus.FINISHED);
@@ -394,7 +402,11 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					TaskStatus newStatus) {
 				if(newStatus != TaskStatus.RUNNING) {
 					if(!wasCanceled.get()) {
-						update();
+						final PhonWorker worker = PhonWorker.createWorker();
+						worker.invokeLater(spectrogramLoader);
+						worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+						worker.setFinishWhenQueueEmpty(true);
+						worker.start();
 					}
 				}
 			}
@@ -413,7 +425,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	public void onToggleFormants() {
 		showFormants = !showFormants;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_FORMANTS_PROP, showFormants);
-		update();
+		
+		final PhonWorker worker = PhonWorker.createWorker();
+		worker.setFinishWhenQueueEmpty(true);
+		if(showFormants) {
+			worker.invokeLater(formantLoader);
+		}
+		worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+		worker.start();
 	}
 	
 	public void onEditFormantSettings() {
@@ -465,15 +484,29 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		if(!wasCanceled.get()) {
 			formantSettings = settingsPanel.getSettings();
+			formantPainter.setSettings(formantSettings);
 			formantPainter.setRepaintBuffer(true);
-			update();
+			
+			final PhonWorker worker = PhonWorker.createWorker();
+			worker.setFinishWhenQueueEmpty(true);
+			worker.invokeLater(formantLoader);
+			worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+			worker.start();
 		}
 	}
 	
 	public void onTogglePitch() {
 		showPitch = !showPitch;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_PITCH_PROP, showPitch);
-		update();
+		
+		final PhonWorker worker = PhonWorker.createWorker();
+		worker.setFinishWhenQueueEmpty(true);
+		
+		if(showPitch) {
+			worker.invokeLater(pitchLoader);
+		}
+		worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+		worker.start();
 	}
 	
 	public void onEditPitchSettings() {
@@ -525,8 +558,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		if(!wasCanceled.get()) {
 			pitchSettings = settingsPanel.getSettings();
+			pitchPainter.setSettings(pitchSettings);
 			pitchPainter.setRepaintBuffer(true);
-			update();
+			
+			final PhonWorker worker = PhonWorker.createWorker();
+			worker.setFinishWhenQueueEmpty(true);
+			worker.invokeLater(pitchLoader);
+			worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+			worker.start();
 		}
 	}
 	
@@ -585,7 +624,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	public void onToggleIntensity() {
 		showIntensity = !showIntensity;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_INTENSITY_PROP, showIntensity);
-		update();
+		
+		final PhonWorker worker = PhonWorker.createWorker();
+		worker.setFinishWhenQueueEmpty(true);
+		if(showIntensity) {
+			worker.invokeLater(intensityLoader);
+		}
+		worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+		worker.start();
 	}
 	
 	public void onEditIntensitySettings() {
@@ -638,7 +684,12 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		if(!wasCanceled.get()) {
 			intensitySettings = settingsPanel.getSettings();
 			intensityPainter.setRepaintBuffer(true);
-			update();
+			
+			final PhonWorker worker = PhonWorker.createWorker();
+			worker.setFinishWhenQueueEmpty(true);
+			worker.invokeLater(intensityLoader);
+			worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+			worker.start();
 		}
 	}
 	
@@ -1130,7 +1181,182 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			update();
 	}
 
-	private final ReentrantLock updateLock = new ReentrantLock();
+	
+	private class LoadData<T> extends PhonTask {
+		
+		private final ReentrantLock updateLock = new ReentrantLock();
+
+		private AtomicReference<T> ref;
+		
+		private Supplier<T> supplier;
+		
+		public LoadData(AtomicReference<T> ref, Supplier<T> supplier) {
+			super();
+			
+			this.ref = ref;
+			this.supplier = supplier;
+		}
+		
+		@Override
+		public void performTask() {
+			super.setStatus(TaskStatus.RUNNING);
+			
+			final MediaSegment segment = getSegment();
+			if(segment == null) {
+				updateLock.unlock();
+				return;
+			}
+			
+			updateLock.lock();
+			
+			try {
+				final T data = supplier.get();
+				ref.set(data);
+			} catch (Exception e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				super.err = e;
+				super.setStatus(TaskStatus.ERROR);
+			}
+			
+			updateLock.unlock();
+			
+			super.setStatus(TaskStatus.FINISHED);
+		}
+		
+	}
+	
+	private final LoadData<Spectrogram> spectrogramLoader = new LoadData<>(spectrogramRef, this::loadSpectrogram);
+	private final LoadData<Formant> formantLoader = new LoadData<>(formantRef, this::loadFormants);
+	private final LoadData<Pitch> pitchLoader = new LoadData<>(pitchRef, this::loadPitch);
+	private final LoadData<Intensity> intensityLoader = new LoadData<>(intensityRef, this::loadIntensity);
+	
+//	/**
+//	 * Task used to update data
+//	 */
+//	private class LoadDataTask extends PhonTask {
+//		
+//		private boolean force;
+//		
+//		public LoadDataTask() {
+//			this(false);
+//		}
+//		
+//		public LoadDataTask(boolean force) {
+//			super();
+//			this.force = force;
+//		}
+//
+//		@Override
+//		public void performTask() {
+//			super.setStatus(TaskStatus.RUNNING);
+//			
+//			updateLock.lock();
+//			
+//			final MediaSegment segment = getSegment();
+//			if(segment == null) {
+//				clearDisplay();
+//				updateLock.unlock();
+//				return;
+//			}
+//			
+//			// check analysis length
+//			final double startTime = segment.getStartValue()/1000.0;
+//			final double endTime = segment.getEndValue()/1000.0;
+//			final double len = endTime - startTime;
+//			
+//			if(lastStartTime == startTime && lastEndTime == endTime) {
+//				// don't re-load data, return
+//				updateLock.unlock();
+//				return;
+//			}
+//			
+//			if(len <= 0.0) return;
+//			
+//			if(len > maxAnalysisLength && !force) {
+//				clearDisplay();
+//				SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(true) );
+//				updateLock.unlock();
+//				return;
+//			}
+//			
+//			SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(false) );
+//			
+//			if(getStatus() == TaskStatus.TERMINATED) {
+//				updateLock.unlock();
+//				return;
+//			}
+//			
+//			Spectrogram spectrogram = null;
+//			try {
+//				spectrogram = loadSpectrogram();
+//			} catch (IllegalArgumentException e) {
+//				LOGGER.log(Level.WARNING, e.getLocalizedMessage(), e);
+//			}
+//			spectrogramRef.set(spectrogram);
+//			spectrogramPainter.setSettings(spectrogramSettings);
+//			spectrogramPainter.setRepaintBuffer(true);
+//			
+//			if(showFormants) {
+//				if(getStatus() == TaskStatus.TERMINATED) {
+//					updateLock.unlock();
+//					return;
+//				}
+//				
+//				Formant formant = null;
+//				try {
+//					formant = loadFormants();
+//				} catch (IllegalArgumentException e) {
+//					
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//				}
+//				formantRef.set(formant);
+//				formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
+//				formantPainter.setSettings(formantSettings);
+//			}
+//			
+//			if(showPitch) {
+//				if(getStatus() == TaskStatus.TERMINATED) {
+//					updateLock.unlock();
+//					return;
+//				}
+//				
+//				Pitch pitch = null;
+//				try {
+//					pitch = loadPitch();
+//				} catch (IllegalArgumentException e) {
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//				}
+//				pitchRef.set(pitch);
+//				pitchPainter.setSettings(pitchSettings);
+//			}
+//			
+//			if(showIntensity) {
+//				if(getStatus() == TaskStatus.TERMINATED) {
+//					updateLock.unlock();
+//					return;
+//				}
+//				
+//				Intensity intensity = null;
+//				try {
+//					intensity = loadIntensity();
+//				} catch (IllegalArgumentException e) {
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//				}
+//				intensityRef.set(intensity);
+//				intensityPainter.setSettings(intensitySettings);
+//			}
+//			
+//			lastStartTime = startTime;
+//			lastEndTime = endTime;
+//			
+//			updateLock.unlock();
+//			
+//			SwingUtilities.invokeLater(updateTask);
+//			
+//			super.setStatus(TaskStatus.FINISHED);
+//		}
+//		
+//	}
 	
 	/**
 	 * Task used to update display.
@@ -1150,8 +1376,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	 * 
 	 */
 	private void clearDisplay() {
-		updateLock.lock();
-		
 		spectrogramRef.set(null);
 		spectrogramPainter.setRepaintBuffer(true);
 		
@@ -1163,8 +1387,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		
 		intensityRef.set(null);
 		intensityPainter.setRepaintBuffer(true);
-		
-		updateLock.unlock();
 		
 		if(SwingUtilities.isEventDispatchThread())
 			updateTask.run();
@@ -1189,70 +1411,57 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final double startTime = segment.getStartValue()/1000.0;
 		final double endTime = segment.getEndValue()/1000.0;
 		final double len = endTime - startTime;
+		final boolean sameSegment = 
+				(lastStartTime == startTime && lastEndTime == endTime);
 		
 		if(len <= 0.0) return;
 		
-		if(len > maxAnalysisLength && !force) {
+		if(len > maxAnalysisLength && !force && !sameSegment) {
+			lastStartTime = -1;
+			lastEndTime = -1;
+			
 			clearDisplay();
-			maxAnalysisMessage.setVisible(true);
+			SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(true) );
 			return;
-		} else {
-			maxAnalysisMessage.setVisible(false);
 		}
 		
-		final Runnable loadData = () -> {
-			updateLock.lock();
-			
-			Spectrogram spectrogram = null;
-			try {
-				spectrogram = loadSpectrogram();
-			} catch (IllegalArgumentException e) {
-				LOGGER.log(Level.WARNING, e.getLocalizedMessage(), e);
-			}
-			spectrogramRef.set(spectrogram);
-			spectrogramPainter.setSettings(spectrogramSettings);
-			spectrogramPainter.setRepaintBuffer(true);
-			
-			if(showFormants) {
-				Formant formant = null;
-				try {
-					formant = loadFormants();
-				} catch (IllegalArgumentException e) {
-					
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				}
-				formantRef.set(formant);
-				formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
-				formantPainter.setSettings(formantSettings);
-			}
-			
-			if(showPitch) {
-				Pitch pitch = null;
-				try {
-					pitch = loadPitch();
-				} catch (IllegalArgumentException e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				}
-				pitchRef.set(pitch);
-				pitchPainter.setSettings(pitchSettings);
-			}
-			
-			if(showIntensity) {
-				Intensity intensity = null;
-				try {
-					intensity = loadIntensity();
-				} catch (IllegalArgumentException e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				}
-				intensityRef.set(intensity);
-				intensityPainter.setSettings(intensitySettings);
-			}
-			updateLock.unlock();
-			
-			
-			SwingUtilities.invokeLater(updateTask);
-		};
-		PhonWorker.getInstance().invokeLater(loadData);
+		if(sameSegment) {
+			// don't re-load data, return
+			return;
+		}
+		
+		SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(false) );
+		
+		final PhonWorker worker = PhonWorker.createWorker();
+		worker.setName(SpectrogramViewer.class.getName()+".worker");
+		
+		spectrogramPainter.setRepaintBuffer(true);
+		spectrogramPainter.setSettings(spectrogramSettings);
+		worker.invokeLater(spectrogramLoader);
+		
+		if(showFormants) {
+			formantPainter.setRepaintBuffer(true);
+			formantPainter.setSettings(formantSettings);
+			worker.invokeLater(formantLoader);
+		}
+		
+		if(showPitch) {
+			pitchPainter.setRepaintBuffer(true);
+			pitchPainter.setSettings(pitchSettings);
+			worker.invokeLater(pitchLoader);
+		}
+		
+		if(showIntensity) {
+			intensityPainter.setRepaintBuffer(true);
+			intensityPainter.setSettings(intensitySettings);
+			worker.invokeLater(intensityLoader);
+		}
+		
+		worker.invokeLater( () -> { lastStartTime = startTime; lastEndTime = endTime; } );
+		worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
+		
+		worker.setFinishWhenQueueEmpty(true);
+		worker.start();
 	}
 
 	@Override
@@ -1296,27 +1505,27 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			}
 			
 			if(spectrogramRef.get() != null) {
-				updateLock.lock();
+				spectrogramLoader.updateLock.lock();
 				spectrogramPainter.paint(spectrogramRef.get(), g2, contentRect);
-				updateLock.unlock();
+				spectrogramLoader.updateLock.unlock();
 			}
 			
 			if(showFormants && formantRef.get() != null) {
-				updateLock.lock();
+				formantLoader.updateLock.lock();
 				formantPainter.paint(formantRef.get(), g2, contentRect);
-				updateLock.unlock();
+				formantLoader.updateLock.unlock();
 			}
 			
 			if(showPitch && pitchRef.get() != null) {
-				updateLock.lock();
+				pitchLoader.updateLock.lock();
 				pitchPainter.paint(pitchRef.get(), g2, contentRect);
-				updateLock.unlock();
+				pitchLoader.updateLock.unlock();
 			}
 			
 			if(showIntensity && intensityRef.get() != null) {
-				updateLock.lock();
+				intensityLoader.updateLock.lock();
 				intensityPainter.paint(intensityRef.get(), g2, contentRect);
-				updateLock.unlock();
+				intensityLoader.updateLock.unlock();
 			}
 			
 			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2}, 0);
@@ -1486,21 +1695,21 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 					contentRect.getX()+contentRect.getWidth(), contentRect.getY(),
 					100.0, contentRect.getHeight());
 			if(spectrogram != null) {
-				updateLock.lock();
+				spectrogramLoader.updateLock.lock();
 				spectrogramPainter.paintGarnish(spectrogram, g2, leftInsetRect, SwingConstants.LEFT);
-				updateLock.unlock();
+				spectrogramLoader.updateLock.unlock();
 			}
 	
 			if(showPitch && pitchRef.get() != null) {
-				updateLock.lock();
+				pitchLoader.updateLock.lock();
 				pitchPainter.paintGarnish(pitchRef.get(), g2, rightInsetRect, SwingConstants.RIGHT);
-				updateLock.unlock();
+				pitchLoader.updateLock.unlock();
 			}
 			
 			if(showIntensity && intensityRef.get() != null) {
-				updateLock.lock();
+				intensityLoader.updateLock.lock();
 				intensityPainter.paintGarnish(intensityRef.get(), g2, rightInsetRect, SwingConstants.RIGHT);
-				updateLock.unlock();
+				intensityLoader.updateLock.unlock();
 			}
 		}
 	}
@@ -1508,6 +1717,13 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	@Override
 	public void onRefresh() {
 		update();
+	}
+	
+	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		if(!visible && maxAnalysisMessage.isVisible())
+			maxAnalysisMessage.setVisible(false);
 	}
 
 	@Override

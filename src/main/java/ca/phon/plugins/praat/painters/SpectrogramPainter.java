@@ -93,9 +93,9 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
 		final String startFreqTxt = nf.format(startFreq) + " Hz";
 		final Rectangle2D startBounds = fm.getStringBounds(startFreqTxt, g2d);
 		int y = 
-				(int)Math.round((bounds.getY() + bounds.getHeight())) - fm.getDescent();
+				(int)Math.ceil((bounds.getY() + bounds.getHeight())) - fm.getDescent();
 		int x = 
-				(int)Math.round((bounds.getX() + bounds.getWidth()) - startBounds.getWidth());
+				(int)Math.ceil((bounds.getX() + bounds.getWidth()) - startBounds.getWidth());
 		g2d.drawString(startFreqTxt, x, y);
 		
 		final String endFreqTxt = nf.format(endFreq) + " Hz";
@@ -105,6 +105,16 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
 		x = 
 				(int)Math.round((bounds.getX() + bounds.getWidth()) - endBounds.getWidth());
 		g2d.drawString(endFreqTxt, x, y);
+	}
+	
+	@Override
+	public int getBufferWidth(Spectrogram spectrogram, Rectangle2D bounds) {
+		return (spectrogram != null ? (int)spectrogram.getNx() : 0);
+	}
+	
+	@Override
+	public int getBufferHeight(Spectrogram spectrogram, Rectangle2D bounds) {
+		return (spectrogram != null ? (int)spectrogram.getNy() : 0);
 	}
 	
 	/**
@@ -152,8 +162,14 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
 		
 		double minIntensity = maximum - settings.getDynamicRange();
 		
-		double cellWidth = bounds.getWidth() / numFrames;
-		double cellHeight = bounds.getHeight() / numBins;
+		
+		double x = Math.floor(bounds.getX());
+		double y = Math.ceil(bounds.getY() + bounds.getHeight());
+		double width = Math.ceil(bounds.getWidth());
+		double height = Math.ceil(bounds.getHeight());
+		
+		double cellWidth = (width / numFrames);
+		double cellHeight = (height/numBins);
 		
 		 double scaleFactor = (colorMap.size() / settings.getDynamicRange());
          for (int i = 0; i < numFrames; i++) {                
@@ -175,7 +191,8 @@ public class SpectrogramPainter extends BufferedPainter<Spectrogram> implements 
                  // TODO interpolate (i.e., calculate transparency of each cell)
                  
                  final Rectangle2D cellRect = new Rectangle2D.Double(
-                		 bounds.getX() + i * cellWidth, (bounds.getY() + bounds.getHeight()) - ( (j+1) * cellHeight),
+                		 x + ((double)i * cellWidth), 
+                		 y - ((double)(j+1) * cellHeight),
                 		 cellWidth, cellHeight);
                  g2d.fill(cellRect);
              }
