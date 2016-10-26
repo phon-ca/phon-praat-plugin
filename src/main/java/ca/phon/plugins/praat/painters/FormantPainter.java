@@ -67,7 +67,7 @@ public class FormantPainter extends BufferedPainter<Formant> implements PraatPai
 		if(len <= 0.0) return;
 		
 		final double pixelPerSec = bounds.getWidth() / len;
-		final double freqPerPixel = getMaxFrequency() / bounds.getHeight();
+		final double pixelPerFreq = bounds.getHeight() / getMaxFrequency();
 	
 		final AtomicReference<Long> iminRef = new AtomicReference<Long>();
 		final AtomicReference<Long> imaxRef = new AtomicReference<Long>();
@@ -105,7 +105,7 @@ public class FormantPainter extends BufferedPainter<Formant> implements PraatPai
 				if(freq > getMaxFrequency()) continue;
 				if(!Double.isInfinite(freq) && !Double.isNaN(freq)) {
 					double x = bounds.getX() + ((time - tmin) * pixelPerSec);
-					double y = (bounds.getY() + bounds.getHeight()) - (freq / freqPerPixel);
+					double y = (bounds.getY() + bounds.getHeight()) - (freq * pixelPerFreq);
 					
 					final Ellipse2D circle = new Ellipse2D.Double();
 					circle.setFrameFromCenter(x, y, x + radius, y + radius);

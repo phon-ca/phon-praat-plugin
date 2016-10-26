@@ -389,6 +389,8 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 				if(!wasCanceled.get()) {
 					spectrogramSettings = settingsPanel.getSettings();
 					spectrogramPainter.setRepaintBuffer(true);
+					formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
+					formantPainter.setRepaintBuffer(true);
 					spectrogramPainter.setSettings(spectrogramSettings);
 				}
 				
@@ -429,6 +431,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final PhonWorker worker = PhonWorker.createWorker();
 		worker.setFinishWhenQueueEmpty(true);
 		if(showFormants) {
+			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			worker.invokeLater(formantLoader);
 		}
 		worker.invokeLater( () -> SwingUtilities.invokeLater(updateTask) );
@@ -485,6 +488,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		if(!wasCanceled.get()) {
 			formantSettings = settingsPanel.getSettings();
 			formantPainter.setSettings(formantSettings);
+			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			formantPainter.setRepaintBuffer(true);
 			
 			final PhonWorker worker = PhonWorker.createWorker();
@@ -1442,6 +1446,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		if(showFormants) {
 			formantPainter.setRepaintBuffer(true);
 			formantPainter.setSettings(formantSettings);
+			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			worker.invokeLater(formantLoader);
 		}
 		
