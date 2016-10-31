@@ -112,10 +112,10 @@ import ca.phon.worker.PhonWorkerGroup;
 /**
  * Adds a spectrogram tier to the waveform editor view.
  */
-public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
+public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	
 	private static final Logger LOGGER = Logger
-			.getLogger(SpectrogramViewer.class.getName());
+			.getLogger(SpectrogramView.class.getName());
 	
 	private static final long serialVersionUID = -6963658315933818319L;
 
@@ -126,16 +126,16 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	/**
 	 * Max analysis length in seconds.
 	 */
-	public final static String MAX_ANALYSIS_LENGTH_PROP = SpectrogramViewer.class.getName() + ".maxAnalysisLength";
+	public final static String MAX_ANALYSIS_LENGTH_PROP = SpectrogramView.class.getName() + ".maxAnalysisLength";
 	public final static double DEFAULT_MAX_ANALYSIS_LENGTH = 10.0;
 	private double maxAnalysisLength = PrefHelper.getDouble(MAX_ANALYSIS_LENGTH_PROP, DEFAULT_MAX_ANALYSIS_LENGTH);
 	
-	private final HidablePanel maxAnalysisMessage = new HidablePanel("SpectrogramViewer.maxAnalysisLengthMessage");
+	private final HidablePanel maxAnalysisMessage = new HidablePanel("SpectrogramView.maxAnalysisLengthMessage");
 	
 	/*
 	 * Spectrogram
 	 */
-	public final static String SHOW_SPECTROGRAM_PROP = SpectrogramViewer.class.getName() + ".showSpectrogram";
+	public final static String SHOW_SPECTROGRAM_PROP = SpectrogramView.class.getName() + ".showSpectrogram";
 	private boolean showSpectrogram =
 			PrefHelper.getBoolean(SHOW_SPECTROGRAM_PROP, false);
 
@@ -156,7 +156,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private final AtomicReference<Spectrogram> spectrogramRef = new AtomicReference<>();
 	
-	public final static String SHOW_FORMANTS_PROP = SpectrogramViewer.class.getName() + ".showFormants";
+	public final static String SHOW_FORMANTS_PROP = SpectrogramView.class.getName() + ".showFormants";
 	private boolean showFormants = 
 			PrefHelper.getBoolean(SHOW_FORMANTS_PROP, false);
 	
@@ -173,7 +173,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private PitchSpecklePainter pitchPainter = new PitchSpecklePainter();
 	
-	public final static String SHOW_PITCH_PROP = SpectrogramViewer.class.getName() + ".showPitch";
+	public final static String SHOW_PITCH_PROP = SpectrogramView.class.getName() + ".showPitch";
 	private boolean showPitch =
 			PrefHelper.getBoolean(SHOW_PITCH_PROP, false);
 
@@ -186,7 +186,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private IntensityPainter intensityPainter = new IntensityPainter();
 	
-	public final static String SHOW_INTENSITY_PROP = SpectrogramViewer.class.getName() + ".showIntensity";
+	public final static String SHOW_INTENSITY_PROP = SpectrogramView.class.getName() + ".showIntensity";
 	private boolean showIntensity =
 			PrefHelper.getBoolean(SHOW_INTENSITY_PROP, false);
 	
@@ -195,14 +195,14 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	 */
 	private transient Point currentPoint = null;
 	
-	private final static String DISPLAY_HEIGHT = "SpectrogramViewer.displayHeight";
+	private final static String DISPLAY_HEIGHT = "SpectrogramView.displayHeight";
 	private JComponent sizer;
 	private int displayHeight = PrefHelper.getInt(DISPLAY_HEIGHT, -1);
 	
 	private transient volatile double lastStartTime = 0.0;
 	private transient volatile double lastEndTime = 0.0;
 	
-	public SpectrogramViewer(SpeechAnalysisEditorView p) {
+	public SpectrogramView(SpeechAnalysisEditorView p) {
 		super();
 		setVisible(showSpectrogram);
 		this.parent = p;
@@ -329,7 +329,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	public void onToggleSpectrogram() {
 		showSpectrogram = !showSpectrogram;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_SPECTROGRAM_PROP, showSpectrogram);
-		SpectrogramViewer.this.setVisible(showSpectrogram);
+		SpectrogramView.this.setVisible(showSpectrogram);
 		if(showSpectrogram) update();
 	}
 	
@@ -1312,7 +1312,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(false) );
 		
 		final PhonWorker worker = PhonWorker.createWorker();
-		worker.setName(SpectrogramViewer.class.getName()+".worker");
+		worker.setName(SpectrogramView.class.getName()+".worker");
 		
 		spectrogramPainter.setRepaintBuffer(true);
 		spectrogramPainter.setSettings(spectrogramSettings);
@@ -1625,7 +1625,7 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleSpectrogram");
 		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show Spectrogram");
-		toggleAct.putValue(PhonUIAction.SELECTED_KEY, SpectrogramViewer.this.isVisible());
+		toggleAct.putValue(PhonUIAction.SELECTED_KEY, SpectrogramView.this.isVisible());
 		praatMenu.add(new JCheckBoxMenuItem(toggleAct));
 		
 		final PhonUIAction settingsAct = new PhonUIAction(this, "onEditSettings");

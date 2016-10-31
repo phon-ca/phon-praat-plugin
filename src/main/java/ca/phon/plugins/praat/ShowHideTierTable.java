@@ -13,12 +13,12 @@ import ca.hedlund.jpraat.binding.fon.Function;
  */
 public class ShowHideTierTable extends JXTable {
 
-	private final TextGridViewer textGridViewer;
+	private final TextGridView textGridView;
 
-	public ShowHideTierTable(TextGridViewer viewer) {
+	public ShowHideTierTable(TextGridView viewer) {
 		super();
 		
-		this.textGridViewer = viewer;
+		this.textGridView = viewer;
 	
 		setModel(new TextGridTableModel());
 	}
@@ -27,7 +27,7 @@ public class ShowHideTierTable extends JXTable {
 
 		@Override
 		public int getRowCount() {
-			return (int)textGridViewer.getTextGrid().numberOfTiers();
+			return (int)textGridView.getTextGrid().numberOfTiers();
 		}
 
 		@Override
@@ -60,18 +60,18 @@ public class ShowHideTierTable extends JXTable {
 
 		@Override
 		public void setValueAt(Object value, int rowIndex, int columnIndex) {
-			final Function tier = textGridViewer.getTextGrid().tier(rowIndex+1);
+			final Function tier = textGridView.getTextGrid().tier(rowIndex+1);
 			
 			final Boolean show = Boolean.parseBoolean(value.toString());
-			textGridViewer.getTextGridPainter().setHidden(tier.getName(), !show);
+			textGridView.getTextGridPainter().setHidden(tier.getName(), !show);
 		}
 		
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			final Function tier = textGridViewer.getTextGrid().tier(rowIndex+1);
+			final Function tier = textGridView.getTextGrid().tier(rowIndex+1);
 			
 			if(columnIndex == 0) {
-				return !textGridViewer.getTextGridPainter().isHidden(tier.getName());
+				return !textGridView.getTextGridPainter().isHidden(tier.getName());
 			} else {
 				return tier.getName();
 			}

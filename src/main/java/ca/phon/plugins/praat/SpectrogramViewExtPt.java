@@ -41,7 +41,7 @@ public class SpectrogramViewExtPt implements IPluginExtensionPoint<SpeechAnalysi
 		@Override
 		public SpeechAnalysisTier createObject(Object... args) {
 			final SpeechAnalysisEditorView parent = SpeechAnalysisEditorView.class.cast(args[0]);
-			return new SpectrogramViewer(parent);
+			return new SpectrogramView(parent);
 		}
 		
 	};

@@ -44,7 +44,7 @@ import ca.phon.app.session.SessionSelector;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.plugins.praat.TextGridManager;
-import ca.phon.plugins.praat.TextGridViewer;
+import ca.phon.plugins.praat.TextGridView;
 import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
 import ca.phon.session.Session;
@@ -381,7 +381,7 @@ public class TextGridExportWizard extends WizardFrame {
 				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name,
 						overwriteBox.isSelected());
 				if(editor != null) {
-					final EditorEvent ee = new EditorEvent(TextGridViewer.TEXT_GRID_CHANGED_EVENT, 
+					final EditorEvent ee = new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT, 
 							this, name);
 					editor.getEventManager().queueEvent(ee);
 				}
