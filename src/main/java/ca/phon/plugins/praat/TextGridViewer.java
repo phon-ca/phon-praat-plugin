@@ -42,7 +42,9 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.ActionMap;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -56,6 +58,7 @@ import javax.swing.event.MenuListener;
 import javax.swing.event.MouseInputAdapter;
 
 import org.jdesktop.swingx.VerticalLayout;
+import org.jdesktop.swingx.action.ActionManager;
 
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
@@ -965,6 +968,9 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 			if(!contentPane.isEnabled()) return;
 			if(tg == null) return;
 			
+			if(e.getButton() != MouseEvent.BUTTON1
+					&& e.getButton() != MouseEvent.BUTTON3) return;
+			
 			int tierNum = tierForPoint(e.getPoint());
 			String tierName = (tierNum >= 0 && tierNum < getVisibleTiers().size() ? 
 					getVisibleTiers().get(tierNum) : null);
@@ -994,6 +1000,8 @@ public class TextGridViewer extends JPanel implements SpeechAnalysisTier {
 					// do nothing
 				}
 			}
+			// dispatch event to parent listeners
+			TextGridViewer.this.dispatchEvent(e);
 		}
 		
 		private int tierForPoint(Point p) {

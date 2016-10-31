@@ -201,7 +201,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	
 	private transient volatile double lastStartTime = 0.0;
 	private transient volatile double lastEndTime = 0.0;
-	private transient volatile boolean forceReload = false;
 	
 	public SpectrogramViewer(SpeechAnalysisEditorView p) {
 		super();
@@ -1185,7 +1184,11 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 			update();
 	}
 
-	
+	/**
+	 * Generic load data class with reentrant lock
+	 *
+	 * @param <T>
+	 */
 	private class LoadData<T> extends PhonTask {
 		
 		private final ReentrantLock updateLock = new ReentrantLock();
@@ -1233,134 +1236,6 @@ public class SpectrogramViewer extends JPanel implements SpeechAnalysisTier {
 	private final LoadData<Formant> formantLoader = new LoadData<>(formantRef, this::loadFormants);
 	private final LoadData<Pitch> pitchLoader = new LoadData<>(pitchRef, this::loadPitch);
 	private final LoadData<Intensity> intensityLoader = new LoadData<>(intensityRef, this::loadIntensity);
-	
-//	/**
-//	 * Task used to update data
-//	 */
-//	private class LoadDataTask extends PhonTask {
-//		
-//		private boolean force;
-//		
-//		public LoadDataTask() {
-//			this(false);
-//		}
-//		
-//		public LoadDataTask(boolean force) {
-//			super();
-//			this.force = force;
-//		}
-//
-//		@Override
-//		public void performTask() {
-//			super.setStatus(TaskStatus.RUNNING);
-//			
-//			updateLock.lock();
-//			
-//			final MediaSegment segment = getSegment();
-//			if(segment == null) {
-//				clearDisplay();
-//				updateLock.unlock();
-//				return;
-//			}
-//			
-//			// check analysis length
-//			final double startTime = segment.getStartValue()/1000.0;
-//			final double endTime = segment.getEndValue()/1000.0;
-//			final double len = endTime - startTime;
-//			
-//			if(lastStartTime == startTime && lastEndTime == endTime) {
-//				// don't re-load data, return
-//				updateLock.unlock();
-//				return;
-//			}
-//			
-//			if(len <= 0.0) return;
-//			
-//			if(len > maxAnalysisLength && !force) {
-//				clearDisplay();
-//				SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(true) );
-//				updateLock.unlock();
-//				return;
-//			}
-//			
-//			SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(false) );
-//			
-//			if(getStatus() == TaskStatus.TERMINATED) {
-//				updateLock.unlock();
-//				return;
-//			}
-//			
-//			Spectrogram spectrogram = null;
-//			try {
-//				spectrogram = loadSpectrogram();
-//			} catch (IllegalArgumentException e) {
-//				LOGGER.log(Level.WARNING, e.getLocalizedMessage(), e);
-//			}
-//			spectrogramRef.set(spectrogram);
-//			spectrogramPainter.setSettings(spectrogramSettings);
-//			spectrogramPainter.setRepaintBuffer(true);
-//			
-//			if(showFormants) {
-//				if(getStatus() == TaskStatus.TERMINATED) {
-//					updateLock.unlock();
-//					return;
-//				}
-//				
-//				Formant formant = null;
-//				try {
-//					formant = loadFormants();
-//				} catch (IllegalArgumentException e) {
-//					
-//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-//				}
-//				formantRef.set(formant);
-//				formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
-//				formantPainter.setSettings(formantSettings);
-//			}
-//			
-//			if(showPitch) {
-//				if(getStatus() == TaskStatus.TERMINATED) {
-//					updateLock.unlock();
-//					return;
-//				}
-//				
-//				Pitch pitch = null;
-//				try {
-//					pitch = loadPitch();
-//				} catch (IllegalArgumentException e) {
-//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-//				}
-//				pitchRef.set(pitch);
-//				pitchPainter.setSettings(pitchSettings);
-//			}
-//			
-//			if(showIntensity) {
-//				if(getStatus() == TaskStatus.TERMINATED) {
-//					updateLock.unlock();
-//					return;
-//				}
-//				
-//				Intensity intensity = null;
-//				try {
-//					intensity = loadIntensity();
-//				} catch (IllegalArgumentException e) {
-//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-//				}
-//				intensityRef.set(intensity);
-//				intensityPainter.setSettings(intensitySettings);
-//			}
-//			
-//			lastStartTime = startTime;
-//			lastEndTime = endTime;
-//			
-//			updateLock.unlock();
-//			
-//			SwingUtilities.invokeLater(updateTask);
-//			
-//			super.setStatus(TaskStatus.FINISHED);
-//		}
-//		
-//	}
 	
 	/**
 	 * Task used to update display.
