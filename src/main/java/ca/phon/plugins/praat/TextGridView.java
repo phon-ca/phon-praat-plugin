@@ -1004,6 +1004,12 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			TextGridView.this.dispatchEvent(e);
 		}
 		
+		@Override
+		public void mouseReleased(MouseEvent me) {
+			// dispatch event to parent container
+			TextGridView.this.dispatchEvent(me);
+		}
+		
 		private int tierForPoint(Point p) {
 			int retVal = -1;
 			
