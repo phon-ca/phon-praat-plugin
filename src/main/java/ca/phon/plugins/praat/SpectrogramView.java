@@ -1422,6 +1422,23 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 				g2.setColor(Color.WHITE);
 				g2.draw(line);
 				
+				if(showFormants && formantRef.get() != null) {
+					final Formant formants = formantRef.get();
+					
+					int x = 0;
+					int y = 0;
+					for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
+						final double fVal = formants.getValueAtTime(i, time, 0);
+						
+						final String formantStr = String.format("F%d: %.2f", i, fVal);
+						final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
+						
+						y += (int)Math.ceil(bounds.getHeight());
+						g2.setColor(Color.red);
+						g2.drawString(formantStr, x, y);						
+					}
+				}
+				
 				if(showPitch && pitchRef.get() != null && !wavDisplay.hasSelection()) {
 					final Pitch pitch = pitchRef.get();
 					// get pitch at current x
