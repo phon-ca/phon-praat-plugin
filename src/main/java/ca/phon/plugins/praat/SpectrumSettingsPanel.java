@@ -2,16 +2,10 @@ package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
 
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import ca.phon.ui.CommonModuleFrame;
-import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.layout.ButtonBarBuilder;
 
 /**
  * Dialog for editing settings for Spectrumt tier of Phon's speech
@@ -19,7 +13,9 @@ import ca.phon.ui.layout.ButtonBarBuilder;
  * 
  * 
  */
-public class SpectrumSettingsDialog extends JDialog {
+public class SpectrumSettingsPanel extends JPanel {
+
+	private static final long serialVersionUID = -7778566797207084580L;
 
 	private JTabbedPane tabPanel;
 	
@@ -31,16 +27,8 @@ public class SpectrumSettingsDialog extends JDialog {
 	
 	private IntensitySettingsPanel intensitySettingsPanel;
 	
-	private JButton okButton;
-	
-	private JButton cancelButton;
-	
-	private JButton applyButton;
-	
-	public SpectrumSettingsDialog() {
+	public SpectrumSettingsPanel() {
 		super();
-		
-		setModal(true);
 		
 		init();
 	}
@@ -65,34 +53,34 @@ public class SpectrumSettingsDialog extends JDialog {
 		
 		intensitySettingsPanel = new IntensitySettingsPanel();
 		tabPanel.add("Intensity", intensitySettingsPanel);
-		
-		final PhonUIAction okAct = new PhonUIAction(this, "onOk");
-		okAct.putValue(PhonUIAction.NAME, "Ok");
-		okButton = new JButton(okAct);
-		
-		final PhonUIAction cancelAct = new PhonUIAction(this, "onCancel");
-		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
-		cancelButton = new JButton(cancelAct);
-		
-		final PhonUIAction applyAct = new PhonUIAction(this, "onApply");
-		applyAct.putValue(PhonUIAction.NAME, "Apply");
-		applyButton = new JButton(applyAct);
-		
-		final JComponent btnPanel = 
-				ButtonBarBuilder.buildOkCancelBar(okButton, cancelButton, applyButton);
-		add(btnPanel, BorderLayout.SOUTH);
+	}
+	
+	public void showSpectrogramSettings() {
+		tabPanel.setSelectedComponent(spectrogramSettingsPanel);
 	}
 	
 	public void loadSpectrogramSettings(SpectrogramSettings spectrogramSettings) {
 		spectrogramSettingsPanel.loadSettings(spectrogramSettings);
 	}
 	
+	public void showFormantSettings() {
+		tabPanel.setSelectedComponent(formantSettingsPanel);
+	}
+	
 	public void loadFormantSettings(FormantSettings formantSettings) {
 		formantSettingsPanel.loadSettings(formantSettings);
 	}
 	
+	public void showPitchSettings() {
+		tabPanel.setSelectedComponent(pitchSettingsPanel);
+	}
+	
 	public void loadPitchSettings(PitchSettings pitchSettings) {
 		pitchSettingsPanel.loadSettings(pitchSettings);
+	}
+	
+	public void showIntensitySettings() {
+		tabPanel.setSelectedComponent(intensitySettingsPanel);
 	}
 	
 	public void loadIntensitySettings(IntensitySettings intensitySettings) {
