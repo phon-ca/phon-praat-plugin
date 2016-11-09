@@ -51,13 +51,17 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputAdapter;
@@ -211,6 +215,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		
 		setupEditorEvents();
 		setupToolbar();
+		
+		installKeyStrokes(p);
 	}
 	
 	private void init() {
@@ -315,12 +321,62 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		parent.getToolbar().add(btn);
 	}
 	
+	private void installKeyStrokes(SpeechAnalysisEditorView p) {
+		final InputMap inputMap = p.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		final ActionMap actionMap = p.getActionMap();
+		
+		final String toggleSpectrogramId = "onToggleSpectrogram";
+		final PhonUIAction toggleSpectrogramAct = new PhonUIAction(this, toggleSpectrogramId);
+		actionMap.put(toggleSpectrogramId, toggleSpectrogramAct);
+		final KeyStroke toggleSpectrogramKs = KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.SHIFT_MASK);
+		inputMap.put(toggleSpectrogramKs, toggleSpectrogramId);
+
+		final String toggleFormantsId = "onToggleFormants";
+		final PhonUIAction toggleFormantsAct = new PhonUIAction(this, toggleFormantsId);
+		actionMap.put(toggleFormantsId, toggleFormantsAct);
+		final KeyStroke toggleFormantsKs = KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_MASK);
+		inputMap.put(toggleFormantsKs, toggleFormantsId);
+		
+		final String listFormantsId = "listFormants";
+		final PhonUIAction listFormantsAct = new PhonUIAction(this, listFormantsId);
+		actionMap.put(listFormantsId, listFormantsAct);
+		final KeyStroke listFormantsKs = KeyStroke.getKeyStroke(KeyEvent.VK_F, 0);
+		inputMap.put(listFormantsKs, listFormantsId);
+		
+		final String togglePitchId = "onTogglePitch";
+		final PhonUIAction togglePitcAct = new PhonUIAction(this, togglePitchId);
+		actionMap.put(togglePitchId, togglePitcAct);
+		final KeyStroke togglePitchKs = KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.SHIFT_MASK);
+		inputMap.put(togglePitchKs, togglePitchId);
+		
+		final String listPitchId = "listPitch";
+		final PhonUIAction listPitchAct = new PhonUIAction(this, listPitchId);
+		actionMap.put(listPitchId, listPitchAct);
+		final KeyStroke listPitchKs = KeyStroke.getKeyStroke(KeyEvent.VK_P, 0);
+		inputMap.put(listPitchKs, listPitchId);
+		
+		final String toggleIntensityId = "onToggleIntensity";
+		final PhonUIAction toggleIntensityAct = new PhonUIAction(this, toggleIntensityId);
+		actionMap.put(toggleIntensityId, toggleIntensityAct);
+		final KeyStroke toggleIntensityKs = KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.SHIFT_MASK);
+		inputMap.put(toggleIntensityKs, toggleIntensityId);
+		
+		final String listIntensityId = "listIntensity";
+		final PhonUIAction listIntensityAct = new PhonUIAction(this, listIntensityId);
+		actionMap.put(listIntensityId, listIntensityAct);
+		final KeyStroke listIntensityKs = KeyStroke.getKeyStroke(KeyEvent.VK_I, 0);
+		inputMap.put(listIntensityKs, listIntensityId);
+		
+		p.setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMap);
+		p.setActionMap(actionMap);
+	}
+	
 	public void onShowSpectrumMenu(PhonActionEvent pae) {
 		final JMenu praatMenu = new JMenu("Praat");
 		final JMenu menu = new JMenu("Spectrum");
 		praatMenu.add(menu);
 		
-		addMenuItems(praatMenu);
+		addMenuItems(praatMenu, true);
 		
 		final JButton btn = (JButton)pae.getActionEvent().getSource();
 		menu.getPopupMenu().show(btn, 0, btn.getHeight());
@@ -1639,7 +1695,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	@Override
-	public void addMenuItems(JMenu menu) {
+	public void addMenuItems(JMenu menu, boolean includeAccelerators) {
 		JMenu praatMenu = null;
 		for(int i = 0; i < menu.getItemCount(); i++) {
 			if(menu.getItem(i) != null && menu.getItem(i).getText() != null 
@@ -1658,6 +1714,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show Spectrogram");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, SpectrogramView.this.isVisible());
+		if(includeAccelerators)
+			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.SHIFT_MASK));
 		praatMenu.add(new JCheckBoxMenuItem(toggleAct));
 		
 		final PhonUIAction settingsAct = new PhonUIAction(this, "onEditSettings");
@@ -1671,6 +1729,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction toggleFormants = new PhonUIAction(this, "onToggleFormants");
 		toggleFormants.putValue(PhonUIAction.NAME, "Show Formants");
 		toggleFormants.putValue(PhonUIAction.SELECTED_KEY, showFormants);
+		if(includeAccelerators)
+			toggleFormants.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_MASK));
 		praatMenu.add(new JCheckBoxMenuItem(toggleFormants));
 		
 		final PhonUIAction formantSettingsAct = new PhonUIAction(this, "onEditFormantSettings");
@@ -1681,6 +1741,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction listFormantsAct = new PhonUIAction(this, "listFormants");
 		listFormantsAct.putValue(PhonUIAction.NAME, "Formant listing");
 		listFormantsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List formants for segment/selection");
+		if(includeAccelerators)
+			listFormantsAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F, 0));
 		praatMenu.add(listFormantsAct);
 		
 		praatMenu.addSeparator();
@@ -1688,6 +1750,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction togglePitchAct = new PhonUIAction(this, "onTogglePitch");
 		togglePitchAct.putValue(PhonUIAction.NAME, "Show Pitch");
 		togglePitchAct.putValue(PhonUIAction.SELECTED_KEY, showPitch);
+		if(includeAccelerators)
+			togglePitchAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.SHIFT_MASK));
 		praatMenu.add(new JCheckBoxMenuItem(togglePitchAct));
 		
 		final PhonUIAction pitchSettingsAct = new PhonUIAction(this, "onEditPitchSettings");
@@ -1698,6 +1762,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction listPitchAct = new PhonUIAction(this, "listPitch");
 		listPitchAct.putValue(PhonUIAction.NAME, "Pitch listing");
 		listPitchAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List pitch for segment/selection");
+		if(includeAccelerators)
+			listPitchAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
 		praatMenu.add(listPitchAct);
 		
 		praatMenu.addSeparator();
@@ -1705,6 +1771,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction toggleIntensityAct = new PhonUIAction(this, "onToggleIntensity");
 		toggleIntensityAct.putValue(PhonUIAction.NAME, "Show Intensity");
 		toggleIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show intensity");
+		if(includeAccelerators)
+			toggleIntensityAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.SHIFT_MASK));
 		final JCheckBoxMenuItem toggleIntensityItem = new JCheckBoxMenuItem(toggleIntensityAct);
 		toggleIntensityItem.setSelected(showIntensity);
 		praatMenu.add(toggleIntensityItem);
@@ -1717,6 +1785,8 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction listIntensityAct = new PhonUIAction(this, "listIntensity");
 		listIntensityAct.putValue(PhonUIAction.NAME, "Intensity listing");
 		listIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List intensity for segment/selection");
+		if(includeAccelerators)
+			listIntensityAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
 		praatMenu.add(listIntensityAct);
 		
 		praatMenu.addSeparator();

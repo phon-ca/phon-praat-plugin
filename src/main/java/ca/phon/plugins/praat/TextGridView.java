@@ -24,6 +24,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -53,6 +54,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.event.MouseInputAdapter;
@@ -166,6 +168,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		setupToolbar();
 		
 		setupEditorActions();
+		installKeyStrokes(parent);
 	}
 	
 	private void init() {
@@ -265,6 +268,20 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segChangedAct);
 	}
 	
+	private void installKeyStrokes(SpeechAnalysisEditorView p) {
+		final InputMap inputMap = p.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		final ActionMap actionMap = p.getActionMap();
+		
+		final String toggleTextGridId = "onToggleTextGrid";
+		final PhonUIAction toggleTextGridAct = new PhonUIAction(this, toggleTextGridId);
+		actionMap.put(toggleTextGridId, toggleTextGridAct);
+		final KeyStroke toggleTextGridKs = KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_MASK);
+		inputMap.put(toggleTextGridKs, toggleTextGridId);
+		
+		p.setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMap);
+		p.setActionMap(actionMap);
+	}
+	
 	public void setTextGrid(TextGrid tg) {
 		this.tg = tg;
 		updateHiddenTiers();
@@ -349,7 +366,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		final JMenu praatMenu = new JMenu("Praat");
 		final JMenu textGridMenu = new JMenu("TextGrid");
 		praatMenu.add(textGridMenu);
-		addMenuItems(praatMenu);
+		addMenuItems(praatMenu, true);
 		
 		textGridMenu.getPopupMenu().show(btn, 0, btn.getHeight());
 	}
@@ -747,7 +764,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 	
 	@Override
-	public void addMenuItems(JMenu menu) {
+	public void addMenuItems(JMenu menu, boolean isContextMenu) {
 		JMenu praatMenu = null;
 		for(int i = 0; i < menu.getItemCount(); i++) {
 			if(menu.getItem(i) != null && menu.getItem(i).getText() != null 
@@ -767,6 +784,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleTextGrid");
 		toggleAct.putValue(PhonUIAction.NAME, "Show TextGrid");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, TextGridView.this.isVisible());
+		if(isContextMenu)
+			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_MASK));
 		final JCheckBoxMenuItem toggleItem = new JCheckBoxMenuItem(toggleAct);
 		praatMenu.add(toggleItem);
 		
