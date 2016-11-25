@@ -38,7 +38,7 @@ import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.opgraph.nodes.query.TableOpNode;
+import ca.phon.app.opgraph.nodes.table.TableOpNode;
 import ca.phon.extensions.IExtendable;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
