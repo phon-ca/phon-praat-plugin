@@ -38,6 +38,7 @@ import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
+import ca.phon.ipa.IntraWordPause;
 import ca.phon.media.sampled.PCMSampled;
 import ca.phon.media.sampled.Sampled;
 import ca.phon.media.util.MediaLocator;
@@ -280,17 +281,23 @@ public class TextGridExporter {
 			}
 			
 			final IPATranscript word = ipaWords.get(i);
-			final List<IPATranscript> sylls = word.syllables();
+			final List<IPATranscript> sylls = word.syllablesAndPauses();
 			
-			final double wordStart = currentStart;
-			final double wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
-			final double syllLength = wordLength / sylls.size();
-			
-			for(int j = 0; j < sylls.size(); j++) {
-				final IPATranscript syll = sylls.get(j);
-				double intEnd = (j == sylls.size() - 1 ? wordEnd : currentStart + syllLength);
-				tier.addInterval(currentStart, intEnd, syll.toString());
-				currentStart = intEnd;
+			if(sylls.size() > 0) {
+				final double wordStart = currentStart;
+				final double wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
+				final double syllLength = wordLength / sylls.size();
+				
+				for(int j = 0; j < sylls.size(); j++) {
+					final IPATranscript syll = sylls.get(j);
+					double intEnd = (j == sylls.size() - 1 ? wordEnd : currentStart + syllLength);
+					tier.addInterval(currentStart, intEnd, syll.toString());
+					currentStart = intEnd;
+				}
+			} else {
+				// add interval for entire word - this is usually a pause
+				tier.addInterval(currentStart, currentStart+wordLength, word.toString());
+				currentStart = currentStart+wordLength;
 			}
 		}
 	}
@@ -319,43 +326,49 @@ public class TextGridExporter {
 			}
 			
 			final IPATranscript word = ipaWords.get(i);
-			final List<IPATranscript> sylls = word.syllables();
+			final List<IPATranscript> sylls = word.syllablesAndPauses();
 			
-			final double wordStart = currentStart;
-			final double wordEnd = (i == ipaWords.size() - 1 ? end : currentStart + wordLength);
-			final double syllLength = wordLength / sylls.size();
-			
-			for(int j = 0; j < sylls.size(); j++) {
-				final IPATranscript syll = sylls.get(j);
-				final double syllStart = currentStart;
-				final double syllEnd = (j == sylls.size() - 1 ? wordEnd: syllStart + syllLength);
+			if(sylls.size() > 0) {
+				final double wordStart = currentStart;
+				final double wordEnd = (i == ipaWords.size() - 1 ? end : wordStart + wordLength);
+				final double syllLength = wordLength / sylls.size();
 				
-				final List<String> intervals = new ArrayList<String>();
-				IPAElement prevPhone = null;
-				for(IPAElement p:syll) {
-					if(p.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER ||
-							p.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
-						prevPhone = p;
-					} else {
-						String text = p.toString();
-						if(prevPhone != null) {
-							text = prevPhone.toString() + text;
-							prevPhone = null;
+				for(int j = 0; j < sylls.size(); j++) {
+					final IPATranscript syll = sylls.get(j);
+					final double syllStart = currentStart;
+					final double syllEnd = (j == sylls.size() - 1 ? wordEnd: syllStart + syllLength);
+					
+					final List<String> intervals = new ArrayList<String>();
+					IPAElement prevPhone = null;
+					for(IPAElement p:syll) {
+						if(!(p instanceof IntraWordPause) && (p.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER ||
+								p.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER)) {
+							prevPhone = p;
+						} else {
+							String text = p.toString();
+							if(prevPhone != null) {
+								text = prevPhone.toString() + text;
+								prevPhone = null;
+							}
+							intervals.add(text);
 						}
-						intervals.add(text);
+					}
+					
+					// add phone intervals
+					final double phoneLength = syllLength / intervals.size();
+					
+					for(int k = 0; k < intervals.size(); k++) {
+						final String text = intervals.get(k);
+						final double phoneStart = currentStart;
+						final double phoneEnd = (k == intervals.size() - 1 ? syllEnd : currentStart + phoneLength);
+						tier.addInterval(phoneStart, phoneEnd, text);
+						currentStart = phoneEnd;
 					}
 				}
-				
-				// add phone intervals
-				final double phoneLength = syllLength / intervals.size();
-				
-				for(int k = 0; k < intervals.size(); k++) {
-					final String text = intervals.get(k);
-					final double phoneStart = currentStart;
-					final double phoneEnd = (k == intervals.size() - 1 ? syllEnd : currentStart + phoneLength);
-					tier.addInterval(phoneStart, phoneEnd, text);
-					currentStart = phoneEnd;
-				}
+			} else {
+				// add interval for entire word - this is usually a pause
+				tier.addInterval(currentStart, currentStart+wordLength, word.toString());
+				currentStart = currentStart+wordLength;
 			}
 		}
 	}
