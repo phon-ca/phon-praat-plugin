@@ -337,6 +337,12 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final KeyStroke toggleFormantsKs = KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_MASK);
 		inputMap.put(toggleFormantsKs, toggleFormantsId);
 		
+		final String listDurationId = "listDuration";
+		final PhonUIAction listDurationAct = new PhonUIAction(this, listDurationId);
+		actionMap.put(listDurationId, listDurationAct);
+		final KeyStroke listDurationKs = KeyStroke.getKeyStroke(KeyEvent.VK_D, 0);
+		inputMap.put(listDurationKs, listDurationId);
+		
 		final String listFormantsId = "listFormants";
 		final PhonUIAction listFormantsAct = new PhonUIAction(this, listFormantsId);
 		actionMap.put(listFormantsId, listFormantsAct);
@@ -831,6 +837,71 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 			out.flush();
 			out.close();
 		} catch(IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+	}
+	
+	public void listDuration() {
+		final Record r = parent.getEditor().currentRecord();
+		final MediaSegment segment = 
+				(r.getSegment().numberOfGroups() > 0 ? r.getSegment().getGroup(0) : null);
+		if(segment == null ||
+				(segment.getEndValue() - segment.getStartValue()) <= 0) {
+			return;
+		}
+		
+		double selStart = 
+				(parent.getWavDisplay().hasSelection() ? 
+						parent.getWavDisplay().getSelectionStart()
+						: segment.getStartValue() / 1000.0);
+		double selEnd = 
+				(parent.getWavDisplay().hasSelection() ? 
+						selStart + parent.getWavDisplay().getSelectionLength()
+						: segment.getEndValue() / 1000.0);
+		if(selEnd < selStart) {
+			double temp = selStart;
+			selStart = selEnd;
+			selEnd = temp;
+		}
+		
+		final NumberFormat format = NumberFormat.getNumberInstance();
+		format.setMaximumFractionDigits(6);
+		
+		final BufferWindow bw = BufferWindow.getInstance();
+		bw.showWindow();
+		final BufferPanel bufferPanel = bw.createBuffer("Duration (" + 
+				format.format(selStart) + "-" + format.format(selEnd) + ")");
+		final LogBuffer buffer = bufferPanel.getLogBuffer();
+		
+		try {
+			final PrintWriter out = 
+					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY);
+			out.flush();
+			final char qc = '\"';
+			final char sc = ',';
+			
+			final StringBuilder sb = new StringBuilder();
+			sb.append(qc).append("Start Time(s)").append(qc).append(sc);
+			sb.append(qc).append("End Time(s)").append(qc).append(sc);
+			sb.append(qc).append("Duration(s)").append(qc).append(sc);
+			sb.append("\n");
+			
+			sb.append(qc).append(format.format(selStart)).append(qc).append(sc);
+			sb.append(qc).append(format.format(selEnd)).append(qc).append(sc);
+			sb.append(qc).append(format.format(selEnd-selStart)).append(qc).append(sc);
+			sb.append("\n");
+			
+			out.write(sb.toString());
+			
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY);
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
+			out.flush();
+			out.close();
+		} catch (UnsupportedEncodingException e) {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
@@ -1722,6 +1793,15 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		settingsAct.putValue(PhonUIAction.NAME, "Spectrogram settings...");
 		settingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit spectrogram settings...");
 		praatMenu.add(settingsAct);
+		
+		praatMenu.addSeparator();
+		
+		final PhonUIAction durationAct = new PhonUIAction(this, "listDuration");
+		durationAct.putValue(PhonUIAction.NAME, "Get duration...");
+		durationAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Get duration for segment/selection");
+		if(includeAccelerators)
+			durationAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
+		praatMenu.add(durationAct);
 		
 		praatMenu.addSeparator();
 		
