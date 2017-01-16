@@ -36,6 +36,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXBusyLabel;
 import org.jdesktop.swingx.VerticalLayout;
 
@@ -371,7 +372,12 @@ public class TextGridExportWizard extends WizardFrame {
 			}
 			
 			final TextGridExporter exporter = new TextGridExporter();
-			String name = TextGridManager.DEFAULT_TEXTGRID_NAME;
+			
+			final String defaultName = 
+					(session.getMediaLocation() != null ? FilenameUtils.removeExtension(session.getMediaLocation())
+						: session.getName());
+			
+			String name = defaultName;
 			if(customNameButton.isSelected()) {
 				name = nameField.getText();
 			}

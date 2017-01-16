@@ -324,7 +324,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		try {
 			final TextGrid mergedTextGrid = tgManager.mergeTextGrids(session);
 			tgManager.saveTextGrid(session.getCorpus(), session.getName(),
-					mergedTextGrid, TextGridManager.DEFAULT_TEXTGRID_NAME);
+					mergedTextGrid, "default");
 			
 			contentPane.removeAll();
 			contentPane.add(buttonPane, BorderLayout.NORTH);
