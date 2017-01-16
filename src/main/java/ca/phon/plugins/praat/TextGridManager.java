@@ -53,7 +53,7 @@ public class TextGridManager {
 	private final static Logger LOGGER = Logger.getLogger(TextGridManager.class.getName());
     
 	/**
-	 * Location of textgrid files in project folder for records
+	 * Location of TextGrid files in project folder for records
 	 * 
 	 * @deprecated since ver 15
 	 */
@@ -85,7 +85,7 @@ public class TextGridManager {
 	 * @param session
 	 * @param recordId
 	 * 
-	 * @return the textgrid or <code>null</code> if not
+	 * @return the TextGrid or <code>null</code> if not
 	 *  found/loaded
 	 *  
 	 * @deprecated since version 15
@@ -137,7 +137,7 @@ public class TextGridManager {
 	 * @param corpus
 	 * @param session
 	 * 
-	 * @return list of textgrid files available
+	 * @return list of TextGrid files available
 	 */
 	public List<File> textGridFilesForSession(String corpus, String session) {
 		List<File> retVal = new ArrayList<>();
@@ -164,7 +164,7 @@ public class TextGridManager {
 	 * @param corpus
 	 * @param session
 	 * 
-	 * @return textgrid names
+	 * @return TextGrid names
 	 */
 	public List<String> textGridNamesForSession(String corpus, String session) {
 		List<String> retVal = new ArrayList<>();
@@ -252,7 +252,7 @@ public class TextGridManager {
 	}
 	
 	/**
-	 * Save textgrid to file
+	 * Save TextGrid to file
 	 * 
 	 * @param textgrid
 	 * @param file
@@ -274,7 +274,7 @@ public class TextGridManager {
 	}
 	
 	/**
-	 * Load textgrid from file
+	 * Load TextGrid from file
 	 * 
 	 * @param file
 	 * @return textgrid
@@ -295,7 +295,7 @@ public class TextGridManager {
 	}
 	
 	/**
-	 * Get the location of the textgrid file
+	 * Get the location of the TextGrid file
 	 *
 	 * @param corpus
 	 * @param session
