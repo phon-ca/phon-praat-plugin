@@ -20,7 +20,7 @@
             </extensions>
         </node>
         <opqry:queryNode id="3aaa4517" name="Query : Phones" type="ca.phon.app.opgraph.nodes.query.QueryNode">
-            <qry:query xmlns="http://phon.ling.mun.ca/ns/query" date="2016-06-20T07:32:28.650-02:30" name="Phones" uuid="21ff79f3-e30b-4710-8b7b-85020dad1fd3">
+            <qry:query xmlns="http://phon.ling.mun.ca/ns/query" date="2017-01-16T08:07:40.764-03:30" name="Phones" uuid="72a4a617-233a-4c5c-b73a-3d4b2e08112b">
                 <script>
                     <source>/*
 params =
@@ -404,7 +404,6 @@ function calcMetadata(record, group, metadata, ipaTVal, ipaAVal) {
                     <oga:property key="includeTierInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
-                    <oga:property key="includeExtraColumns"><![CDATA[true]]></oga:property>
                 </oga:settings>
                 <oga:meta x="520" y="15"/>
             </extensions>
@@ -412,15 +411,20 @@ function calcMetadata(record, group, metadata, ipaTVal, ipaAVal) {
         <node id="1bca1812" type="class:ca.phon.plugins.praat.opgraph.FormantsNode">
             <extensions>
                 <oga:settings>
+                    <oga:property key="intervalFilter"/>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.dynamicRange"><![CDATA[30.0]]></oga:property>
+                    <oga:property key="textGridTier"/>
                     <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.windowLength"><![CDATA[0.025]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.numFormants"><![CDATA[5]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.maxFrequency"><![CDATA[5500.0]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.timeStep"><![CDATA[0.0]]></oga:property>
+                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeNumFormants"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeBandwidths"><![CDATA[true]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.dotSize"><![CDATA[1.0]]></oga:property>
+                    <oga:property key="useTextGridInterval"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.preEmphasis"><![CDATA[50.0]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeIntensity"><![CDATA[false]]></oga:property>
                 </oga:settings>
@@ -446,19 +450,49 @@ function calcMetadata(record, group, metadata, ipaTVal, ipaAVal) {
         <link dest="1bca1812" destField="project" source="2b11e73e" sourceField="obj"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.analysis.AnalysisWizardExtension">
-                <opqry:info title="Formant Listing (vowels)">
+                <opqry:info format="html" title="Formant Listing (vowels)">
                     <opqry:message/>
                 </opqry:info>
                 <opqry:node ref="3aaa4517">
-                    <opqry:info title="Query : Phones">
+                    <opqry:info format="html" title="Query : Phones">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>
                 <opqry:node ref="1bca1812" showAsStep="true">
-                    <opqry:info title="Formant Listing">
+                    <opqry:info format="html" title="Formant Listing">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>
+                <opqry:report-template name="Report">#**
+ * Phon - An open source tool for research in phonology.
+ * Copyright (C) 2005 - 2017, Gregory Hedlund &lt;ghedlund@mun.ca&gt; and Yvan Rose &lt;yrose@mun.ca&gt;
+ * Dept of Linguistics, Memorial University &lt;https://phon.ca&gt;
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ *#
+#foreach($bufferName in $bufferNames)
+#if(!$bufferName.equals("Report"))
+#h2($bufferName)
+
+#if($tables.containsKey($bufferName))
+#printTable($tables[$bufferName], [])
+#else
+$buffers[$bufferName]
+#end
+#end
+
+#end</opqry:report-template>
             </opqry:nodewizard>
             <nes:settings type="ca.phon.app.opgraph.analysis.AnalysisOpGraphEditorModel"/>
         </extensions>

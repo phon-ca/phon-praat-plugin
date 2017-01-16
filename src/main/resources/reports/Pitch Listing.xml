@@ -13,7 +13,6 @@
                     <oga:property key="includeTierInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
-                    <oga:property key="includeExtraColumns"><![CDATA[true]]></oga:property>
                 </oga:settings>
                 <oga:meta x="229" y="14"/>
             </extensions>
@@ -21,19 +20,24 @@
         <node id="24ddbc67" type="class:ca.phon.plugins.praat.opgraph.PitchNode">
             <extensions>
                 <oga:settings>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.dotSize"><![CDATA[1.0]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.voicingThreshold"><![CDATA[0.45]]></oga:property>
-                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.autoCorrelate"><![CDATA[true]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.maxCandidates"><![CDATA[15]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.silenceThreshold"><![CDATA[0.03]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.timStep"><![CDATA[0.0]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.units"><![CDATA[HERTZ]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.rangeStart"><![CDATA[75.0]]></oga:property>
+                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.PitchSettings.rangeEnd"><![CDATA[500.0]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettingsvoicedUnvoicedCost"><![CDATA[0.14]]></oga:property>
-                    <oga:property key="ca.phon.plugins.praat.PitchSettings.octaveJumpCost"><![CDATA[0.35]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.silenceThreshold"><![CDATA[0.03]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.PitchSettings.veryAccurate"><![CDATA[false]]></oga:property>
+                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettingsvoicedUnvoicedCost"><![CDATA[0.14]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.timStep"><![CDATA[0.0]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.rangeStart"><![CDATA[75.0]]></oga:property>
+                    <oga:property key="intervalFilter"/>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.autoCorrelate"><![CDATA[true]]></oga:property>
+                    <oga:property key="textGridTier"/>
+                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.voicingThreshold"><![CDATA[0.45]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.dotSize"><![CDATA[1.0]]></oga:property>
+                    <oga:property key="useTextGridInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.octaveJumpCost"><![CDATA[0.35]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.units"><![CDATA[HERTZ]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.PitchSettings.maxCandidates"><![CDATA[15]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.PitchSettings.octaveCost"><![CDATA[0.35]]></oga:property>
                 </oga:settings>
                 <oga:meta x="225" y="137"/>
@@ -44,7 +48,9 @@
                 <oga:settings>
                     <oga:property key="showTable"><![CDATA[true]]></oga:property>
                 </oga:settings>
-                <oga:meta x="398" y="141"/>
+                <oga:meta x="398" y="141">
+                    <oga:default for="buffer" type="java.lang.String">Pitch Listing</oga:default>
+                </oga:meta>
             </extensions>
         </node>
         <link dest="2e67bb53" destField="project" source="d510549" sourceField="project"/>
@@ -54,14 +60,44 @@
         <link dest="2c77bffd" destField="data" source="24ddbc67" sourceField="table"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
-                <opqry:info title="Pitch Listing">
+                <opqry:info format="html" title="Pitch Listing">
                     <opqry:message/>
                 </opqry:info>
                 <opqry:node ref="24ddbc67" showAsStep="true">
-                    <opqry:info title="Pitch">
+                    <opqry:info format="html" title="Pitch">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>
+                <opqry:report-template name="Report">#**
+ * Phon - An open source tool for research in phonology.
+ * Copyright (C) 2005 - 2017, Gregory Hedlund &lt;ghedlund@mun.ca&gt; and Yvan Rose &lt;yrose@mun.ca&gt;
+ * Dept of Linguistics, Memorial University &lt;https://phon.ca&gt;
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ *#
+#foreach($bufferName in $bufferNames)
+#if(!$bufferName.equals("Report"))
+#h2($bufferName)
+
+#if($tables.containsKey($bufferName))
+#printTable($tables[$bufferName], [])
+#else
+$buffers[$bufferName]
+#end
+#end
+
+#end</opqry:report-template>
             </opqry:nodewizard>
             <nes:settings type="ca.phon.app.opgraph.report.ReportOpGraphEditorModel"/>
         </extensions>

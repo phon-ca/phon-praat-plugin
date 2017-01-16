@@ -13,7 +13,6 @@
                     <oga:property key="includeTierInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
-                    <oga:property key="includeExtraColumns"><![CDATA[true]]></oga:property>
                 </oga:settings>
                 <oga:meta x="250" y="18"/>
             </extensions>
@@ -21,15 +20,20 @@
         <node id="30fc909" type="class:ca.phon.plugins.praat.opgraph.FormantsNode">
             <extensions>
                 <oga:settings>
+                    <oga:property key="intervalFilter"/>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.dynamicRange"><![CDATA[30.0]]></oga:property>
+                    <oga:property key="textGridTier"/>
                     <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.windowLength"><![CDATA[0.025]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.numFormants"><![CDATA[5]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.maxFrequency"><![CDATA[5500.0]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.timeStep"><![CDATA[0.0]]></oga:property>
+                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeNumFormants"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeBandwidths"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.dotSize"><![CDATA[1.0]]></oga:property>
+                    <oga:property key="useTextGridInterval"><![CDATA[false]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.preEmphasis"><![CDATA[50.0]]></oga:property>
                     <oga:property key="ca.phon.plugins.praat.FormantSettings.includeIntensity"><![CDATA[false]]></oga:property>
                 </oga:settings>
@@ -53,14 +57,44 @@
         <link dest="5d5a8268" destField="data" source="30fc909" sourceField="table"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
-                <opqry:info title="Formant Listing">
+                <opqry:info format="html" title="Formant Listing">
                     <opqry:message/>
                 </opqry:info>
                 <opqry:node ref="30fc909" showAsStep="true">
-                    <opqry:info title="Formants">
+                    <opqry:info format="html" title="Formants">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>
+                <opqry:report-template name="Report">#**
+ * Phon - An open source tool for research in phonology.
+ * Copyright (C) 2005 - 2017, Gregory Hedlund &lt;ghedlund@mun.ca&gt; and Yvan Rose &lt;yrose@mun.ca&gt;
+ * Dept of Linguistics, Memorial University &lt;https://phon.ca&gt;
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ *#
+#foreach($bufferName in $bufferNames)
+#if(!$bufferName.equals("Report"))
+#h2($bufferName)
+
+#if($tables.containsKey($bufferName))
+#printTable($tables[$bufferName], [])
+#else
+$buffers[$bufferName]
+#end
+#end
+
+#end</opqry:report-template>
             </opqry:nodewizard>
             <nes:settings type="ca.phon.app.opgraph.report.ReportOpGraphEditorModel"/>
         </extensions>
