@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <opgraph xmlns="http://gedge.ca/ns/opgraph" xmlns:nes="https://www.phon.ca/ns/node_editor" xmlns:oga="http://gedge.ca/ns/opgraph-app" xmlns:opqry="https://phon.ca/ns/opgraph_query">
     <graph id="root">
-        <node id="313f49e7" type="class:ca.phon.app.opgraph.nodes.query.QueryHistoryNode">
+        <node id="71119068" type="class:ca.phon.app.opgraph.nodes.query.QueryHistoryNode">
             <extensions>
                 <oga:meta x="15" y="15"/>
             </extensions>
         </node>
-        <node id="eb7d526" type="class:ca.phon.app.opgraph.nodes.table.ResultsToTableNode">
+        <node id="3410d0f7" type="class:ca.phon.app.opgraph.nodes.table.ResultsToTableNode">
             <extensions>
                 <oga:settings>
                     <oga:property key="includeMetadata"><![CDATA[true]]></oga:property>
@@ -14,44 +14,48 @@
                     <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
                     <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
                 </oga:settings>
-                <oga:meta x="234" y="17"/>
+                <oga:meta x="240" y="23"/>
             </extensions>
         </node>
-        <node id="3b620881" type="class:ca.phon.plugins.praat.opgraph.DurationNode">
+        <node id="3598e7f6" type="class:ca.phon.plugins.praat.opgraph.IntensityNode">
             <extensions>
                 <oga:settings>
-                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
-                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
-                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.IntensitySettings.viewRangeMax"><![CDATA[100.0]]></oga:property>
                     <oga:property key="intervalFilter"/>
+                    <oga:property key="50.0"><![CDATA[50.0]]></oga:property>
                     <oga:property key="textGridTier"/>
+                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.IntensitySettings.subtractMean"><![CDATA[true]]></oga:property>
+                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
                     <oga:property key="useTextGridInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="ca.phon.plugins.praat.IntensitySettings.averaging"><![CDATA[1]]></oga:property>
                 </oga:settings>
-                <oga:meta x="233" y="144"/>
+                <oga:meta x="243" y="144"/>
             </extensions>
         </node>
-        <node id="75339654" type="class:ca.phon.app.opgraph.nodes.log.PrintBufferNode">
+        <node id="33d87eea" type="class:ca.phon.app.opgraph.nodes.log.PrintBufferNode">
             <extensions>
                 <oga:settings>
                     <oga:property key="showTable"><![CDATA[true]]></oga:property>
                 </oga:settings>
-                <oga:meta x="412" y="145">
-                    <oga:default for="buffer" type="java.lang.String">Duration Listing</oga:default>
+                <oga:meta x="416" y="148">
+                    <oga:default for="buffer" type="java.lang.String">Intensity</oga:default>
                 </oga:meta>
             </extensions>
         </node>
-        <link dest="eb7d526" destField="project" source="313f49e7" sourceField="project"/>
-        <link dest="eb7d526" destField="results" source="313f49e7" sourceField="result sets"/>
-        <link dest="3b620881" destField="table" source="eb7d526" sourceField="table"/>
-        <link dest="3b620881" destField="project" source="313f49e7" sourceField="project"/>
-        <link dest="75339654" destField="data" source="3b620881" sourceField="table"/>
+        <link dest="3410d0f7" destField="project" source="71119068" sourceField="project"/>
+        <link dest="3410d0f7" destField="results" source="71119068" sourceField="result sets"/>
+        <link dest="3598e7f6" destField="table" source="3410d0f7" sourceField="table"/>
+        <link dest="3598e7f6" destField="project" source="71119068" sourceField="project"/>
+        <link dest="33d87eea" destField="data" source="3598e7f6" sourceField="table"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
-                <opqry:info format="html" title="Duration Listing">
+                <opqry:info format="html" title="Intensity">
                     <opqry:message/>
                 </opqry:info>
-                <opqry:node ref="3b620881" showAsStep="true">
-                    <opqry:info format="html" title="Duration">
+                <opqry:node ref="3598e7f6" showAsStep="true">
+                    <opqry:info format="html" title="Intensity">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>

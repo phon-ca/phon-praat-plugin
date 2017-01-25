@@ -1,4 +1,4 @@
-reports/Duration Listing.xml
-reports/Formant Listing.xml
-reports/Pitch Listing.xml
-reports/Intensity Listing.xml
+reports/Acoustic data reports/Duration.xml
+reports/Acoustic data reports/Formants.xml
+reports/Acoustic data reports/Pitch.xml
+reports/Acoustic data reports/Intensity.xml

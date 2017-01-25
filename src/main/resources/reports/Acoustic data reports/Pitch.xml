@@ -49,7 +49,7 @@
                     <oga:property key="showTable"><![CDATA[true]]></oga:property>
                 </oga:settings>
                 <oga:meta x="398" y="141">
-                    <oga:default for="buffer" type="java.lang.String">Pitch Listing</oga:default>
+                    <oga:default for="buffer" type="java.lang.String">Pitch</oga:default>
                 </oga:meta>
             </extensions>
         </node>
@@ -60,7 +60,7 @@
         <link dest="2c77bffd" destField="data" source="24ddbc67" sourceField="table"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
-                <opqry:info format="html" title="Pitch Listing">
+                <opqry:info format="html" title="Pitch">
                     <opqry:message/>
                 </opqry:info>
                 <opqry:node ref="24ddbc67" showAsStep="true">
