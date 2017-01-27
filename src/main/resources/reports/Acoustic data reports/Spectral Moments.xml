@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<opgraph xmlns="http://gedge.ca/ns/opgraph" xmlns:nes="https://www.phon.ca/ns/node_editor" xmlns:oga="http://gedge.ca/ns/opgraph-app" xmlns:opqry="https://phon.ca/ns/opgraph_query">
+    <graph id="root">
+        <node id="519fab30" type="class:ca.phon.app.opgraph.nodes.query.QueryHistoryNode">
+            <extensions>
+                <oga:meta x="15" y="15"/>
+            </extensions>
+        </node>
+        <node id="1f1663a8" type="class:ca.phon.app.opgraph.nodes.table.ResultsToTableNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="includeMetadata"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeTierInfo"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeSpeakerInfo"><![CDATA[true]]></oga:property>
+                    <oga:property key="includeSessionInfo"><![CDATA[true]]></oga:property>
+                </oga:settings>
+                <oga:meta x="250" y="18"/>
+            </extensions>
+        </node>
+        <node id="5f769453" type="class:ca.phon.plugins.praat.opgraph.SpectralMomentsNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="intervalFilter"/>
+                    <oga:property key="filterEnd"><![CDATA[15000.0]]></oga:property>
+                    <oga:property key="textGridTier"/>
+                    <oga:property key="column"><![CDATA[IPA Actual]]></oga:property>
+                    <oga:property key="useRecordInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="filterSmoothing"><![CDATA[100.0]]></oga:property>
+                    <oga:property key="usePreemphasis"><![CDATA[true]]></oga:property>
+                    <oga:property key="windowShape"><![CDATA[KAISER_2]]></oga:property>
+                    <oga:property key="useColumnInterval"><![CDATA[true]]></oga:property>
+                    <oga:property key="useTextGridInterval"><![CDATA[false]]></oga:property>
+                    <oga:property key="preempFrom"><![CDATA[2000.0]]></oga:property>
+                    <oga:property key="filterStart"><![CDATA[500.0]]></oga:property>
+                </oga:settings>
+                <oga:meta x="223" y="161"/>
+            </extensions>
+        </node>
+        <node id="5d5a8268" type="class:ca.phon.app.opgraph.nodes.log.PrintBufferNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="showTable"><![CDATA[true]]></oga:property>
+                </oga:settings>
+                <oga:meta x="432" y="149">
+                    <oga:default for="buffer" type="java.lang.String">Spectral Moments</oga:default>
+                </oga:meta>
+            </extensions>
+        </node>
+        <link dest="1f1663a8" destField="project" source="519fab30" sourceField="project"/>
+        <link dest="1f1663a8" destField="results" source="519fab30" sourceField="result sets"/>
+        <link dest="5f769453" destField="table" source="1f1663a8" sourceField="table"/>
+        <link dest="5f769453" destField="project" source="519fab30" sourceField="project"/>
+        <link dest="5d5a8268" destField="data" source="5f769453" sourceField="table"/>
+        <extensions>
+            <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
+                <opqry:info format="html" title="Spectral Moments">
+                    <opqry:message/>
+                </opqry:info>
+                <opqry:node ref="519fab30">
+                    <opqry:info format="html" title="Query History">
+                        <opqry:message/>
+                    </opqry:info>
+                </opqry:node>
+                <opqry:node ref="1f1663a8">
+                    <opqry:info format="html" title="Results To Table">
+                        <opqry:message/>
+                    </opqry:info>
+                </opqry:node>
+                <opqry:node ref="5f769453" showAsStep="true">
+                    <opqry:info format="html" title="Spectral Moments">
+                        <opqry:message/>
+                    </opqry:info>
+                </opqry:node>
+                <opqry:node ref="5d5a8268">
+                    <opqry:info format="html" title="Print to Buffer">
+                        <opqry:message/>
+                    </opqry:info>
+                </opqry:node>
+                <opqry:report-template name="Report">#**
+ * Phon - An open source tool for research in phonology.
+ * Copyright (C) 2005 - 2017, Gregory Hedlund &lt;ghedlund@mun.ca&gt; and Yvan Rose &lt;yrose@mun.ca&gt;
+ * Dept of Linguistics, Memorial University &lt;https://phon.ca&gt;
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ *#
+#foreach($bufferName in $bufferNames)
+#if(!$bufferName.equals("Report"))
+#h2($bufferName)
+
+#if($tables.containsKey($bufferName))
+#printTable($tables[$bufferName], [])
+#else
+$buffers[$bufferName]
+#end
+#end
+
+#end</opqry:report-template>
+            </opqry:nodewizard>
+            <nes:settings type="ca.phon.app.opgraph.report.ReportOpGraphEditorModel"/>
+        </extensions>
+    </graph>
+</opgraph>
