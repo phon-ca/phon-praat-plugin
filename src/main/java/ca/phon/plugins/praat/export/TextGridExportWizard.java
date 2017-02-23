@@ -44,7 +44,6 @@ import ca.phon.app.session.RecordFilterPanel;
 import ca.phon.app.session.SessionSelector;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.TextGridView;
 import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
@@ -209,7 +208,11 @@ public class TextGridExportWizard extends WizardFrame {
 		nameField = new JTextField();
 		nameField.setEnabled(false);
 		
-		defaultNameButton = new JRadioButton("Save as default TextGrid for session (__res/textgrids/.../default.TextGrid)");
+		final String tgName = 
+				(session.getMediaLocation() != null ? 
+						FilenameUtils.getBaseName(session.getMediaLocation()) : session.getName());
+		
+		defaultNameButton = new JRadioButton("Save as default TextGrid for session (__res/textgrids/.../" + tgName + ".TextGrid)");
 		customNameButton = new JRadioButton("Save TextGrid with custom name");
 		defaultNameButton.setSelected(true);
 
@@ -374,7 +377,7 @@ public class TextGridExportWizard extends WizardFrame {
 			final TextGridExporter exporter = new TextGridExporter();
 			
 			final String defaultName = 
-					(session.getMediaLocation() != null ? FilenameUtils.removeExtension(session.getMediaLocation())
+					(session.getMediaLocation() != null ? FilenameUtils.getBaseName(session.getMediaLocation())
 						: session.getName());
 			
 			String name = defaultName;

@@ -59,6 +59,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.event.MouseInputAdapter;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.VerticalLayout;
 import org.jdesktop.swingx.action.ActionManager;
 
@@ -153,6 +154,11 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	private boolean showTierLabels = 
 			PrefHelper.getBoolean(SHOW_TIER_LABELS_PROP, true);
 	
+	public final static String SELECTED_TEXTGRID_PROP_PREFIX = 
+			"TextGridView.";
+	public final static String SELECTED_TEXTGRID_PROP_SUXFFIX = 
+			".selectedTextGrid";
+	
 	private final HidablePanel textGridMessage = new HidablePanel("TextGridView.message");
 	
 	public TextGridView(SpeechAnalysisEditorView parent) {
@@ -186,15 +192,27 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		
 		tgPainter.setPaintTierLabels(showTierLabels);
 		
+		loadTextGrid();
+	}
+	
+	public String getSelectedTextGridPropertyName() {
+		return SELECTED_TEXTGRID_PROP_PREFIX 
+				+ parent.getEditor().getSession().getCorpus() + "." + parent.getEditor().getSession().getName() 
+				+ "." + FilenameUtils.getBaseName(parent.getEditor().getSession().getMediaLocation())
+				+ SELECTED_TEXTGRID_PROP_SUXFFIX;
+	}
+	
+	private void loadTextGrid() {
 		tgManager = new TextGridManager(parent.getEditor().getProject());
+		
+		
+		
 		// load default TextGrid
-		final File defaultTextGridFile = tgManager.defaultTextGridFile(parent.getEditor().getSession().getCorpus(),
-				parent.getEditor().getSession().getName());
+		final File defaultTextGridFile = tgManager.defaultTextGridFile(parent.getEditor().getSession());
 		if(defaultTextGridFile != null) {
 			try {
 				final TextGrid tg = TextGridManager.loadTextGrid(defaultTextGridFile);
-				currentTextGridName = tgManager.defaultTextGridName(parent.getEditor().getSession().getCorpus(),
-						parent.getEditor().getSession().getName());
+				currentTextGridName = tgManager.defaultTextGridName(parent.getEditor().getSession());
 				setTextGrid(tg);
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -225,13 +243,13 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 				// show a message to open the Generate TextGrid wizard
 				final PhonUIAction generateAct = new PhonUIAction(this, "onGenerateTextGrid");
 				generateAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
-				generateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for Session");
+				generateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid tiers from Phon tiers");
 				generateAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
 				
 				textGridMessage.setDefaultAction(generateAct);
 				textGridMessage.addAction(generateAct);
 				
-				textGridMessage.setBottomLabelText("<html>Click here to generate a TextGrid.</html>");
+				textGridMessage.setBottomLabelText("<html>Click here to generate TextGrid tiers from Phon tiers.</html>");
 			}
 			parent.getErrorPane().add(textGridMessage);
 		}
@@ -266,6 +284,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		
 		final EditorAction segChangedAct = new DelegateEditorAction(this, "onTierChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segChangedAct);
+		
+		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
 	}
 	
 	private void installKeyStrokes(SpeechAnalysisEditorView p) {
@@ -305,7 +326,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		}
 		
 	};
-	
 	
 	private void setupTextGrid() {
 		tgPainter.setRepaintBuffer(true);
@@ -585,6 +605,11 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		if(ee.getEventData() != null && ee.getEventData().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
+	}
+	
+	@RunOnEDT
+	public void onMediaChanged(EditorEvent ee) {
+		loadTextGrid();
 	}
 	
 	public void onSendPraat() {
