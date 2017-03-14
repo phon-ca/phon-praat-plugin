@@ -1,17 +1,17 @@
 /*
  * phon-textgrid-plugin
  * Copyright (C) 2015, Gregory Hedlund <ghedlund@mun.ca>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -62,79 +62,79 @@ import ca.phon.worker.PhonTaskListener;
 import ca.phon.worker.PhonWorker;
 
 public class TextGridExportWizard extends WizardFrame {
-	
+
 	private static final Logger LOGGER = Logger
 			.getLogger(TextGridExportWizard.class.getName());
 
 	private static final long serialVersionUID = 4037035439180386352L;
-	
+
 	private Session session;
-	
+
 	/*
 	 * UI
 	 */
 	private SessionSelector sessionSelector;
-	
+
 	private RecordFilterPanel recordFilterPanel;
-	
+
 	private JTextField nameField;
-	
+
 	private ExportEntryCheckboxTree exportsTree;
-	
+
 	/*
 	 * radio buttons for selection output location
 	 */
 	private ButtonGroup nameGroup;
 	private JRadioButton defaultNameButton;
 	private JRadioButton customNameButton;
-	
+
 	/*
 	 * overwrite/use existing TextGrids
 	 */
 	private JCheckBox overwriteBox;
-	
+
 	private final static String OVERWRITE_MESSAGE = "Keep existing data for records";
-	
+
 	/*
 	 * Wizard steps
 	 */
 	private WizardStep selectSessionStep;
-	
+
 	private WizardStep selectRecordsStep;
-	
+
 	private WizardStep exportOptionsStep;
-	
+
 	public TextGridExportWizard(Project project) {
 		super("TextGrid Export");
-		
+
 		super.putExtension(Project.class, project);
-		
+
 		setupWizard();
 		super.btnFinish.setText("Generate TextGrids");
 	}
-	
-	
+
+
 	public TextGridExportWizard(Project project, Session session) {
 		super("TextGrid Export");
-		
+
 		super.putExtension(Project.class, project);
 		super.putExtension(Session.class, session);
 		this.session = session;
-		
+
 		setupWizard();
 		selectRecordsStep.setPrevStep(-1);
 		gotoStep(1);
-		super.btnFinish.setText("Generate TextGrids");
+		super.btnFinish.setText("Generate TextGrid");
 	}
-	
+
 	public TextGridExportWizard(Project project, Session session, RecordFilter filter) {
 		super("TextGrid Export");
-		
+
 		super.putExtension(Project.class, project);
 		super.putExtension(Session.class, session);
 		this.session = session;
 		setOverrideRecordFilter(filter);
-		
+
 		setupWizard();
 		selectRecordsStep.setPrevStep(-1);
 		exportOptionsStep.setPrevStep(-1);
@@ -146,78 +146,78 @@ public class TextGridExportWizard extends WizardFrame {
 		selectSessionStep = setupSessionsStep();
 		selectSessionStep.setPrevStep(-1);
 		selectSessionStep.setNextStep(1);
-		
+
 		selectRecordsStep = setupRecordsStep();
 		selectRecordsStep.setPrevStep(0);
 		selectRecordsStep.setNextStep(2);
-		
+
 		exportOptionsStep = setupExportOptionsStep();
 		exportOptionsStep.setPrevStep(1);
 		exportOptionsStep.setNextStep(-1);
-		
+
 		addWizardStep(selectSessionStep);
 		addWizardStep(selectRecordsStep);
 		addWizardStep(exportOptionsStep);
 	}
-	
+
 	public Project getProject() {
 		return getExtension(Project.class);
 	}
-	
+
 	private WizardStep setupSessionsStep() {
 		final WizardStep retVal = new WizardStep();
-		
+
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select a single session.");
 		sessionSelector = new SessionSelector(getProject());
 		((TristateCheckBoxTreeModel)sessionSelector.getModel()).setCheckingMode(CheckingMode.SINGLE);
-		
+
 		final JScrollPane sp = new JScrollPane(sessionSelector);
-		
+
 		retVal.setLayout(new BorderLayout());
 		retVal.add(header, BorderLayout.NORTH);
 		retVal.add(sp, BorderLayout.CENTER);
-		
+
 		return retVal;
 	}
-	
+
 	private WizardStep setupRecordsStep() {
 		final WizardStep retVal = new WizardStep();
-		
+
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select records.");
-		
+
 		// add record filter panel
 		recordFilterPanel = new RecordFilterPanel(getProject(), session);
 		recordFilterPanel.setBorder(BorderFactory.createTitledBorder("Select records"));
 		final JScrollPane scroller = new JScrollPane(recordFilterPanel);
-		
+
 		retVal.setLayout(new BorderLayout());
 		retVal.add(scroller, BorderLayout.CENTER);
 		retVal.add(header, BorderLayout.NORTH);
-		
+
 		return retVal;
 	}
-	
+
 	private WizardStep setupExportOptionsStep() {
 		final WizardStep retVal = new WizardStep();
-		
+
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Setup export options.");
-		
+
 		overwriteBox = new JCheckBox();
 		overwriteBox.setText(OVERWRITE_MESSAGE);
-		
+
 		nameField = new JTextField();
 		nameField.setEnabled(false);
-		
-		final String tgName = 
-				(session.getMediaLocation() != null ? 
+
+		final String tgName =
+				(session.getMediaLocation() != null ?
 						FilenameUtils.getBaseName(session.getMediaLocation()) : session.getName());
-		
-		defaultNameButton = new JRadioButton("Save as default TextGrid for session (__res/textgrids/.../" + tgName + ".TextGrid)");
+
+		defaultNameButton = new JRadioButton("Save as default TextGrid for session media (__res/textgrids/.../" + tgName + ".TextGrid)");
 		customNameButton = new JRadioButton("Save TextGrid with custom name");
 		defaultNameButton.setSelected(true);
 
 		defaultNameButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				boolean state = defaultNameButton.isSelected();
@@ -225,11 +225,11 @@ public class TextGridExportWizard extends WizardFrame {
 					nameField.setEnabled(false);
 				}
 			}
-			
+
 		});
-		
+
 		customNameButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				boolean state = customNameButton.isSelected();
@@ -238,17 +238,17 @@ public class TextGridExportWizard extends WizardFrame {
 				}
 			}
 		});
-		
+
 		nameGroup = new ButtonGroup();
 		nameGroup.add(defaultNameButton);
 		nameGroup.add(customNameButton);
-		
+
 		final TextGridExporter exporter = new TextGridExporter();
 		exportsTree = new ExportEntryCheckboxTree(session);
 		exportsTree.setBorder(BorderFactory.createTitledBorder("Select tiers"));
 		exportsTree.setChecked(exporter.getExports(getProject()));
 		final JScrollPane exportsScroller = new JScrollPane(exportsTree);
-		
+
 		final JPanel topPanel = new JPanel();
 		topPanel.setLayout(new VerticalLayout());
 		topPanel.setBorder(BorderFactory.createTitledBorder("Options"));
@@ -256,32 +256,32 @@ public class TextGridExportWizard extends WizardFrame {
 		topPanel.add(customNameButton);
 		topPanel.add(nameField);
 		topPanel.add(overwriteBox);
-		
+
 		final JPanel centerPanel = new JPanel();
 		centerPanel.setLayout(new BorderLayout());
 		centerPanel.add(topPanel, BorderLayout.NORTH);
 		centerPanel.add(exportsScroller, BorderLayout.CENTER);
-		
+
 		retVal.setLayout(new BorderLayout());
 		retVal.add(header, BorderLayout.NORTH);
 		retVal.add(centerPanel, BorderLayout.CENTER);
-		
+
 		return retVal;
 	}
-	
+
 	private RecordFilter overrideRecordFilter = null;
-	
+
 	public RecordFilter getRecordFilter() {
 		return (overrideRecordFilter != null ? overrideRecordFilter : recordFilterPanel.getRecordFilter());
 	}
-	
+
 	public void setOverrideRecordFilter(RecordFilter filter) {
 		this.overrideRecordFilter = filter;
 	}
-	
+
 	public Session getSession() {
 		Session retVal = this.session;
-		
+
 		if(retVal == null) {
 			final List<SessionPath> selectedSessions = sessionSelector.getSelectedSessions();
 			if(selectedSessions.size() > 0) {
@@ -294,10 +294,10 @@ public class TextGridExportWizard extends WizardFrame {
 				}
 			}
 		}
-		
+
 		return retVal;
 	}
-	
+
 	@Override
 	public void next() {
 		if(getCurrentStep() == selectRecordsStep) {
@@ -317,23 +317,23 @@ public class TextGridExportWizard extends WizardFrame {
 		}
 		super.next();
 	}
-	
+
 	@Override
 	public void finish() {
 		final JPanel glassPane = new JPanel();
 		glassPane.setLayout(null);
 		glassPane.setOpaque(false);
-		
+
 		final Rectangle exportsRect = exportsTree.getBounds();
-		
+
 		final JXBusyLabel busyLabel = new JXBusyLabel(new Dimension(32, 32));
-		
+
 		final Point busyPoint = new Point( (exportsRect.x + exportsRect.width) - 42, 10);
 		busyLabel.setLocation(busyPoint);
 		glassPane.add(busyLabel);
-		
+
 		final PhonTaskListener busyListener = new PhonTaskListener() {
-			
+
 			@Override
 			public void statusChanged(PhonTask task, TaskStatus oldstatus, TaskStatus status) {
 				if(status == TaskStatus.RUNNING) {
@@ -342,29 +342,29 @@ public class TextGridExportWizard extends WizardFrame {
 				} else {
 					busyLabel.setBusy(false);
 					glassPane.setVisible(false);
-					
+
 					generateTask.removeTaskListener(this);
 					TextGridExportWizard.super.finish();
 				}
 			}
-			
+
 			@Override
 			public void propertyChanged(PhonTask arg0, String arg1, Object arg2,
 					Object arg3) {
 			}
 		};
 		generateTask.addTaskListener(busyListener);
-		
+
 		final PhonWorker worker = PhonWorker.getInstance();
 		worker.invokeLater(generateTask);
 	}
-	
+
 	final PhonTask generateTask = new PhonTask() {
 
 		@Override
 		public void performTask() {
 			super.setStatus(TaskStatus.RUNNING);
-			
+
 			// look for window editing this session
 			SessionEditor editor = null;
 			for(CommonModuleFrame cmf:CommonModuleFrame.getOpenWindows()) {
@@ -373,24 +373,24 @@ public class TextGridExportWizard extends WizardFrame {
 					break;
 				}
 			}
-			
+
 			final TextGridExporter exporter = new TextGridExporter();
-			
-			final String defaultName = 
+
+			final String defaultName =
 					(session.getMediaLocation() != null ? FilenameUtils.getBaseName(session.getMediaLocation())
 						: session.getName());
-			
+
 			String name = defaultName;
 			if(customNameButton.isSelected()) {
 				name = nameField.getText();
 			}
 			name = name.trim();
-			
+
 			try {
 				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name,
 						overwriteBox.isSelected());
 				if(editor != null) {
-					final EditorEvent ee = new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT, 
+					final EditorEvent ee = new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT,
 							this, name);
 					editor.getEventManager().queueEvent(ee);
 				}
@@ -400,6 +400,6 @@ public class TextGridExportWizard extends WizardFrame {
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
 			}
 		}
-		
+
 	};
 }
