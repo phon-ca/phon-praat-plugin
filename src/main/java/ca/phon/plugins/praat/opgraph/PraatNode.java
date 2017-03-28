@@ -60,12 +60,12 @@ import ca.phon.session.TierString;
 import ca.phon.ui.text.PromptedTextField;
 
 public abstract class PraatNode extends TableOpNode implements NodeSettings {
-	
+
 	private final static Logger LOGGER = Logger.getLogger(PraatNode.class.getName());
-	
-	protected final InputField projectInput = 
+
+	protected final InputField projectInput =
 			new InputField("project", "project", Project.class);
-	
+
 	/**
 	 * These options determine what interval is passed
 	 * to the implementing subclass in the operate method.
@@ -76,7 +76,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	private PromptedTextField textGridTierField;
 	private PromptedTextField intervalFilterField;
 	private JRadioButton fromColumnBox;
-	private PromptedTextField columnField;	
+	private PromptedTextField columnField;
 
 	private boolean useRecordInterval = false;
 	private boolean useTextGridInterval = false;
@@ -84,19 +84,19 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	private String intervalFilter = "";
 	private boolean useColumnInterval = true;
 	private String column = "IPA Actual";
-	
+
 	public PraatNode() {
 		super();
-		
+
 		putField(projectInput);
 		putExtension(NodeSettings.class, this);
 	}
-	
+
 
 	// get media file
 	private File getMediaFile(Project project, Session session) {
 		File retVal = null;
-		final File mediaFile = 
+		final File mediaFile =
 				MediaLocator.findMediaFile(project, session);
 		if(mediaFile != null) {
 			String mediaName = mediaFile.getName();
@@ -108,20 +108,20 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			}
 			retVal = new File(mediaFile.getParentFile(), mediaName);
 		}
-		
+
 		return retVal;
 	}
 
 	private <T extends IExtendable> TextInterval getTextInterval(T obj) {
 		TextInterval retVal = obj.getExtension(TextInterval.class);
-		
+
 		if(retVal == null) {
 			if(obj instanceof Orthography) {
 				final Orthography ortho = (Orthography)obj;
 				if(ortho.length() > 0) {
 					TextInterval firstInterval = ortho.elementAt(0).getExtension(TextInterval.class);
 					TextInterval lastInterval = ortho.elementAt(ortho.length()-1).getExtension(TextInterval.class);
-					
+
 					if(firstInterval != null && lastInterval != null) {
 						try {
 							retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
@@ -132,12 +132,12 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				}
 			} else if(obj instanceof IPATranscript) {
 				final IPATranscript ipa = ((IPATranscript)obj).removePunctuation();
-				
+
 				if(ipa.length() > 0) {
 					// check first and last phones
 					TextInterval firstInterval = ipa.elementAt(0).getExtension(TextInterval.class);
 					TextInterval lastInterval = ipa.elementAt(ipa.length()-1).getExtension(TextInterval.class);
-					
+
 					if(firstInterval != null && lastInterval != null) {
 						try {
 							retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
@@ -148,12 +148,12 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				}
 			} else if(obj instanceof TierString) {
 				final TierString tierString = (TierString)obj;
-				
+
 				TextInterval interval = tierString.getExtension(TextInterval.class);
 				if(interval == null && tierString.numberOfWords() > 0) {
 					TierString firstWord = tierString.getWord(0);
 					TierString lastWord = tierString.getWord(tierString.numberOfWords()-1);
-					
+
 					TextInterval firstInterval = firstWord.getExtension(TextInterval.class);
 					TextInterval lastInterval = lastWord.getExtension(TextInterval.class);
 					if(firstInterval != null && lastInterval != null) {
@@ -166,40 +166,40 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				}
 			}
 		}
-		
+
 		return retVal;
 	}
 
 	@Override
 	public void operate(OpContext context) throws ProcessingException {
 		final Project project = (Project)context.get(projectInput);
-		
+
 		final DefaultTableDataSource table = (DefaultTableDataSource)context.get(tableInput);
 		final DefaultTableDataSource outputTable = new DefaultTableDataSource();
-		
+
 		final String globalTgName = (String)context.get(TextGridNameGlobalOption.TEXTGRIDNAME_KEY);
 
 		final TextGridManager tgManager = new TextGridManager(project);
 		final TextGridAnnotator annotator = new TextGridAnnotator();
-		
+
 		final int resultCol = table.getColumnIndex("Result");
 		final int sessionNameCol = table.getColumnIndex("Session");
-		
+
 		SessionPath lastSessionName = new SessionPath();
 		Session session = null;
 		TextGrid textGrid = null;
 		LongSound longSound = null;
-		
+
 		List<Integer> recordList = new ArrayList<>();
-		
+
 		for(int row = 0; row < table.getRowCount(); row++) {
 			if(super.isCanceled()) throw new BreakpointEncountered(null, this);
-			
+
 			final SessionPath sessionName = (SessionPath)table.getValueAt(row, sessionNameCol);
 			if(session == null || !lastSessionName.equals(sessionName)) {
 				try {
 					session = project.openSession(sessionName.getCorpus(), sessionName.getSession());
-					String tgName = 
+					String tgName =
 							(globalTgName == null || globalTgName.length() == 0
 							? tgManager.defaultTextGridName(sessionName.getCorpus(), sessionName.getSession())
 							: globalTgName);
@@ -212,7 +212,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			}
 			lastSessionName = sessionName;
 			if(textGrid == null || longSound == null) continue;
-			
+
 			final Result result = (Result)table.getValueAt(row, resultCol);
 			final Record record = session.getRecord(result.getRecordIndex());
 			final Tier<MediaSegment> segTier = record.getSegment();
@@ -227,7 +227,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
-			
+
 			TextInterval textInterval = null;
 			if(isUseRecordInterval()) {
 				if(recordList.contains(result.getRecordIndex())) continue;
@@ -243,14 +243,14 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				String textGridTier = getTextGridTier();
 				final long tierNum = TextGridUtils.tierNumberFromName(recordTextGrid, textGridTier);
 				if(tierNum <= 0) continue;
-				
+
 				try {
 					final IntervalTier intervalTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierNum);
 					recordList.add(result.getRecordIndex());
-					
+
 					for(long i = 1; i <= intervalTier.numberOfIntervals(); i++) {
 						final TextInterval interval = intervalTier.interval(i);
-						
+
 						// check interval filter
 						if(checkFilter(interval)) {
 							addRowToTable(longSound, interval, sessionName, segment, result, null, null, outputTable);
@@ -259,7 +259,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				} catch (PraatException pe) {
 					LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
 				}
-				
+
 			} else {
 				// find correct result value in result
 				ResultValue rv = null;
@@ -271,7 +271,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 				}
 				if(rv == null) continue;
-				
+
 				Object tierVal = null;
 				SystemTierType systemTier = SystemTierType.tierFromString(rv.getTierName());
 				if(systemTier != null) {
@@ -289,7 +289,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					case Notes:
 						tierVal = record.getNotes().getGroup(0);
 						break;
-						
+
 					default:
 						break;
 					}
@@ -298,11 +298,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					tierVal = tier.getGroup(rv.getGroupIndex());
 				}
 				if(tierVal == null) continue;
-				
+
 				Object resultValue = null;
 				if(tierVal instanceof Orthography) {
 					Orthography ortho = (Orthography)tierVal;
-					
+
 					if(rv.getRange().getFirst() == 0
 							&& rv.getRange().getRange() == ortho.toString().length()) {
 						resultValue = ortho;
@@ -343,11 +343,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 							resultValue = ortho.subsection(startEleIdx, endEleIdx+1);
 						} else {
 							final String tierTxt = ortho.toString();
-							
-							final String resultTxt = 
+
+							final String resultTxt =
 									(rv.getRange().getFirst() >= 0 && rv.getRange().getLast() >= rv.getRange().getFirst() ?
 									tierTxt.substring(
-											Math.max(0, rv.getRange().getFirst()), 
+											Math.max(0, rv.getRange().getFirst()),
 											Math.max(0, Math.min(rv.getRange().getLast(), tierTxt.length()))) : "");
 							try {
 								resultValue = Orthography.parseOrthography(resultTxt);
@@ -358,7 +358,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 				} else if(tierVal instanceof IPATranscript) {
 					IPATranscript ipa = (IPATranscript)tierVal;
-					
+
 					if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == ipa.toString().length()) {
 						resultValue = ipa;
 					} else {
@@ -368,7 +368,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 				} else if (tierVal instanceof TierString) {
 					TierString tierString = (TierString)tierVal;
-					
+
 					if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == tierString.length()) {
 						resultValue = tierString;
 					} else {
@@ -415,22 +415,22 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					resultValue = txt.substring(rv.getRange().getFirst(), rv.getRange().getLast());
 				}
 				if(resultValue == null || !(resultValue instanceof IExtendable)) continue;
-				
+
 				IExtendable extendable = (IExtendable)resultValue;
 				textInterval = getTextInterval(extendable);
 				if(textInterval == null) continue;
 				addRowToTable(longSound, textInterval, sessionName, segment, result, rv, resultValue, outputTable);
 			}
 		}
-		
+
 		List<String> colNames = getColumnNames();
 		for(int i = 0; i < colNames.size(); i++) {
 			outputTable.setColumnTitle(i, colNames.get(i));
 		}
-		
+
 		context.put(tableOutput, outputTable);
 	}
-	
+
 	private boolean checkFilter(TextInterval interval) {
 		if(getIntervalFilter().trim().length() > 0) {
 			return interval.getText().matches(getIntervalFilter());
@@ -439,7 +439,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * Get tier/column name for analysis
 	 * @return
@@ -447,13 +447,13 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	public String getColumn() {
 		return (this.columnField != null ? this.columnField.getText() : this.column);
 	}
-	
+
 	public void setColumn(String column) {
 		this.column = column;
 		if(this.columnField != null)
 			this.columnField.setText(column);
 	}
-	
+
 	public boolean isUseRecordInterval() {
 		return (this.recordIntervalBox != null ? this.recordIntervalBox.isSelected() : useRecordInterval);
 	}
@@ -493,11 +493,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		if(fromColumnBox != null)
 			fromColumnBox.setSelected(useColumnInterval);
 	}
-	
+
 	public String getTextGridTier() {
 		return (this.textGridTierField != null ? this.textGridTierField.getText() : textGridTier);
 	}
-	
+
 	public void setTextGridTier(String textGridTier) {
 		this.textGridTier = textGridTier;
 		if(this.textGridTierField != null)
@@ -518,26 +518,26 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	public abstract void addRowToTable(LongSound longSound, TextInterval textInerval,
 			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table);
-	
+
 	public abstract List<String> getColumnNames();
-	
+
 	private JPanel createSettingsPanel() {
 		final JPanel retVal = new JPanel();
-		
+
 		final GridBagLayout layout = new GridBagLayout();
 		retVal.setLayout(layout);
 		final GridBagConstraints gbc = new GridBagConstraints();
-		
+
 		final ButtonGroup btnGroup = new ButtonGroup();
 		recordIntervalBox = new JRadioButton("Use full record segment");
 		btnGroup.add(recordIntervalBox);
-		
+
 		textGridTierBox = new JRadioButton("Use intervals from TextGrid tier");
 		btnGroup.add(textGridTierBox);
-		
+
 		fromColumnBox = new JRadioButton("Use interval for tier/column value");
 		btnGroup.add(fromColumnBox);
-		
+
 		final ActionListener btnListener = (e) -> {
 			this.textGridTierField.setEnabled(this.textGridTierBox.isSelected());
 			this.intervalFilterField.setEnabled(this.textGridTierBox.isSelected());
@@ -546,16 +546,16 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		recordIntervalBox.addActionListener(btnListener);
 		textGridTierBox.addActionListener(btnListener);
 		fromColumnBox.addActionListener(btnListener);
-		
+
 		textGridTierField = new PromptedTextField("Enter TextGrid tier name");
 		textGridTierField.setText(textGridTier);
-		
+
 		intervalFilterField = new PromptedTextField("Enter interval filter (leave empty to select all)");
 		intervalFilterField.setText(intervalFilter);
-		
+
 		columnField = new PromptedTextField("Enter tier/column name");
 		columnField.setText(column);
-		
+
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.weightx = 1.0;
@@ -565,12 +565,12 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.anchor = GridBagConstraints.WEST;
 		gbc.insets = new Insets(2, 2, 2, 2);
-		
+
 		retVal.add(new JXTitledSeparator("Interval for Analysis"), gbc);
 
 		++gbc.gridy;
 		retVal.add(recordIntervalBox, gbc);
-		
+
 		++gbc.gridy;
 		retVal.add(textGridTierBox, gbc);
 		gbc.insets = new Insets(2, 20, 2, 2);
@@ -584,11 +584,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		++gbc.gridy;
 		gbc.insets = new Insets(2, 20, 2, 2);
 		retVal.add(columnField, gbc);
-		
+
 		recordIntervalBox.setSelected(useRecordInterval);
 		textGridTierBox.setSelected(useTextGridInterval);
 		fromColumnBox.setSelected(useColumnInterval);
-		
+
 		return retVal;
 	}
 
@@ -621,5 +621,5 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		setUseColumnInterval(Boolean.parseBoolean(properties.getProperty("useColumnInterval", "true")));
 		setColumn(properties.getProperty("column", "IPA Actual"));
 	}
-	
+
 }
