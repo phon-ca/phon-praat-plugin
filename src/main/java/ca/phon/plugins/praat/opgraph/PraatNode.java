@@ -177,7 +177,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		final DefaultTableDataSource table = (DefaultTableDataSource)context.get(tableInput);
 		final DefaultTableDataSource outputTable = new DefaultTableDataSource();
 
-		final String globalTgName = (String)context.get(TextGridNameGlobalOption.TEXTGRIDNAME_KEY);
+//		final String globalTgName = (String)context.get(TextGridNameGlobalOption.TEXTGRIDNAME_KEY);
 
 		final TextGridManager tgManager = new TextGridManager(project);
 		final TextGridAnnotator annotator = new TextGridAnnotator();
@@ -199,11 +199,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			if(session == null || !lastSessionName.equals(sessionName)) {
 				try {
 					session = project.openSession(sessionName.getCorpus(), sessionName.getSession());
-					String tgName =
-							(globalTgName == null || globalTgName.length() == 0
-							? tgManager.defaultTextGridName(sessionName.getCorpus(), sessionName.getSession())
-							: globalTgName);
-					textGrid = tgManager.openTextGrid(sessionName.getCorpus(), sessionName.getSession(), tgName);
+					final File textGridFile = tgManager.defaultTextGridFile(session);
+					textGrid = TextGridManager.loadTextGrid(textGridFile);
 					File mediaFile = getMediaFile(project, session);
 					longSound = LongSound.open(MelderFile.fromPath(mediaFile.getAbsolutePath()));
 				} catch (IOException | PraatException e) {

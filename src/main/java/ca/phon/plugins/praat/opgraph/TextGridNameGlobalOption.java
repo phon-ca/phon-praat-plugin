@@ -15,10 +15,15 @@ import ca.phon.ui.ipamap.io.Grid;
 import ca.phon.ui.text.PromptedTextField;
 
 @PhonPlugin(name="praat", author="Greg Hedlund", minPhonVersion="2.2")
+@Deprecated
 public class TextGridNameGlobalOption implements WizardGlobalOption, IPluginExtensionPoint<WizardGlobalOption> {
-	
+
+	/**
+	 * @deprecated no longer used
+	 */
+	@Deprecated
 	public static final String TEXTGRIDNAME_KEY = "__textGridName";
-	
+
 	private JPanel panel;
 	private PromptedTextField textGridNameField;
 
@@ -54,11 +59,11 @@ public class TextGridNameGlobalOption implements WizardGlobalOption, IPluginExte
 			gbc.anchor = GridBagConstraints.WEST;
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.weightx = 0.0;
-			
+
 			panel.add(new JLabel("TextGrid: "), gbc);
-			
+
 			textGridNameField = new PromptedTextField("Enter TextGrid name, blank for default");
-			
+
 			gbc.gridx++;
 			gbc.weightx = 1.0;
 			panel.add(textGridNameField, gbc);

@@ -23,6 +23,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -44,6 +46,8 @@ import ca.phon.app.session.RecordFilterPanel;
 import ca.phon.app.session.SessionSelector;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.SessionEditor;
+import ca.phon.media.util.MediaLocator;
+import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.TextGridView;
 import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
@@ -51,6 +55,10 @@ import ca.phon.session.Session;
 import ca.phon.session.SessionPath;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.nativedialogs.FileFilter;
+import ca.phon.ui.nativedialogs.MessageDialogProperties;
+import ca.phon.ui.nativedialogs.NativeDialogs;
+import ca.phon.ui.nativedialogs.SaveDialogProperties;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel;
 import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.CheckingMode;
@@ -77,23 +85,15 @@ public class TextGridExportWizard extends WizardFrame {
 
 	private RecordFilterPanel recordFilterPanel;
 
-	private JTextField nameField;
-
 	private ExportEntryCheckboxTree exportsTree;
 
 	/*
 	 * radio buttons for selection output location
 	 */
 	private ButtonGroup nameGroup;
-	private JRadioButton defaultNameButton;
+	private JRadioButton withMediaButton;
+	private JRadioButton projectLocationButton;
 	private JRadioButton customNameButton;
-
-	/*
-	 * overwrite/use existing TextGrids
-	 */
-	private JCheckBox overwriteBox;
-
-	private final static String OVERWRITE_MESSAGE = "Keep existing data for records";
 
 	/*
 	 * Wizard steps
@@ -202,45 +202,21 @@ public class TextGridExportWizard extends WizardFrame {
 
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Setup export options.");
 
-		overwriteBox = new JCheckBox();
-		overwriteBox.setText(OVERWRITE_MESSAGE);
+		withMediaButton = new JRadioButton("Save TextGrid in folder with same name as media file");
+		final String projectButtonText =
+				(session.getMediaLocation() != null ? "Save in project folder with same name as media file"
+						: "Save in project folder with same name as session");
+		projectLocationButton = new JRadioButton(projectButtonText);
+		customNameButton = new JRadioButton("Choose where to save TextGrid (save dialog will display after clicking 'Generate')");
 
-		nameField = new JTextField();
-		nameField.setEnabled(false);
-
-		final String tgName =
-				(session.getMediaLocation() != null ?
-						FilenameUtils.getBaseName(session.getMediaLocation()) : session.getName());
-
-		defaultNameButton = new JRadioButton("Save as default TextGrid for session media (__res/textgrids/.../" + tgName + ".TextGrid)");
-		customNameButton = new JRadioButton("Save TextGrid with custom name");
-		defaultNameButton.setSelected(true);
-
-		defaultNameButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				boolean state = defaultNameButton.isSelected();
-				if(state) {
-					nameField.setEnabled(false);
-				}
-			}
-
-		});
-
-		customNameButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				boolean state = customNameButton.isSelected();
-				if(state) {
-					nameField.setEnabled(true);
-				}
-			}
-		});
+		if(session.getMediaLocation() == null)
+			projectLocationButton.setSelected(true);
+		else
+			withMediaButton.setSelected(true);
 
 		nameGroup = new ButtonGroup();
-		nameGroup.add(defaultNameButton);
+		nameGroup.add(withMediaButton);
+		nameGroup.add(projectLocationButton);
 		nameGroup.add(customNameButton);
 
 		final TextGridExporter exporter = new TextGridExporter();
@@ -252,10 +228,9 @@ public class TextGridExportWizard extends WizardFrame {
 		final JPanel topPanel = new JPanel();
 		topPanel.setLayout(new VerticalLayout());
 		topPanel.setBorder(BorderFactory.createTitledBorder("Options"));
-		topPanel.add(defaultNameButton);
+		topPanel.add(withMediaButton);
+		topPanel.add(projectLocationButton);
 		topPanel.add(customNameButton);
-		topPanel.add(nameField);
-		topPanel.add(overwriteBox);
 
 		final JPanel centerPanel = new JPanel();
 		centerPanel.setLayout(new BorderLayout());
@@ -374,24 +349,83 @@ public class TextGridExportWizard extends WizardFrame {
 				}
 			}
 
+			final TextGridManager tgManager = new TextGridManager(getProject());
 			final TextGridExporter exporter = new TextGridExporter();
 
+			// determine location of TextGrid file
+			File tgFile = null;
 			final String defaultName =
 					(session.getMediaLocation() != null ? FilenameUtils.getBaseName(session.getMediaLocation())
-						: session.getName());
+							: session.getName()).trim();
+			if(!customNameButton.isSelected()) {
 
-			String name = defaultName;
-			if(customNameButton.isSelected()) {
-				name = nameField.getText();
+				if(withMediaButton.isSelected()) {
+					final File mediaFile = MediaLocator.findMediaFile(getProject(), getSession());
+					if(mediaFile == null) {
+						super.err = new FileNotFoundException(session.getMediaLocation());
+						setStatus(TaskStatus.ERROR);
+						return;
+					}
+
+					tgFile = new File(mediaFile.getParentFile(), defaultName + TextGridManager.TEXTGRID_EXT);
+				} else if(projectLocationButton.isSelected()) {
+					final File textGridFolder = new File(tgManager.textGridFolder(session.getCorpus(), session.getName()));
+					tgFile = new File(textGridFolder, defaultName + TextGridManager.TEXTGRID_EXT);
+				}
+			} else {
+				final File sessionTgFolder = new File(tgManager.textGridFolder(session.getCorpus(), session.getName()));
+				if(!sessionTgFolder.exists()) {
+					sessionTgFolder.mkdirs();
+				}
+				// show save-as dialog
+				final SaveDialogProperties props = new SaveDialogProperties();
+				props.setParentWindow(TextGridExportWizard.this);
+				props.setCanCreateDirectories(true);
+				props.setInitialFolder(sessionTgFolder.getAbsolutePath());
+				props.setInitialFile(defaultName);
+				props.setFileFilter(  new FileFilter("TextGrids", TextGridManager.TEXTGRID_EXT.substring(1)) );
+				props.setRunAsync(false);
+
+				final String selectedPath = NativeDialogs.showSaveDialog(props);
+				if(selectedPath != null) {
+					tgFile = new File(selectedPath);
+				}
 			}
-			name = name.trim();
+
+			if(tgFile == null) {
+				super.err = new FileNotFoundException();
+				super.setStatus(TaskStatus.ERROR);
+				return;
+			}
+
+			// if exists, ask to overwrite or append tiers
+			boolean appendTiers = false;
+			if(tgFile.exists()) {
+				final MessageDialogProperties props = new MessageDialogProperties();
+				props.setParentWindow(TextGridExportWizard.this);
+				props.setTitle("Overwrite or Append Tiers");
+				props.setHeader("Overwrite or Append Tiers?");
+				props.setMessage("A TextGrid already exists at " + tgFile.getAbsolutePath() + ". Overwrite data or "
+						+ "append tiers to the existing TextGrid?");
+
+				final String[] opts = new String[] { "Overwrite", "Append Tiers", "Cancel" };
+				props.setOptions(opts);
+				props.setRunAsync(false);
+
+				int selectedOption = NativeDialogs.showMessageDialog(props);
+				if(selectedOption == 2) {
+					setStatus(TaskStatus.FINISHED);
+					return;
+				}
+				appendTiers = (selectedOption == 1);
+			}
 
 			try {
-				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(), name,
-						overwriteBox.isSelected());
+				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(),
+						tgFile, appendTiers);
 				if(editor != null) {
 					final EditorEvent ee = new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT,
-							this, name);
+							this, tgFile);
 					editor.getEventManager().queueEvent(ee);
 				}
 				super.setStatus(TaskStatus.FINISHED);

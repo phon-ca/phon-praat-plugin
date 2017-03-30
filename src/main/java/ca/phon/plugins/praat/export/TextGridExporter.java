@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -445,12 +446,13 @@ public class TextGridExporter {
 	 * @param recordFilter
 	 * @param exports
 	 * @param name
-	 * @param keepExisting
+	 * @param appendTiers if a TextGrid already exists at <code>file</code> add
+	 *  tiers to the existing TextGrid
 	 *
 	 * @throws IOException
 	 */
 	public void generateTextGrid(Project project, Session session, RecordFilter recordFilter,
-			List<TextGridExportEntry> exports, String name, boolean keepExisting) throws IOException {
+			List<TextGridExportEntry> exports, File file, boolean appendTiers) throws IOException {
 		// get audio file
 		final File audioFile = getAudioFile(project, session);
 		if(audioFile == null) throw new IOException("Unable to open audio");
@@ -459,39 +461,33 @@ public class TextGridExporter {
 		if(sampled.getLength() == 0) throw new IOException("Unable to read audio file");
 
 		final TextGridManager manager = new TextGridManager(project);
-		TextGrid oldTextGrid = null;
-		if(keepExisting) {
+
+		final AtomicReference<TextGrid> textGridRef = new AtomicReference<TextGrid>(null);
+		if(file.exists() && appendTiers) {
+			textGridRef.set(TextGridManager.loadTextGrid(file));
+		} else {
 			try {
-				oldTextGrid = manager.openTextGrid(session.getCorpus(), session.getName(), name);
-			} catch (IOException e) {
-				// no previous textgrid available
+				textGridRef.set(TextGrid.createWithoutTiers(0.0, (double)sampled.getLength()));
+			} catch (PraatException e) {
+				throw new IOException(e);
 			}
 		}
 
 		try {
-			final TextGrid textGrid = TextGrid.createWithoutTiers(0.0, (double)sampled.getLength());
-			setupTextGridTiers(textGrid, exports);
+			setupTextGridTiers(textGridRef.get(), exports);
 
 			for(Record record:session.getRecords()) {
-				if(keepExisting && oldTextGrid != null) {
-					try {
-						if(copyRecordData(oldTextGrid, textGrid, record))
-							continue;
-					} catch (PraatException e) {
-
-					}
-				}
 				if(recordFilter != null && !recordFilter.checkRecord(record)) continue;
 
 				exports.forEach( (TextGridExportEntry entry) -> {
-					addTierToTextGrid(record, textGrid, entry);
+					addTierToTextGrid(record, textGridRef.get(), entry);
 				} );
 			}
 
-			for(int tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
+			for(int tierIdx = 1; tierIdx <= textGridRef.get().numberOfTiers(); tierIdx++) {
 				try {
 					final IntervalTier intervalTier =
-							textGrid.checkSpecifiedTierIsIntervalTier(tierIdx);
+							textGridRef.get().checkSpecifiedTierIsIntervalTier(tierIdx);
 					final TextInterval lastInterval =
 							(intervalTier.numberOfIntervals() > 0 ? intervalTier.interval(intervalTier.numberOfIntervals()) : null);
 					double lastIntervalStart =
@@ -505,7 +501,7 @@ public class TextGridExporter {
 				}
 			}
 
-			manager.saveTextGrid(session.getCorpus(), session.getName(), textGrid, name);
+			TextGridManager.saveTextGrid(textGridRef.get(), file);
 		} catch (PraatException pe) {
 			throw new IOException(pe);
 		}
@@ -745,15 +741,38 @@ public class TextGridExporter {
 		}
 	}
 
+	private boolean checkForTier(TextGrid textGrid, String tierName) {
+		boolean tierExists = false;
+
+		for(int i = 1; i <= textGrid.numberOfTiers(); i++) {
+			final Function tier = textGrid.tier(i);
+			if(tier.getName().equals(tierName)) {
+				tierExists = true;
+				break;
+			}
+		}
+
+		return tierExists;
+	}
+
 	public void setupTextGridTiers(TextGrid textGrid, List<TextGridExportEntry> exports)
 		throws PraatException {
 		// setup tiers
 		for(TextGridExportEntry exportEntry:exports) {
+
+			// fix name if necessary
+			String tierName = exportEntry.getTextGridTier();
+			int idx = 0;
+			while(checkForTier(textGrid, tierName)) {
+				tierName = exportEntry.getTextGridTier() + "(" + (++idx) + ")";
+			}
+			exportEntry.setTextGridTier(tierName);
+
 			final IntervalTier intervalTier = IntervalTier
 					.create(textGrid.getXmin(), textGrid.getXmax());
 			// remove default interval
 			intervalTier.removeInterval(1);
-			intervalTier.setName(exportEntry.getTextGridTier());
+			intervalTier.setName(tierName);
 			intervalTier.setForgetOnFinalize(false);
 			textGrid.addTier(intervalTier);
 		}
