@@ -18,11 +18,13 @@
 package ca.phon.plugins.praat.importer;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ItemEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,10 +40,12 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -49,6 +53,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
@@ -93,7 +98,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 	private final static String INFO_MESSAGE2 =
 			"<html><p>For each TextGrid tier you wish to import, enter the corresponding Phon tier name and group options.</p></html>";
 
-	private JComboBox<String> textGridSelector;
+	private JComboBox<File> textGridSelector;
 
 	private JComboBox<String> tierNameSelector;
 
@@ -136,9 +141,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 		final HidablePanel tblInfoPanel = new HidablePanel(MSG2_PROP);
 		tblInfoPanel.setBottomLabelText(INFO_MESSAGE2);
 
-		final List<String> tgNames = tgManager.textGridNamesForSession(session.getCorpus(), session.getName());
-		textGridSelector = new JComboBox<>(tgNames.toArray(new String[0]));
+		final List<File> tgNames = tgManager.textGridFilesForSession(session.getCorpus(), session.getName());
+		textGridSelector = new JComboBox<>(tgNames.toArray(new File[0]));
 		textGridSelector.addItemListener( this::onSelectTextGrid );
+		textGridSelector.setRenderer(new TextGridCellRenderer());
 
 		tierNameSelector = new JComboBox<>();
 
@@ -277,10 +283,10 @@ public class TextGridImportSettingsStep extends WizardStep {
 	}
 
 	public void onSelectTextGrid(ItemEvent itemEvent) {
-		final String textGridName = textGridSelector.getSelectedItem().toString();
+		final File textGridFile = (File)textGridSelector.getSelectedItem();
 
 		try {
-			final TextGrid textGrid = tgManager.openTextGrid(session.getCorpus(), session.getName(), textGridName);
+			final TextGrid textGrid = TextGridManager.loadTextGrid(textGridFile);
 			final List<String> tierNames = new ArrayList<>();
 			for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
 				try {
@@ -309,9 +315,9 @@ public class TextGridImportSettingsStep extends WizardStep {
 		}
 	}
 
-	public String getSelectedTextGrid() {
+	public File getSelectedTextGrid() {
 		return
-				(textGridSelector.getSelectedItem() != null ? textGridSelector.getSelectedItem().toString() : "");
+				(textGridSelector.getSelectedItem() != null ? (File)textGridSelector.getSelectedItem() : null);
 	}
 
 	public String getSelectedTier() {
@@ -338,6 +344,21 @@ public class TextGridImportSettingsStep extends WizardStep {
 		}
 
 		public String getName() { return this.name; }
+
+	}
+
+	private class TextGridCellRenderer extends DefaultListCellRenderer {
+
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+				boolean cellHasFocus) {
+			final JLabel retVal = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+			final File f = (File)value;
+			retVal.setText(FilenameUtils.getBaseName(f.getAbsolutePath()));
+
+			return retVal;
+		}
 
 	}
 
