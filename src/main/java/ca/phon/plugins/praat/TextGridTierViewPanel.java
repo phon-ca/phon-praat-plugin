@@ -129,6 +129,7 @@ public class TextGridTierViewPanel extends JPanel {
 
 		final TextGridTableModel model = new TextGridTableModel();
 		tierViewTable = new JXTable(model);
+		tierViewTable.setSortable(false);
 		tierViewTable.getColumn(0).setMaxWidth(40);
 		tierViewTable.getColumn(2).setMaxWidth(100);
 		tierViewTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -197,7 +198,6 @@ public class TextGridTierViewPanel extends JPanel {
 
 		popup.pack();
 		popup.setLocation(p.x, p.y);
-		popup.setSize(new Dimension(300, 250));
 		popup.setVisible(true);
 
 		popup.getRootPane().setDefaultButton(okBtn);

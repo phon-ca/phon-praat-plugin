@@ -728,7 +728,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 		dialog.pack();
 		dialog.setSize(600, 500);
-		dialog.setLocationRelativeTo(this);
+		dialog.setLocationRelativeTo(parent);
 		dialog.setVisible(true);
 	}
 
