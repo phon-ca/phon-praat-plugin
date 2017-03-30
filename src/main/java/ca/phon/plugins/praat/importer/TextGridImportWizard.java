@@ -1,17 +1,17 @@
 /*
  * phon-textgrid-plugin
  * Copyright (C) 2015, Gregory Hedlund <ghedlund@mun.ca>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -64,22 +64,22 @@ import ca.phon.worker.PhonTask;
 import ca.phon.worker.PhonWorker;
 
 public class TextGridImportWizard extends WizardFrame {
-	
+
 	private final static Logger LOGGER =
 			Logger.getLogger(TextGridImportWizard.class.getName());
 
 	private static final long serialVersionUID = -7074300145973546703L;
-	
+
 	private final SessionEditor editor;
-	
+
 	private final Project project;
-	
+
 	private final Session session;
 
 	private final TextGridImportSettingsStep step1;
-	
+
 	private WizardStep step3;
-	
+
 	private BufferPanel console;
 
 	public TextGridImportWizard(SessionEditor editor) {
@@ -87,13 +87,13 @@ public class TextGridImportWizard extends WizardFrame {
 		this.editor = editor;
 		this.project = editor.getProject();
 		this.session = editor.getSession();
-		
+
 		putExtension(Project.class, project);
 		putExtension(Session.class, session);
-		
+
 		step1 = new TextGridImportSettingsStep(session, new TextGridManager(project));
 		init();
-		
+
 		btnFinish.setVisible(false);
 	}
 
@@ -103,17 +103,17 @@ public class TextGridImportWizard extends WizardFrame {
 			final EditorEvent ee = new EditorEvent(EditorEventType.TIER_VIEW_CHANGED_EVT, step1);
 			editor.getEventManager().queueEvent(ee);
 		});
-		
+
 		step3 = new WizardStep();
 		step3.setLayout(new BorderLayout());
-		
+
 		final DialogHeader header = new DialogHeader("Create Records", "Creating records from TextGrid data");
 		step3.add(header, BorderLayout.NORTH);
-		
+
 		console = new BufferPanel("Create records from TextGrid");
 		step3.add(console, BorderLayout.CENTER);
 		addWizardStep(step3);
-		
+
 		step1.setNextStep(1);
 		step3.setPrevStep(0);
 	}
@@ -121,7 +121,7 @@ public class TextGridImportWizard extends WizardFrame {
 	@Override
 	protected void next() {
 		super.next();
-		
+
 		if(getCurrentStep() == step3) {
 			// import text grids
 			btnCancel.setEnabled(false);
@@ -149,12 +149,12 @@ public class TextGridImportWizard extends WizardFrame {
 				public String getRedoPresentationName() {
 					return "Redo create record from TextGrid";
 				}
-				
+
 			};
-			
+
 			final TextGridImporter importer = new TextGridImporter();
 			final TierDescriptions descs = session.getUserTiers();
-			
+
 			// add user defined tiers to session
 			final Map<String, TierDescription> tierMap = step1.getTierMap();
 			for(TierDescription td:tierMap.values()) {
@@ -167,7 +167,7 @@ public class TextGridImportWizard extends WizardFrame {
 							break;
 						}
 					}
-					
+
 					if(doImport) {
 						final TierViewItem tvi = SessionFactory.newFactory().createTierViewItem(td.getName(), true);
 						final AddTierEdit addTierEdit = new AddTierEdit(editor, td, tvi);
@@ -176,19 +176,19 @@ public class TextGridImportWizard extends WizardFrame {
 					}
 				}
 			}
-			
+
 			final TextGridManager tgManager = new TextGridManager(project);
 			TextGrid textGrid = null;
 			try ( CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(console.getLogBuffer().getStdOutStream(), "UTF-8")) ) {
-				textGrid = tgManager.openTextGrid(session.getCorpus(), session.getName(), step1.getSelectedTextGrid());
-				
+				textGrid = TextGridManager.loadTextGrid(step1.getSelectedTextGrid());
+
 				try {
 					console.getLogBuffer().getStdOutStream().flush();
-					console.getLogBuffer().getStdOutStream().write( 
+					console.getLogBuffer().getStdOutStream().write(
 							new String(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY).getBytes() );
 					console.getLogBuffer().getStdOutStream().flush();
 				} catch (IOException e) {}
-				
+
 				List<String> colNames = new ArrayList<>();
 				colNames.add("Record #");
 				colNames.add("Segment");
@@ -199,9 +199,9 @@ public class TextGridImportWizard extends WizardFrame {
 				}
 				csvWriter.writeNext(colNames.toArray(new String[0]));
 				csvWriter.flush();
-				
+
 				int rIdx = session.getRecordCount();
-				
+
 				final String tgTierName = step1.getSelectedTier();
 				long tgTierIdx = 0;
 				IntervalTier intervalTier = new IntervalTier();
@@ -217,27 +217,27 @@ public class TextGridImportWizard extends WizardFrame {
 
 				for(int i = 1; i <= intervalTier.numberOfIntervals(); i++) {
 					TextInterval recordInterval = intervalTier.interval(i);
-					
+
 					if(recordInterval.getText().trim().length() == 0 &&
 							step1.isIgnoreEmptyIntervals()) continue;
-					
+
 					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
 					// create a new record for each interval
 					final Record newRecord =
 							importer.createRecordFromTextGrid(session, tg, step1.getTierMap());
-					
+
 					List<String> rowData = new ArrayList<>();
 					rowData.add( (++rIdx) + "");
 					rowData.add(newRecord.getSegment().getGroup(0).toString());
-					
+
 					for(String tgTier:tierMap.keySet()) {
 						final TierDescription td = tierMap.get(tgTier);
 						rowData.add(newRecord.getTier(td.getName(), String.class).toString());
 					}
-					
+
 					csvWriter.writeNext(rowData.toArray(new String[0]));
 					csvWriter.flush();
-					
+
 					final AddRecordEdit addRecordEdit = new AddRecordEdit(editor, newRecord);
 					addRecordEdit.setFireEvent(false);
 					cmpEdit.addEdit(addRecordEdit);
@@ -246,12 +246,12 @@ public class TextGridImportWizard extends WizardFrame {
 				setStatus(TaskStatus.FINISHED);
 			} catch (IOException | PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				
+
 				try {
 					console.getLogBuffer().getStdErrStream().write(e.getLocalizedMessage().getBytes());
 					console.getLogBuffer().getStdErrStream().flush();
 				} catch (IOException ex) {}
-				
+
 				setStatus(TaskStatus.ERROR);
 			} finally {
 				cmpEdit.addEdit(new AbstractUndoableEdit() {
@@ -259,7 +259,7 @@ public class TextGridImportWizard extends WizardFrame {
 					@Override
 					public void undo() throws CannotUndoException {
 						SwingUtilities.invokeLater(() -> {
-							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
 									editor.getSession().getRecord(0));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
@@ -268,39 +268,39 @@ public class TextGridImportWizard extends WizardFrame {
 					@Override
 					public void redo() throws CannotRedoException {
 						SwingUtilities.invokeLater(() -> {
-							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
 									editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
 					}
-					
+
 				});
 				cmpEdit.end();
 				editor.getUndoSupport().postEdit(cmpEdit);
-				
-				final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this, 
+
+				final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
 						editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
 				editor.getEventManager().queueEvent(sessionModifiedEvent);
-				
+
 				btnCancel.setEnabled(true);
-				
+
 				try {
 					console.getLogBuffer().getStdOutStream().flush();
-					console.getLogBuffer().getStdOutStream().write( 
+					console.getLogBuffer().getStdOutStream().write(
 							new String(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY).getBytes() );
 					console.getLogBuffer().getStdOutStream().flush();
-					console.getLogBuffer().getStdOutStream().write( 
+					console.getLogBuffer().getStdOutStream().write(
 							new String(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE).getBytes() );
 					console.getLogBuffer().getStdOutStream().flush();
-					console.getLogBuffer().getStdOutStream().write( 
+					console.getLogBuffer().getStdOutStream().write(
 							new String(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.PACK_TABLE_COLUMNS).getBytes() );
 					console.getLogBuffer().getStdOutStream().flush();
 				} catch (IOException e) {}
 			}
 		}
-		
+
 	};
-	
+
 	@Override
 	public void finish() {
 		if(session != null) {
@@ -308,7 +308,7 @@ public class TextGridImportWizard extends WizardFrame {
 			epArgs.put(EntryPointArgs.PROJECT_OBJECT, project);
 			epArgs.put(EntryPointArgs.CORPUS_NAME, session.getCorpus());
 			epArgs.put(EntryPointArgs.SESSION_OBJECT, session);
-			
+
 			try {
 				PluginEntryPointRunner.executePlugin("SessionEditor", epArgs);
 			} catch (PluginException e) {
@@ -316,5 +316,5 @@ public class TextGridImportWizard extends WizardFrame {
 			}
 		}
 	}
-	
+
 }
