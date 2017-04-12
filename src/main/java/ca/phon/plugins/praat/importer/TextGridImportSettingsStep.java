@@ -73,6 +73,7 @@ import ca.phon.session.Session;
 import ca.phon.session.SessionFactory;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
+import ca.phon.session.TierString;
 import ca.phon.session.TierViewItem;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
@@ -258,7 +259,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 			final SessionFactory factory = SessionFactory.newFactory();
 			// add tier to session
 			final TierDescription tierDesc = factory.createTierDescription(
-					ted.getTierEditor().getTierName(), ted.getTierEditor().isGrouped(), String.class);
+					ted.getTierEditor().getTierName(), ted.getTierEditor().isGrouped(), TierString.class);
 			session.addUserTier(tierDesc);
 
 			final Formatter<Font> fontFormatter = FormatterFactory.createFormatter(Font.class);

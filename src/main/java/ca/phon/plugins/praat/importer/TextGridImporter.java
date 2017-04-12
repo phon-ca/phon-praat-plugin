@@ -1,17 +1,17 @@
 /*
  * phon-textgrid-plugin
  * Copyright (C) 2015, Gregory Hedlund <ghedlund@mun.ca>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -53,13 +53,13 @@ import ca.phon.syllabifier.Syllabifier;
 import ca.phon.syllabifier.SyllabifierLibrary;
 
 public class TextGridImporter {
-	
-	public static final String IGNORE_EMPTY_INTERVALS_PROP = 
+
+	public static final String IGNORE_EMPTY_INTERVALS_PROP =
 			TextGridImporter.class.getName() + ".ignoreEmptyIntervals";
-	
-	private final static Logger LOGGER = 
+
+	private final static Logger LOGGER =
 			Logger.getLogger(TextGridImporter.class.getName());
-	
+
 	public TextGridImporter() {
 		super();
 	}
@@ -67,35 +67,35 @@ public class TextGridImporter {
 	/**
 	 * Setup default tier mapping if any tier names match
 	 * default system tiers.
-	 * 
+	 *
 	 * @param textGridTiers
 	 * @return map of text grid tier names to phon tier descriptions
 	 */
 	public Map<String, TierDescription> setupDefaultTierMapping(Set<String> textGridTiers) {
 		final Map<String, TierDescription> retVal = new LinkedHashMap<String, TierDescription>();
-		
+
 		final SessionFactory factory = SessionFactory.newFactory();
 		final Set<SystemTierType> mappedTiers = new HashSet<SystemTierType>();
-		
+
 		for(String tierName:textGridTiers) {
-			final String tierPart = 
+			final String tierPart =
 					(tierName.indexOf(':') > 0 ? tierName.split(":")[0] : tierName);
 			final SystemTierType systemTier = SystemTierType.tierFromString(tierPart);
 			if(systemTier != null && systemTier != SystemTierType.Segment && !mappedTiers.contains(systemTier)) {
 				final TierDescription td = factory.createTierDescription(systemTier.getName(), systemTier.isGrouped());
 				retVal.put(tierName, td);
-				
+
 				mappedTiers.add(systemTier);
 			}
 		}
-		
+
 		return retVal;
 	}
-	
+
 	public List<Record> importTextGridRecords(Project project, Session session, TextGrid textGrid,
 			String referenceTier, boolean ignoreEmptyIntervals, Map<String, TierDescription> tierMap) {
 		List<Record> retVal = new ArrayList<>();
-		
+
 		long tgTierIdx = 0;
 		IntervalTier intervalTier = new IntervalTier();
 		for(long tierIdx = 1; tierIdx <= textGrid.numberOfTiers(); tierIdx++) {
@@ -113,7 +113,7 @@ public class TextGridImporter {
 
 		for(int i = 1; i <= intervalTier.numberOfIntervals(); i++) {
 			TextInterval recordInterval = intervalTier.interval(i);
-			
+
 			if(recordInterval.getText().trim().length() == 0 &&
 					ignoreEmptyIntervals) continue;
 			try {
@@ -122,17 +122,17 @@ public class TextGridImporter {
 				final Record newRecord =
 						createRecordFromTextGrid(session, tg, tierMap);
 				session.addRecord(newRecord);
-				
+
 				retVal.add(newRecord);
 			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 			}
 		}
-		
+
 		return retVal;
 	}
-	
-	public Record createRecordFromTextGrid(Session session, TextGrid textGrid, 
+
+	public Record createRecordFromTextGrid(Session session, TextGrid textGrid,
 			Map<String, TierDescription> tierMap) {
 		final SessionFactory factory = SessionFactory.newFactory();
 		final Record r = factory.createRecord();
@@ -141,7 +141,7 @@ public class TextGridImporter {
 		segment.setEndValue((float)(textGrid.getXmax() * 1000.0f));
 		segment.setUnitType(MediaUnit.Millisecond);
 		r.getSegment().addGroup(segment);
-		
+
 		final SyllabifierLibrary library = SyllabifierLibrary.getInstance();
 		SyllabifierInfo info = session.getExtension(SyllabifierInfo.class);
 		if(info == null) {
@@ -150,12 +150,12 @@ public class TextGridImporter {
 			info.setSyllabifierLanguageForTier(SystemTierType.IPAActual.getName(), library.defaultSyllabifierLanguage());
 			session.putExtension(SyllabifierInfo.class, info);
 		}
-		final Syllabifier targetSyllabifier = 
+		final Syllabifier targetSyllabifier =
 				library.getSyllabifierForLanguage(info.getSyllabifierLanguageForTier(SystemTierType.IPATarget.getName()));
 		final Syllabifier actualSyllabifier = library.getSyllabifierForLanguage(info.getSyllabifierLanguageForTier(SystemTierType.IPAActual.getName()));
-		
+
 		final PhoneAligner aligner = new PhoneAligner();
-		
+
 		for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
 			try {
 				final IntervalTier tier = textGrid.checkSpecifiedTierIsIntervalTier(i);
@@ -167,10 +167,10 @@ public class TextGridImporter {
 				// not an interval tier
 			}
 		}
-		
+
 		for(int i = 0; i < r.numberOfGroups(); i++) {
 			final Group g = r.getGroup(i);
-			
+
 			final IPATranscript ipaT = g.getIPATarget();
 			if(targetSyllabifier != null) {
 				targetSyllabifier.syllabify(ipaT.toList());
@@ -179,26 +179,26 @@ public class TextGridImporter {
 			if(actualSyllabifier != null) {
 				actualSyllabifier.syllabify(ipaA.toList());
 			}
-			
+
 			final PhoneMap pm = aligner.calculatePhoneMap(ipaT, ipaA);
 			g.setPhoneAlignment(pm);
 		}
-		
+
 		// if we didn't import anything - create a group!
 		if(r.numberOfGroups() == 0) {
 			r.addGroup();
 		}
-		
+
 		return r;
 	}
-	
+
 	public void importTextGridTier(Record r, IntervalTier tgTier, TierDescription td) {
 		final List<String> grpVals = new ArrayList<String>();
-		
+
 		if(tgTier.getName().toString().endsWith(": Tier")) {
-			String fullTierData = 
+			String fullTierData =
 					(tgTier.numberOfIntervals() > 0 ? tgTier.interval(1).getText() : "[]");
-			
+
 			final String[] vals = fullTierData.split("\\[");
 			for(int i = 1; i < vals.length; i++) {
 				String val = vals[i].replaceAll("\\]", "").trim();
@@ -219,15 +219,15 @@ public class TextGridImporter {
 			if(buffer.length() > 0)
 				grpVals.add(buffer.toString());
 		}
-		
+
 		if(!SystemTierType.isSystemTier(td.getName()) && !r.hasTier(td.getName())) {
-			final Tier<String> depTier = SessionFactory.newFactory().createTier(td.getName(), String.class, td.isGrouped());
+			final Tier<TierString> depTier = SessionFactory.newFactory().createTier(td.getName(), TierString.class, td.isGrouped());
 			r.putTier(depTier);
 		}
-		
+
 		for(int grpIdx = 0; grpIdx < grpVals.size(); grpIdx++) {
 			final String grpVal = grpVals.get(grpIdx);
-			
+
 			Group grp = null;
 			if(grpIdx >= r.numberOfGroups())
 				grp = r.addGroup();
@@ -276,13 +276,13 @@ public class TextGridImporter {
 				}
 			} else {
 				if(td.isGrouped()) {
-					grp.setTier(td.getName(), String.class, grpVal);
+					grp.setTier(td.getName(), TierString.class, new TierString(grpVal));
 				} else {
-					grp.setTier(td.getName(), String.class, 
-							new String(grp.getTier(td.getName(), String.class) + " " + grpVal).trim());
+					grp.setTier(td.getName(), TierString.class,
+							new TierString( (grp.getTier(td.getName(), TierString.class) + " " + new TierString(grpVal)).trim()));
 				}
 			}
 		}
-	} 
-	
+	}
+
 }
