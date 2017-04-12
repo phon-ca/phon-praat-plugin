@@ -230,6 +230,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		});
 
 		table.getColumn(Col.PHON_TIER.ordinal()).setCellEditor(new DefaultCellEditor(tierNameBox));
+		table.setSortable(false);
 
 		final JPanel btmPanel = new JPanel(new BorderLayout());
 		btmPanel.add(tblInfoPanel, BorderLayout.NORTH);

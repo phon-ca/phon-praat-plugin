@@ -20,6 +20,7 @@ package ca.phon.plugins.praat;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -34,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -674,7 +676,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 					FileUtil.copyFile(tgFile, newFile);
 					// select new TextGrid
 //					showTextGrid(tgName);
-					onTextGridChanged(new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT, tgFile));
+					onTextGridChanged(new EditorEvent(TextGridView.TEXT_GRID_CHANGED_EVENT, this, newFile));
 				} catch (IOException ex) {
 					LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
 				}
@@ -831,7 +833,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			@Override
 			public void menuSelected(MenuEvent e) {
 				textGridMenu.removeAll();
-				for(File textGridFile:manager.textGridFilesForSession(session.getCorpus(), session.getName())) {
+				boolean projectHeaderAdded = false;
+				for(File textGridFile:manager.textGridFilesForSession(session)) {
 					final String textGridName = FilenameUtils.getBaseName(textGridFile.getAbsolutePath());
 					boolean isCurrent = (currentTextGridFile != null && textGridFile.equals(currentTextGridFile));
 					ImageIcon icn = null;
@@ -839,6 +842,42 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 					if(serverMap.containsKey(textGridName)) {
 						icn = lockIcon;
+					}
+
+					// add folder headers
+					final File mediaFile =
+							MediaLocator.findMediaFile(session.getMediaLocation(), getParentView().getEditor().getProject(), session.getCorpus());
+					if(mediaFile != null) {
+						final String mediaFolder = mediaFile.getParent();
+						if(textGridFile.getParentFile().equals(new File(mediaFolder))) {
+							try {
+								final PhonUIAction showMediaFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL",
+										(new File(mediaFolder)).toURI().toURL());
+								showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Media Folder --");
+								showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, mediaFolder);
+								final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
+								showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
+								textGridMenu.add(showMediaFolderItem);
+							} catch (MalformedURLException e1) {
+								LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
+							}
+						}
+					}
+
+					final String projectFolder = tgManager.textGridFolder(session.getCorpus(), session.getName());
+					if(textGridFile.getParentFile().equals(new File(projectFolder)) && !projectHeaderAdded) {
+						try {
+							final PhonUIAction showMediaFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL",
+									(new File(projectFolder)).toURI().toURL());
+							showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Project Folder --");
+							showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, projectFolder);
+							final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
+							showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
+							textGridMenu.add(showMediaFolderItem);
+							projectHeaderAdded = true;
+						} catch (MalformedURLException e1) {
+							LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
+						}
 					}
 
 					final PhonUIAction showTgAct = new PhonUIAction(TextGridView.this, "showTextGrid", textGridFile);
@@ -851,10 +890,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 					textGridMenu.add(new JCheckBoxMenuItem(showTgAct));
 				}
 				textGridMenu.addSeparator();
-				final PhonUIAction showTextGridFolderAct = new PhonUIAction(TextGridView.this, "onShowTextGridFolder");
-				showTextGridFolderAct.putValue(PhonUIAction.NAME, "Show TextGrid folder");
-				showTextGridFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, tgManager.textGridFolder(session.getCorpus(), session.getName()));
-				textGridMenu.add(showTextGridFolderAct);
 
 				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridView.this, "onAddExistingTextGrid");
 				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
