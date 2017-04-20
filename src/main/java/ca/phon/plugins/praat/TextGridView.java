@@ -211,8 +211,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	private void loadTextGrid() {
 		tgManager = new TextGridManager(parent.getEditor().getProject());
 
-
-
 		// load default TextGrid
 		final File defaultTextGridFile = tgManager.defaultTextGridFile(parent.getEditor().getSession());
 		if(defaultTextGridFile != null) {
@@ -223,6 +221,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+			}
+			if(textGridMessage.isVisible()) {
+				textGridMessage.setVisible(false);
 			}
 		} else {
 			setTextGrid(null);
