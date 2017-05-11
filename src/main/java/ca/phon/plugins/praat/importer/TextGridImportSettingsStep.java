@@ -142,7 +142,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 		final HidablePanel tblInfoPanel = new HidablePanel(MSG2_PROP);
 		tblInfoPanel.setBottomLabelText(INFO_MESSAGE2);
 
-		final List<File> tgNames = tgManager.textGridFilesForSession(session.getCorpus(), session.getName());
+		final List<File> tgNames = tgManager.textGridFilesForSession(session);
 		textGridSelector = new JComboBox<>(tgNames.toArray(new File[0]));
 		textGridSelector.addItemListener( this::onSelectTextGrid );
 		textGridSelector.setRenderer(new TextGridCellRenderer());
