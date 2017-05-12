@@ -224,7 +224,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 
 		final JComboBox<String> tierNameBox = new JComboBox<>(new TierNameModel());
 		tierNameBox.addItemListener( e -> {
-			if(tierNameBox.getSelectedItem() != null
+			if(e.getStateChange() == ItemEvent.SELECTED && tierNameBox.getSelectedItem() != null
 					&& tierNameBox.getSelectedItem().equals("New tier...")) {
 				showNewTierDialog();
 			}
@@ -247,7 +247,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 
 	private void showNewTierDialog() {
 		final int row = table.getSelectedRow();
-		if(row <= 0) return;
+		if(row < 0) return;
 
 		final String tgTier = (String)table.getValueAt(row, Col.TG_TIER.ordinal());
 
