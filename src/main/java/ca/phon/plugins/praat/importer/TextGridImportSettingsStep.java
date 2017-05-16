@@ -191,10 +191,11 @@ public class TextGridImportSettingsStep extends WizardStep {
 		gbc.weightx = 1.0;
 		gbc.anchor = GridBagConstraints.WEST;
 		ignoreEmptyIntervalsBox = new JCheckBox("Ignore empty intervals");
-		ignoreEmptyIntervalsBox.setSelected(
-				PrefHelper.getBoolean(TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, Boolean.TRUE));
-		ignoreEmptyIntervalsBox.addActionListener( (e) -> PrefHelper.getUserPreferences().putBoolean(
-				TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, ignoreEmptyIntervalsBox.isSelected()) );
+		ignoreEmptyIntervalsBox.setSelected(true);
+//		ignoreEmptyIntervalsBox.setSelected(
+//				PrefHelper.getBoolean(TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, Boolean.TRUE));
+//		ignoreEmptyIntervalsBox.addActionListener( (e) -> PrefHelper.getUserPreferences().putBoolean(
+//				TextGridImporter.IGNORE_EMPTY_INTERVALS_PROP, ignoreEmptyIntervalsBox.isSelected()) );
 		textGridOptionsPanel.add(ignoreEmptyIntervalsBox, gbc);
 
 		recordOptionsGroup = new ButtonGroup();
