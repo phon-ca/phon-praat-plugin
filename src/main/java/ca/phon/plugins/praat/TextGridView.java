@@ -19,14 +19,20 @@ package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -42,29 +48,45 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTree;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.event.MouseInputAdapter;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import org.apache.commons.io.FilenameUtils;
+import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.VerticalLayout;
-import org.jdesktop.swingx.action.ActionManager;
 
+import ca.gedge.opgraph.app.components.DoubleClickableTextField;
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
@@ -96,6 +118,7 @@ import ca.phon.session.MediaSegment;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
+import ca.phon.session.TierDescription;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
@@ -111,6 +134,7 @@ import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.FileUtil;
 import ca.phon.util.OpenFileLauncher;
 import ca.phon.util.PrefHelper;
+import ca.phon.util.Tuple;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
 
@@ -142,7 +166,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	// parent panel
 	private SpeechAnalysisEditorView parent;
 
-	private TextGridContentPanel contentPane;
+	private JLayeredPane layeredPane;
+	
+	private TextGridContentPanel textGridContentPane;
 
 	private TextGridPainter tgPainter = new TextGridPainter();
 
@@ -180,21 +206,47 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	private void init() {
+		setLayout(new BorderLayout());
 		buttonPane = new JPanel(new VerticalLayout());
-		contentPane = new TextGridContentPanel();
-		contentPane.setLayout(new BorderLayout());
-
+		add(buttonPane, BorderLayout.NORTH);
+		
+		textGridContentPane = new TextGridContentPanel() ;
+		layeredPane = new JLayeredPane() {
+			@Override
+			public Dimension getPreferredSize() {
+				return textGridContentPane.getPreferredSize();
+			}
+		};
+		add(layeredPane, BorderLayout.CENTER);
+		
+		layeredPane.add(textGridContentPane, JLayeredPane.DEFAULT_LAYER);
+		layeredPane.addComponentListener(new ComponentListener() {
+			
+			@Override
+			public void componentShown(ComponentEvent e) {
+			}
+			
+			@Override
+			public void componentResized(ComponentEvent e) {
+				textGridContentPane.setBounds(0, 0, layeredPane.getWidth(), layeredPane.getHeight());
+			}
+			
+			@Override
+			public void componentMoved(ComponentEvent e) {
+			}
+			
+			@Override
+			public void componentHidden(ComponentEvent e) {
+			}
+			
+		});
+		
 		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.SELECTION_LENGTH_PROP, tierUpdater);
 		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_START_PROT, tierUpdater);
 		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_LENGTH_PROP, tierUpdater);
 
-		setLayout(new BorderLayout());
-		contentPane.add(buttonPane, BorderLayout.NORTH);
-		add(contentPane, BorderLayout.CENTER);
-
-		tgPainter.setPaintTierLabels(showTierLabels);
-
 		loadTextGrid();
+		updateTierLabels();
 	}
 
 	public File getCurrentTextGridFile() {
@@ -336,14 +388,14 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 	private void setupTextGrid() {
 		tgPainter.setRepaintBuffer(true);
-		contentPane.revalidate();
-		contentPane.repaint();
+		textGridContentPane.revalidate();
+		textGridContentPane.repaint();
 	}
 
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		contentPane.setEnabled(enabled);
+		textGridContentPane.setEnabled(enabled);
 	}
 
 	/**
@@ -359,8 +411,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			tgManager.saveTextGrid(session.getCorpus(), session.getName(),
 					mergedTextGrid, "merged");
 
-			contentPane.removeAll();
-			contentPane.add(buttonPane, BorderLayout.NORTH);
+			textGridContentPane.removeAll();
+			textGridContentPane.add(buttonPane, BorderLayout.NORTH);
 			currentTextGridFile = tgManager.defaultTextGridFile(session.getCorpus(), session.getName());
 			setTextGrid(mergedTextGrid);
 		} catch (IOException e) {
@@ -493,7 +545,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		if(mediaFile == null) return;
 
 		// don't open if contentpane is current disabled (locked)
-		if(!contentPane.isEnabled()) return;
+		if(!textGridContentPane.isEnabled()) return;
 
 		final SessionEditor model = parent.getEditor();
 		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
@@ -542,7 +594,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	private void lock(File textGridFile) {
-		contentPane.setEnabled(false);
+		textGridContentPane.setEnabled(false);
 
 		final JButton forceUnlockBtn = new JButton();
 		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridFile);
@@ -554,11 +606,11 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		buttonPane.add(forceUnlockBtn);
 
 		revalidate();
-		contentPane.repaint();
+		textGridContentPane.repaint();
 	}
 
 	public void onForceUnlock(PhonActionEvent pae) {
-		contentPane.setEnabled(true);
+		textGridContentPane.setEnabled(true);
 
 		final File textGridFile = (File)pae.getData();
 
@@ -573,19 +625,38 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		buttonPane.remove((JButton)pae.getActionEvent().getSource());
 
 		revalidate();
-		contentPane.repaint();
+		textGridContentPane.repaint();
 	}
 
 	private void unlock() {
-		contentPane.setEnabled(true);
+		textGridContentPane.setEnabled(true);
 		buttonPane.removeAll();
 
 		revalidate();
-		contentPane.repaint();
+		textGridContentPane.repaint();
 	}
 
 	private void update() {
-		contentPane.repaint();
+		textGridContentPane.repaint();
+		updateTierLabels();
+	}
+	
+	public void removeTierLabels() {
+		final Component[] compList = layeredPane.getComponentsInLayer(JLayeredPane.PALETTE_LAYER);
+		Arrays.stream(compList).forEach( layeredPane::remove );
+	}
+	
+	public void updateTierLabels() {
+		removeTierLabels();
+		if(showTierLabels) {
+			int idx = 0;
+			for(String tierName:getVisibleTiers()) {
+				final TierLabel tierLabel = new TierLabel(tierName);
+				tierLabel.setBounds(0, idx * 50, tierLabel.getPreferredSize().width, tierLabel.getPreferredSize().height);
+				layeredPane.add(tierLabel, JLayeredPane.PALETTE_LAYER);
+				++idx;
+			}
+		}
 	}
 
 	@RunOnEDT
@@ -600,9 +671,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 			// load TextGrid
 			try {
-				contentPane.removeAll();
+				textGridContentPane.removeAll();
 				textGridMessage.setVisible(false);
-				contentPane.add(buttonPane, BorderLayout.NORTH);
+				textGridContentPane.add(buttonPane, BorderLayout.NORTH);
 
 				final TextGrid tg = TextGridManager.loadTextGrid(file);
 				currentTextGridFile = file;
@@ -709,7 +780,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	public void onToggleTextGridLabels() {
 		showTierLabels = !showTierLabels;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_TIER_LABELS_PROP, showTierLabels);
-		tgPainter.setPaintTierLabels(showTierLabels);
 		tgPainter.setRepaintBuffer(true);
 		update();
 	}
@@ -980,75 +1050,11 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		praatMenu.add(sendPraatAct);
 	}
 
-//	@Override
-//	public void addMenuItems(JMenu menu) {
-//		JMenu praatMenu = null;
-//		for(int i = 0; i < menu.getItemCount(); i++) {
-//			if(menu.getItem(i) != null && menu.getItem(i).getText() != null
-//					&& menu.getItem(i).getText().equals("TextGrid")) {
-//				praatMenu = (JMenu)menu.getItem(i);
-//			}
-//		}
-//		if(praatMenu == null) {
-//			praatMenu = new JMenu("TextGrid");
-//			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
-//			menu.addSeparator();
-//			menu.add(praatMenu);
-//		}
-//
-//		final Session session = parent.getEditor().getSession();
-//		final TextGridManager manager = new TextGridManager(parent.getEditor().getProject());
-//
-//
-//
-//
-//
-//
-//
-//		final JMenu textGridMenu = new JMenu("TextGrids");
-//		textGridMenu.addMenuListener(new MenuListener() {
-//
-//			@Override
-//			public void menuSelected(MenuEvent e) {
-//
-//
-//				if(textGridMenu.getItemCount() > 0) {
-//					textGridMenu.addSeparator();
-//				} else {
-//					// add an item to merge previous textgrids
-//					if(hasOldTextGridFiles()) {
-//						final PhonUIAction mergeAct = new PhonUIAction(TextGridView.this, "mergeOldTextGrids");
-//						mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
-//						mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
-//						textGridMenu.add(mergeAct);
-//					}
-//				}
-//
-//			}
-//
-//			@Override
-//			public void menuDeselected(MenuEvent e) {
-//
-//			}
-//
-//			@Override
-//			public void menuCanceled(MenuEvent e) {
-//
-//			}
-//		});
-//		praatMenu.add(textGridMenu);
-//
-//
-//		praatMenu.addSeparator();
-//
-//
-//	}
-
 	private class TextGridMouseListener extends MouseInputAdapter {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			if(!contentPane.isEnabled()) return;
+			if(!textGridContentPane.isEnabled()) return;
 			if(tg == null) return;
 
 			if(e.getButton() != MouseEvent.BUTTON1
@@ -1117,7 +1123,326 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 		return visibleTiers;
 	}
+	
+	public void destroyPopup(JFrame popup) {
+		popup.setVisible(false);
+		popup.dispose();
+	}
+	
+	public void onMapTier(String tierName, JLabel mapTierButton) {
+		final TextGridTierMapper mapper = new TextGridTierMapper(
+				getParentView().getEditor().getSession(),
+				getTextGrid());
+		final JTree tree = new JTree(mapper.createTreeModel());
+		final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)tree.getModel().getRoot();
+		final TreePath rootPath = new TreePath(rootNode);
+		for(int i = 0; i < rootNode.getChildCount(); i++) {
+			final TreePath treePath = rootPath.pathByAddingChild(rootNode.getChildAt(i));
+			tree.expandPath(treePath);
+		}
 
+		tree.setVisibleRowCount(10);
+		tree.expandPath(new TreePath(tree.getModel().getRoot()));
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		final JScrollPane scroller = new JScrollPane(tree);
+
+		final Point p = new Point(0, mapTierButton.getHeight());
+		SwingUtilities.convertPointToScreen(p, mapTierButton);
+
+		final JFrame popup = new JFrame("Map TextGrid Tier");
+		popup.setUndecorated(true);
+		popup.addWindowFocusListener(new WindowFocusListener() {
+
+			@Override
+			public void windowLostFocus(WindowEvent e) {
+				destroyPopup(popup);
+			}
+
+			@Override
+			public void windowGainedFocus(WindowEvent e) {
+			}
+
+		});
+
+		final PhonUIAction cancelAct = new PhonUIAction(this, "destroyPopup", popup);
+		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
+		final JButton cancelBtn = new JButton(cancelAct);
+
+		final PhonUIAction okAct = new PhonUIAction(this, "mapTier", new Tuple<String, JTree>(tierName, tree));
+		okAct.putValue(PhonUIAction.NAME, "Map to Selected Phon Tier and Dimension");
+		final JButton okBtn = new JButton(okAct);
+		okBtn.addActionListener( (e) -> {
+			final TreePath selectedPath = tree.getSelectionPath();
+			if(selectedPath != null) {
+				final DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)selectedPath.getLastPathComponent();
+				if(treeNode.isLeaf()) {
+					destroyPopup(popup);
+				}
+			}
+		} );
+
+		final JComponent btnBar = ButtonBarBuilder.buildOkCancelBar(okBtn, cancelBtn);
+
+		popup.setLayout(new BorderLayout());
+		popup.add(scroller, BorderLayout.CENTER);
+		popup.add(btnBar, BorderLayout.SOUTH);
+
+		popup.pack();
+		popup.setLocation(p.x, p.y);
+		popup.setVisible(true);
+
+		popup.getRootPane().setDefaultButton(okBtn);
+	}
+	
+	public void mapTier(Tuple<String, JTree> tuple) {
+		final JTree tree = tuple.getObj2();
+		final TreePath path = tree.getSelectionPath();
+		if(path != null) {
+			final DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)path.getLastPathComponent();
+			if(selectedNode.isLeaf()) {
+				final String tierName = ((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().toString();
+				final String segmentation = ((DefaultMutableTreeNode)selectedNode).getUserObject().toString();
+
+				final String newName = tierName + ": " + segmentation;
+				renameTier(tuple.getObj1(), newName);
+			}
+		}
+	}
+	
+	private void renameTier(String tierName, String newName) {
+		newName = newName.trim();
+		if(newName.length() == 0) {
+			Toolkit.getDefaultToolkit().beep();
+			return;
+		}
+		
+		Function tier = null;
+		final TextGrid textGrid = getTextGrid();
+		for(int i = 1; i <= textGrid.numberOfTiers(); i++) {
+			final Function currentTier = textGrid.tier(i);
+			if(currentTier.getName().equals(tierName)) {
+				tier = currentTier;
+			} else {
+				if(currentTier.getName().equals(newName)) {
+					// bail, name already used
+					Toolkit.getDefaultToolkit().beep();
+					return;
+				}
+			}
+		}
+		
+		if(tier != null) {
+			tier.setName(newName);
+			saveTextGrid();
+			
+			updateTierLabels();
+			repaint();
+		}
+	}
+	
+	public void saveTextGrid() {
+		try {
+			TextGridManager.saveTextGrid(getTextGrid(), getCurrentTextGridFile());
+		} catch (IOException e) {
+			Toolkit.getDefaultToolkit().beep();
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+	}
+	
+	private class TierLabel extends JPanel {
+		
+		private JTextField tierNameLabel;
+		private DoubleClickableTextField tierNameEditSupport;
+		
+		private JLabel mapTierButton;
+		
+		private final String mappedTierRegex = "([- _\\w]+)\\s?:\\s?((Tier|Group|Word|Syllable|Phone))";
+		
+		private String tierName;
+		
+		public TierLabel(String tierName) {
+			super();
+			
+			this.tierName = tierName;
+			
+			init();
+			
+			setOpaque(true);
+		}
+		
+		private boolean isMappedTier() {
+			boolean retVal = false;
+			
+			final String tierName = getTierName();
+			final Pattern pattern = Pattern.compile(mappedTierRegex);
+			final Matcher matcher = pattern.matcher(tierName);
+			
+			if(matcher.matches()) {
+				final String name = matcher.group(1);
+				final String domain = matcher.group(2);
+
+				boolean isUserTier = false;
+				for(TierDescription td:getParentView().getEditor().getSession().getUserTiers()) {
+					if(td.getName().equals(name)) {
+						isUserTier = true;
+						break;
+					}
+				}
+				retVal = SystemTierType.isSystemTier(name) || isUserTier;
+				
+				if(domain.equals("Syllable") || domain.equals("Phone")) {
+					final SystemTierType systemTier = SystemTierType.tierFromString(name);
+					retVal = (systemTier != null &&  (systemTier == SystemTierType.IPATarget || systemTier == SystemTierType.IPAActual) );
+				}
+			}
+			
+			return retVal;
+		}
+		
+		public String getTierName() {
+			return this.tierName;
+		}
+		
+		public void setTierName(String tierName) {
+			this.tierName = tierName;
+			this.tierNameLabel.setText(this.tierName);
+		}
+		
+		private void init() {
+			setLayout(new HorizontalLayout(0));
+			
+			setBorder(BorderFactory.createLineBorder(Color.darkGray));
+			
+			// setup map tier button
+			mapTierButton = new JLabel(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+			mapTierButton.setToolTipText("Map TextGrid tier to Phon tier");
+			mapTierButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			mapTierButton.setBackground(UIManager.getColor("JComponent.background"));
+			mapTierButton.setOpaque(true);
+			mapTierButton.addMouseListener(new MouseInputAdapter() {
+				
+				@Override
+				public void mouseEntered(MouseEvent me) {
+				}
+				
+				@Override
+				public void mouseExited(MouseEvent me) {
+				}
+				
+				@Override
+				public void mousePressed(MouseEvent me) {
+					mapTierButton.setBackground(UIManager.getColor("JList.selected"));
+					mapTierButton.repaint();
+				}
+				
+				@Override
+				public void mouseReleased(MouseEvent me) {
+					mapTierButton.setBackground(UIManager.getColor("JComponent.background"));
+					mapTierButton.repaint();
+				}
+				
+				@Override
+				public void mouseClicked(MouseEvent me) {
+					onMapTier(tierName, mapTierButton);
+				}
+				
+			});
+			add(mapTierButton);
+			
+			if(isMappedTier())
+				setBackground(new Color(50, 255, 120, 120));
+			else
+				setBackground(new Color(255, 255, 0, 120));
+			
+			tierNameLabel = new JTextField(tierName);
+			tierNameLabel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
+			tierNameLabel.setOpaque(false);
+			add(tierNameLabel);
+					
+			final AtomicReference<InputMap> inputMapRef = 
+					new AtomicReference<InputMap>(getParentView().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT));
+			final AtomicReference<String> tierNameRef = new AtomicReference<String>("");
+			tierNameEditSupport = new DoubleClickableTextField(tierNameLabel);
+			tierNameEditSupport.addPropertyChangeListener(DoubleClickableTextField.TEXT_PROPERTY, (e) -> {
+				renameTier(tierNameRef.get(), tierNameLabel.getText());
+			});
+			tierNameEditSupport.addPropertyChangeListener(DoubleClickableTextField.EDITING_PROPERTY, (e) -> {
+				if(tierNameEditSupport.isEditing()) {
+					getParentView().getWavDisplay().setSelectionStart(0f);
+					getParentView().getWavDisplay().setSelectionLength(0f);
+					tierNameRef.set(tierNameLabel.getText());
+					getParentView().setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, new InputMap());
+				} else {
+					getParentView().setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMapRef.get());
+					getParentView().requestFocusInWindow();
+				}
+			});
+		}
+		
+	}
+
+	private class TierLabelButton extends JLabel {
+		
+		private boolean pressed = false;
+		
+		public TierLabelButton() {
+			super();
+			init();
+		}
+		
+		public TierLabelButton(Icon icn) {
+			super(icn);
+			init();
+		}
+		
+		private void init() {
+			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			
+			addMouseListener(new MouseInputAdapter() {
+				
+				@Override
+				public void mouseEntered(MouseEvent me) {
+					
+				}
+				
+				@Override
+				public void mouseExited(MouseEvent me) {
+					
+				}
+				
+				@Override
+				public void mousePressed(MouseEvent me) {
+					pressed = true;
+					repaint();
+				}
+				
+				@Override
+				public void mouseReleased(MouseEvent me) {
+					pressed = false;
+					repaint();
+				}
+				
+			});
+		}
+		
+		@Override
+		public void paintComponent(Graphics g) {
+			// paint background
+			final Color bgColor = getBackground();
+			g.setColor(bgColor);
+			g.fillRect(0, 0, getWidth(), getHeight());
+			
+			if(pressed) {
+				
+			} else {
+				
+			}
+			
+			super.paintComponent(g);
+		}
+		
+	}
+	
 	private class TextGridContentPanel extends JPanel {
 
 		private static final long serialVersionUID = 1370029937245278277L;

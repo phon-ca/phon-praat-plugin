@@ -42,12 +42,6 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 	
 	private List<String> hiddenTiers = new ArrayList<>();
 
-	private boolean paintTierLabels = false;
-	
-	private double startTime = 0.0;
-	
-	private double endTime = 0.0;
-	
 	public TextGridPainter() {
 		super();
 		setResizeMode(ResizeMode.REPAINT_ON_RESIZE);
@@ -66,14 +60,6 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 	
 	public void clearHiddenTiers() {
 		this.hiddenTiers.clear();
-	}
-	
-	public boolean isPaintTierLabels() {
-		return paintTierLabels;
-	}
-
-	public void setPaintTierLabels(boolean paintTierLabels) {
-		this.paintTierLabels = paintTierLabels;
 	}
 
 	@Override
@@ -167,10 +153,7 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 				double textY = labelRect.getCenterY() - textBounds.getCenterY();
 				g2d.drawString(labelText, (float)textX, (float)textY);
 			}
-		}
-		
-		if(paintTierLabels)
-			paintTierLabel(intervalTier, g2d, bounds);
+		}		
 	}
 	
 	public void paintPointTier(TextTier textTier, Graphics2D g2d, Rectangle2D bounds) {
@@ -202,9 +185,6 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 			g2d.setColor(Color.black);
 			g2d.drawString(tp.getText(), x, (float)(textBounds.getY() + textBounds.getHeight() - g2d.getFontMetrics().getDescent()));
 		}
-		
-		if(paintTierLabels)
-			paintTierLabel(textTier, g2d, bounds);
 	}
 
 }

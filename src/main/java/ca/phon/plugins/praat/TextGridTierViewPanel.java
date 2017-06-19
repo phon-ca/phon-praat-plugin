@@ -142,7 +142,10 @@ public class TextGridTierViewPanel extends JPanel {
 	public void onMapTier() {
 		if(tierViewTable.getSelectedRow() < 0) return;
 
-		final JTree tree = new JTree(createTreeModel());
+		final TextGridTierMapper mapper = new TextGridTierMapper(
+				parentView.getParentView().getEditor().getSession(),
+				parentView.getTextGrid());
+		final JTree tree = new JTree(mapper.createTreeModel());
 		final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)tree.getModel().getRoot();
 		final TreePath rootPath = new TreePath(rootNode);
 		for(int i = 0; i < rootNode.getChildCount(); i++) {
@@ -221,60 +224,16 @@ public class TextGridTierViewPanel extends JPanel {
 					tgTier.setName(newName);
 					((TextGridTableModel)tierViewTable.getModel()).fireTableCellUpdated(selectedRow, 1);
 
-					saveTextGrid();
-
+					parentView.saveTextGrid();
 					parentView.setTextGrid(parentView.getTextGrid());
 				}
 			}
 		}
 	}
 
-	private void saveTextGrid() {
-		try {
-			TextGridManager.saveTextGrid(parentView.getTextGrid(), parentView.getCurrentTextGridFile());
-		} catch (IOException e) {
-			Toolkit.getDefaultToolkit().beep();
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-		}
-	}
-
 	public void destroyPopup(JFrame popup) {
 		popup.setVisible(false);
 		popup.dispose();
-	}
-
-	private TreeModel createTreeModel() {
-		final Session session = parentView.getParentView().getEditor().getSession();
-		final List<TierViewItem> tierOrder = session.getTierView();
-
-		final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(session.getCorpus() + "." + session.getName());
-		for(TierViewItem tierView:tierOrder) {
-			if(!tierView.isVisible()) continue;
-
-			final String tierName = tierView.getTierName();
-			final SystemTierType systemTier = SystemTierType.tierFromString(tierName);
-
-			final DefaultMutableTreeNode tierNode = new DefaultMutableTreeNode(tierName);
-
-			for(Segmentation type:Segmentation.values()) {
-				if(type == Segmentation.SYLLABLE || type == Segmentation.PHONE) {
-					final boolean isIPA =
-							(systemTier == SystemTierType.IPATarget) || (systemTier == SystemTierType.IPAActual);
-					if(!isIPA) continue;
-				}
-
-				final String name = tierName + ": " + type.toString();
-				if(TextGridUtils.tierNumberFromName(parentView.getTextGrid(), name) > 0) {
-					continue;
-				}
-
-				final DefaultMutableTreeNode typeNode = new DefaultMutableTreeNode(type);
-				tierNode.add(typeNode);
-			}
-			if(tierNode.getChildCount() > 0)
-				rootNode.add(tierNode);
-		}
-		return new DefaultTreeModel(rootNode);
 	}
 
 	public void onRename() {
@@ -302,7 +261,7 @@ public class TextGridTierViewPanel extends JPanel {
 			try {
 				final TextGrid newTextGrid = reoderTiers(allTiers);
 				parentView.setTextGrid(newTextGrid);
-				saveTextGrid();
+				parentView.saveTextGrid();
 
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsInserted(newLocation, newLocation);
@@ -331,7 +290,7 @@ public class TextGridTierViewPanel extends JPanel {
 			try {
 				final TextGrid newTextGrid = reoderTiers(allTiers);
 				parentView.setTextGrid(newTextGrid);
-				saveTextGrid();
+				parentView.saveTextGrid();
 
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsInserted(newLocation, newLocation);
@@ -371,7 +330,7 @@ public class TextGridTierViewPanel extends JPanel {
 
 					((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 
-					saveTextGrid();
+					parentView.saveTextGrid();
 
 					parentView.setTextGrid(parentView.getTextGrid());
 				} catch (PraatException e) {
@@ -460,7 +419,7 @@ public class TextGridTierViewPanel extends JPanel {
 					// make sure TextGrid does not have a tier with same name
 					if(TextGridUtils.tierNumberFromName(parentView.getTextGrid(), newName) <= 0) {
 						tier.setName(newName);
-						saveTextGrid();
+						parentView.saveTextGrid();
 
 						parentView.setTextGrid(parentView.getTextGrid());
 					}
