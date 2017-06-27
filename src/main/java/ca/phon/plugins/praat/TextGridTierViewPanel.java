@@ -408,11 +408,7 @@ public class TextGridTierViewPanel extends JPanel {
 		public void setValueAt(Object value, int rowIndex, int columnIndex) {
 			final Function tier = parentView.getTextGrid().tier(rowIndex+1);
 			if(columnIndex == 0) {
-				final Boolean show = Boolean.parseBoolean(value.toString());
-				parentView.getTextGridPainter().setHidden(tier.getName(), !show);
-				parentView.saveHiddenTiers();
-
-				parentView.setTextGrid(parentView.getTextGrid());
+				parentView.onToggleTier(tier.getName());
 			} else if(columnIndex == 1) {
 				final String newName = value.toString();
 				if(newName.trim().length() > 0) {

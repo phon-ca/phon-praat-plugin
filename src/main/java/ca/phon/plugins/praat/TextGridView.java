@@ -69,6 +69,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
@@ -365,6 +366,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	public void setTextGrid(TextGrid tg) {
 		this.tg = tg;
 		updateHiddenTiers();
+		updateTierLabels();
 		setupTextGrid();
 	}
 
@@ -810,6 +812,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		final boolean isHidden = getTextGridPainter().isHidden(tierName);
 		getTextGridPainter().setHidden(tierName, !isHidden);
 		getTextGridPainter().setRepaintBuffer(true);
+		updateTierLabels();
+		saveHiddenTiers();
 		revalidate();
 	}
 
@@ -1129,70 +1133,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		popup.dispose();
 	}
 	
-	public void onMapTier(String tierName, JLabel mapTierButton) {
-		final TextGridTierMapper mapper = new TextGridTierMapper(
-				getParentView().getEditor().getSession(),
-				getTextGrid());
-		final JTree tree = new JTree(mapper.createTreeModel());
-		final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)tree.getModel().getRoot();
-		final TreePath rootPath = new TreePath(rootNode);
-		for(int i = 0; i < rootNode.getChildCount(); i++) {
-			final TreePath treePath = rootPath.pathByAddingChild(rootNode.getChildAt(i));
-			tree.expandPath(treePath);
-		}
-
-		tree.setVisibleRowCount(10);
-		tree.expandPath(new TreePath(tree.getModel().getRoot()));
-		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		final JScrollPane scroller = new JScrollPane(tree);
-
-		final Point p = new Point(0, mapTierButton.getHeight());
-		SwingUtilities.convertPointToScreen(p, mapTierButton);
-
-		final JFrame popup = new JFrame("Map TextGrid Tier");
-		popup.setUndecorated(true);
-		popup.addWindowFocusListener(new WindowFocusListener() {
-
-			@Override
-			public void windowLostFocus(WindowEvent e) {
-				destroyPopup(popup);
-			}
-
-			@Override
-			public void windowGainedFocus(WindowEvent e) {
-			}
-
-		});
-
-		final PhonUIAction cancelAct = new PhonUIAction(this, "destroyPopup", popup);
-		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
-		final JButton cancelBtn = new JButton(cancelAct);
-
-		final PhonUIAction okAct = new PhonUIAction(this, "mapTier", new Tuple<String, JTree>(tierName, tree));
-		okAct.putValue(PhonUIAction.NAME, "Map to Selected Phon Tier and Dimension");
-		final JButton okBtn = new JButton(okAct);
-		okBtn.addActionListener( (e) -> {
-			final TreePath selectedPath = tree.getSelectionPath();
-			if(selectedPath != null) {
-				final DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)selectedPath.getLastPathComponent();
-				if(treeNode.isLeaf()) {
-					destroyPopup(popup);
-				}
-			}
-		} );
-
-		final JComponent btnBar = ButtonBarBuilder.buildOkCancelBar(okBtn, cancelBtn);
-
-		popup.setLayout(new BorderLayout());
-		popup.add(scroller, BorderLayout.CENTER);
-		popup.add(btnBar, BorderLayout.SOUTH);
-
-		popup.pack();
-		popup.setLocation(p.x, p.y);
-		popup.setVisible(true);
-
-		popup.getRootPane().setDefaultButton(okBtn);
-	}
+	
 	
 	public void mapTier(Tuple<String, JTree> tuple) {
 		final JTree tree = tuple.getObj2();
@@ -1249,12 +1190,77 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		}
 	}
 	
+	public void onMapTier(TierLabel tierLabel) {
+		final TextGridTierMapper mapper = new TextGridTierMapper(
+				getParentView().getEditor().getSession(),
+				getTextGrid());
+		final JTree tree = new JTree(mapper.createTreeModel());
+		final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)tree.getModel().getRoot();
+		final TreePath rootPath = new TreePath(rootNode);
+		for(int i = 0; i < rootNode.getChildCount(); i++) {
+			final TreePath treePath = rootPath.pathByAddingChild(rootNode.getChildAt(i));
+			tree.expandPath(treePath);
+		}
+
+		tree.setVisibleRowCount(10);
+		tree.expandPath(new TreePath(tree.getModel().getRoot()));
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		final JScrollPane scroller = new JScrollPane(tree);
+
+		final Point p = new Point(0, tierLabel.tierButton.getHeight());
+		SwingUtilities.convertPointToScreen(p, tierLabel.tierButton);
+
+		final JFrame popup = new JFrame("Map TextGrid Tier");
+		popup.setUndecorated(true);
+		popup.addWindowFocusListener(new WindowFocusListener() {
+
+			@Override
+			public void windowLostFocus(WindowEvent e) {
+				destroyPopup(popup);
+			}
+
+			@Override
+			public void windowGainedFocus(WindowEvent e) {
+			}
+
+		});
+
+		final PhonUIAction cancelAct = new PhonUIAction(this, "destroyPopup", popup);
+		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
+		final JButton cancelBtn = new JButton(cancelAct);
+
+		final PhonUIAction okAct = new PhonUIAction(this, "mapTier", new Tuple<String, JTree>(tierLabel.tierName, tree));
+		okAct.putValue(PhonUIAction.NAME, "Map to Selected Phon Tier and Dimension");
+		final JButton okBtn = new JButton(okAct);
+		okBtn.addActionListener( (e) -> {
+			final TreePath selectedPath = tree.getSelectionPath();
+			if(selectedPath != null) {
+				final DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)selectedPath.getLastPathComponent();
+				if(treeNode.isLeaf()) {
+					destroyPopup(popup);
+				}
+			}
+		} );
+
+		final JComponent btnBar = ButtonBarBuilder.buildOkCancelBar(okBtn, cancelBtn);
+
+		popup.setLayout(new BorderLayout());
+		popup.add(scroller, BorderLayout.CENTER);
+		popup.add(btnBar, BorderLayout.SOUTH);
+
+		popup.pack();
+		popup.setLocation(p.x, p.y);
+		popup.setVisible(true);
+
+		popup.getRootPane().setDefaultButton(okBtn);
+	}
+	
 	private class TierLabel extends JPanel {
 		
 		private JTextField tierNameLabel;
 		private DoubleClickableTextField tierNameEditSupport;
 		
-		private JLabel mapTierButton;
+		private JLabel tierButton;
 		
 		private final String mappedTierRegex = "([- _\\w]+)\\s?:\\s?((Tier|Group|Word|Syllable|Phone))";
 		
@@ -1299,13 +1305,39 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			return retVal;
 		}
 		
-		public String getTierName() {
-			return this.tierName;
+		public void showTierMenu() {
+			final JPopupMenu popupMenu = new JPopupMenu();
+			
+			// add 'Map to tier' options
+			final PhonUIAction mapAct = new PhonUIAction(TextGridView.this, "onMapTier", this);
+			mapAct.putValue(PhonUIAction.NAME, "Map to Phon tier...");
+			mapAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Map interval values to groups/words in a Phon tier.");
+			popupMenu.add(new JMenuItem(mapAct));
+			popupMenu.addSeparator();
+
+			final PhonUIAction renameAct = new PhonUIAction(tierNameEditSupport, "setEditing", Boolean.TRUE);
+			renameAct.putValue(PhonUIAction.NAME, "Rename tier");
+			renameAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Rename tier");
+			popupMenu.add(new JMenuItem(renameAct));
+			
+			final PhonUIAction hideTierAct = new PhonUIAction(TextGridView.this, "onToggleTier", getTierName());
+			hideTierAct.putValue(PhonUIAction.NAME, "Hide tier");
+			hideTierAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Hide tier, to view again use the 'TextGrid Tier Management' dialog found in the TextGrid menu.");
+			popupMenu.add(new JMenuItem(hideTierAct));
+			
+			popupMenu.addSeparator();
+			
+			final PhonUIAction tierManagementAct = new PhonUIAction(TextGridView.this, "onTierManagement");
+			tierManagementAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
+			popupMenu.add(new JMenuItem(tierManagementAct));
+			
+			popupMenu.show(tierButton, 0, tierButton.getHeight());
 		}
 		
-		public void setTierName(String tierName) {
-			this.tierName = tierName;
-			this.tierNameLabel.setText(this.tierName);
+		
+		
+		public String getTierName() {
+			return this.tierName;
 		}
 		
 		private void init() {
@@ -1314,40 +1346,20 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			setBorder(BorderFactory.createLineBorder(Color.darkGray));
 			
 			// setup map tier button
-			mapTierButton = new JLabel(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
-			mapTierButton.setToolTipText("Map TextGrid tier to Phon tier");
-			mapTierButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			mapTierButton.setBackground(UIManager.getColor("JComponent.background"));
-			mapTierButton.setOpaque(true);
-			mapTierButton.addMouseListener(new MouseInputAdapter() {
-				
-				@Override
-				public void mouseEntered(MouseEvent me) {
-				}
-				
-				@Override
-				public void mouseExited(MouseEvent me) {
-				}
-				
-				@Override
-				public void mousePressed(MouseEvent me) {
-					mapTierButton.setBackground(UIManager.getColor("JList.selected"));
-					mapTierButton.repaint();
-				}
-				
-				@Override
-				public void mouseReleased(MouseEvent me) {
-					mapTierButton.setBackground(UIManager.getColor("JComponent.background"));
-					mapTierButton.repaint();
-				}
+			final Icon mapIcn = UIManager.getIcon("Menu.arrowIcon");
+//					IconManager.getInstance().getIcon("emblems/caret-down", IconSize.SMALL);
+			tierButton = new JLabel(mapIcn);
+			tierButton.setToolTipText("Show menu");
+			tierButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+//			tierButton.setOpaque(true);
+			tierButton.addMouseListener(new MouseInputAdapter() {
 				
 				@Override
 				public void mouseClicked(MouseEvent me) {
-					onMapTier(tierName, mapTierButton);
+					showTierMenu();
 				}
 				
 			});
-			add(mapTierButton);
 			
 			if(isMappedTier())
 				setBackground(new Color(50, 255, 120, 120));
@@ -1357,7 +1369,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			tierNameLabel = new JTextField(tierName);
 			tierNameLabel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
 			tierNameLabel.setOpaque(false);
+			
 			add(tierNameLabel);
+			add(tierButton);
 					
 			final AtomicReference<InputMap> inputMapRef = 
 					new AtomicReference<InputMap>(getParentView().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT));

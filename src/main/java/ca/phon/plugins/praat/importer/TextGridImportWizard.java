@@ -126,7 +126,7 @@ public class TextGridImportWizard extends WizardFrame {
 			// import text grids
 			btnCancel.setEnabled(false);
 			btnBack.setEnabled(false);
-//			generateTask.performTask();
+			
 			PhonWorker.getInstance().invokeLater(generateTask);
 		}
 	}
