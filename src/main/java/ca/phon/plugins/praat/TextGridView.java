@@ -1366,7 +1366,15 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			else
 				setBackground(new Color(255, 255, 0, 120));
 			
-			tierNameLabel = new JTextField(tierName);
+			tierNameLabel = new JTextField(tierName) {
+				@Override
+				public Dimension getPreferredSize() {
+					final Dimension retVal = super.getPreferredSize();
+					retVal.width += 10;
+					return retVal;
+				}
+			};
+			tierNameLabel.setHorizontalAlignment(JTextField.CENTER);
 			tierNameLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 			tierNameLabel.setOpaque(false);
 			
