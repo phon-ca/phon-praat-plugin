@@ -4,6 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-praat-plugin</artifactId>
+  <version>38-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -109,5 +110,4 @@
 
     </plugins>
   </build>
-  <version>37</version>
 </project>
