@@ -1150,11 +1150,10 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		}
 	}
 	
-	private void renameTier(String tierName, String newName) {
+	private boolean renameTier(String tierName, String newName) {
 		newName = newName.trim();
 		if(newName.length() == 0) {
-			Toolkit.getDefaultToolkit().beep();
-			return;
+			return false;
 		}
 		
 		Function tier = null;
@@ -1166,8 +1165,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			} else {
 				if(currentTier.getName().equals(newName)) {
 					// bail, name already used
-					Toolkit.getDefaultToolkit().beep();
-					return;
+					return false;
 				}
 			}
 		}
@@ -1178,7 +1176,10 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			
 			updateTierLabels();
 			repaint();
+			
+			return true;
 		}
+		return false;
 	}
 	
 	public void saveTextGrid() {
@@ -1386,7 +1387,10 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			final AtomicReference<String> tierNameRef = new AtomicReference<String>("");
 			tierNameEditSupport = new DoubleClickableTextField(tierNameLabel);
 			tierNameEditSupport.addPropertyChangeListener(DoubleClickableTextField.TEXT_PROPERTY, (e) -> {
-				renameTier(tierNameRef.get(), tierNameLabel.getText());
+				if(!renameTier(tierNameRef.get(), tierNameLabel.getText())) {
+					Toolkit.getDefaultToolkit().beep();
+					tierNameLabel.setText(tierNameRef.get());
+				}
 			});
 			tierNameEditSupport.addPropertyChangeListener(DoubleClickableTextField.EDITING_PROPERTY, (e) -> {
 				if(tierNameEditSupport.isEditing()) {
