@@ -1117,11 +1117,12 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 	public List<String> getVisibleTiers() {
 		final List<String> visibleTiers = new ArrayList<>();
-
-		for(long i = 1; i <= tg.numberOfTiers(); i++) {
-			final Function tier = tg.tier(i);
-			if(!tgPainter.isHidden(tier.getName())) {
-				visibleTiers.add(tier.getName());
+		if(tg != null) {
+			for(long i = 1; i <= tg.numberOfTiers(); i++) {
+				final Function tier = tg.tier(i);
+				if(!tgPainter.isHidden(tier.getName())) {
+					visibleTiers.add(tier.getName());
+				}
 			}
 		}
 
