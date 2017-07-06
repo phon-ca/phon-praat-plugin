@@ -314,7 +314,7 @@ public class TextGridExportWizard extends WizardFrame {
 				if(status == TaskStatus.RUNNING) {
 					busyLabel.setBusy(true);
 					glassPane.setVisible(true);
-				} else {
+				} else if(status == TaskStatus.FINISHED) {
 					busyLabel.setBusy(false);
 					glassPane.setVisible(false);
 
@@ -389,6 +389,9 @@ public class TextGridExportWizard extends WizardFrame {
 				final String selectedPath = NativeDialogs.showSaveDialog(props);
 				if(selectedPath != null) {
 					tgFile = new File(selectedPath);
+				} else {
+					super.setStatus(TaskStatus.TERMINATED);
+					return;
 				}
 			}
 
@@ -414,7 +417,7 @@ public class TextGridExportWizard extends WizardFrame {
 
 				int selectedOption = NativeDialogs.showMessageDialog(props);
 				if(selectedOption == 2) {
-					setStatus(TaskStatus.FINISHED);
+					setStatus(TaskStatus.TERMINATED);
 					return;
 				}
 				appendTiers = (selectedOption == 1);
@@ -430,6 +433,9 @@ public class TextGridExportWizard extends WizardFrame {
 				}
 				super.setStatus(TaskStatus.FINISHED);
 			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
+			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
 			}

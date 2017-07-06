@@ -56,6 +56,7 @@ import ca.phon.session.RecordFilter;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
+import ca.phon.session.Word;
 import ca.phon.syllable.SyllableConstituentType;
 
 /**
@@ -178,11 +179,11 @@ public class TextGridExporter {
 					String data = "";
 					if(systemTier != null) {
 						if(systemTier == SystemTierType.Orthography) {
-							data = group.getOrthography().toString();
+							data = (group.getOrthography() != null ? group.getOrthography().toString() : "");
 						} else if(systemTier == SystemTierType.IPATarget) {
-							data = group.getIPATarget().toString();
+							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
 						} else if(systemTier == SystemTierType.IPAActual) {
-							data = group.getIPAActual().toString();
+							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
 						}
 					} else {
 						if(group.getTier(tier) != null)
@@ -193,21 +194,23 @@ public class TextGridExporter {
 					currentStart = groupEnd;
 				} else if(type == Segmentation.WORD) {
 					String data = "";
+					
 					if(systemTier != null) {
 						if(systemTier == SystemTierType.Orthography) {
-							data = "";
 							for(int wIdx = 0; wIdx < group.getAlignedWordCount(); wIdx++) {
-								final String orthoWord = group.getAlignedWord(wIdx).getOrthography().toString();
-								data += (data.length() > 0 ? " " : "") + orthoWord;
+								final Word alignedWord = group.getAlignedWord(wIdx);
+								final String orthoWord = (alignedWord != null && alignedWord.getOrthography() != null ? 
+										alignedWord.getOrthography().toString() : "");
+								data += (orthoWord.length() > 0 ? (data.length() > 0 ? " " : "") + orthoWord : "");
 							}
 						} else if(systemTier == SystemTierType.IPATarget) {
-							data = group.getIPATarget().toString();
+							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
 						} else if(systemTier == SystemTierType.IPAActual) {
-							data = group.getIPAActual().toString();
+							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
 						}
 					} else {
 						if(group.getTier(tier) != null)
-							data = group.getTier(tier, String.class);
+							data = (group.getTier(tier) != null ? group.getTier(tier, String.class) : "");
 					}
 
 					addWords(tgTier, data, currentStart, groupEnd);

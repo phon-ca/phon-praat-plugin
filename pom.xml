@@ -67,7 +67,7 @@
     <project.build.targetVersion>1.8</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.13.6</ca.hedlund.jpraat.version>
+    <ca.hedlund.jpraat.version>0.15</ca.hedlund.jpraat.version>
     <ca.phon.phon-app.version>2.2.0-SNAPSHOT</ca.phon.phon-app.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     
