@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +54,12 @@ import ca.phon.project.Project;
 import ca.phon.session.RecordFilter;
 import ca.phon.session.Session;
 import ca.phon.session.SessionPath;
+import ca.phon.session.check.CheckTranscripts;
+import ca.phon.session.check.OverlappingSegmentsCheck;
+import ca.phon.session.check.SessionCheck;
+import ca.phon.session.check.SessionValidator;
 import ca.phon.ui.CommonModuleFrame;
+import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.nativedialogs.FileFilter;
 import ca.phon.ui.nativedialogs.MessageDialogProperties;
@@ -81,6 +87,8 @@ public class TextGridExportWizard extends WizardFrame {
 	/*
 	 * UI
 	 */
+	private HidablePanel msgPanel;
+	
 	private SessionSelector sessionSelector;
 
 	private RecordFilterPanel recordFilterPanel;
@@ -184,16 +192,24 @@ public class TextGridExportWizard extends WizardFrame {
 		final WizardStep retVal = new WizardStep();
 
 		final DialogHeader header = new DialogHeader("Generate TextGrids", "Select records.");
+		
+		msgPanel = new HidablePanel(TextGridExportWizard.class.getName() + ".msgPanel");
+		msgPanel.setVisible(false);
+		
+		final JPanel centerPanel = new JPanel(new BorderLayout());
 
 		// add record filter panel
 		recordFilterPanel = new RecordFilterPanel(getProject(), session);
 		recordFilterPanel.setBorder(BorderFactory.createTitledBorder("Select records"));
 		final JScrollPane scroller = new JScrollPane(recordFilterPanel);
-
+		
+		centerPanel.add(msgPanel, BorderLayout.NORTH);
+		centerPanel.add(scroller, BorderLayout.CENTER);
+		
 		retVal.setLayout(new BorderLayout());
-		retVal.add(scroller, BorderLayout.CENTER);
 		retVal.add(header, BorderLayout.NORTH);
-
+		retVal.add(centerPanel, BorderLayout.CENTER);
+		
 		return retVal;
 	}
 
@@ -273,6 +289,37 @@ public class TextGridExportWizard extends WizardFrame {
 		return retVal;
 	}
 
+	@Override
+	public void gotoStep(int stepIndex) {
+		super.gotoStep(stepIndex);
+		
+		if(getCurrentStep() == selectRecordsStep) {
+			// run range checks and report if issues are found
+			final List<SessionCheck> checks = new ArrayList<>();
+			checks.add(new CheckTranscripts());
+			checks.add(new OverlappingSegmentsCheck());
+			
+			final SessionValidator validator = new SessionValidator(checks);
+			validator.addValidationListener( (e) -> {
+				final String title = "Session Check";
+				String msg = "";
+				if(e.getMessage().startsWith("Segment overlaps")) {
+					msg = "This session has overlapping records which may cause TextGrid generation to fail.";
+				} else {
+					// transcription errors
+					msg = "This session has IPA errors which may cause TextGrid generation to fail.";
+				}
+				msgPanel.setTopLabelText(title);
+				msgPanel.setBottomLabelText(msg);
+				msgPanel.setVisible(true);
+				
+				selectRecordsStep.revalidate();
+			});
+			
+			PhonWorker.getInstance().invokeLater( () -> validator.validate(session) );
+		}
+	}
+	
 	@Override
 	public void next() {
 		if(getCurrentStep() == selectRecordsStep) {
