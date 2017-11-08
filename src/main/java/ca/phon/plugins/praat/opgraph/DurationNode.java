@@ -1,26 +1,17 @@
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.Box;
-import javax.swing.JPanel;
-
-import org.jdesktop.swingx.JXTitledSeparator;
+import javax.swing.*;
 
 import ca.gedge.opgraph.OpNodeInfo;
 import ca.gedge.opgraph.app.GraphDocument;
-import ca.hedlund.jpraat.binding.fon.LongSound;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.phon.plugins.praat.FormantSettingsPanel;
-import ca.phon.query.db.Result;
-import ca.phon.query.db.ResultValue;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
-import ca.phon.session.MediaSegment;
-import ca.phon.session.SessionPath;
+import ca.phon.session.*;
 
 @OpNodeInfo(
 		name="Duration",
@@ -37,13 +28,14 @@ public class DurationNode extends PraatNode {
 			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
 		// columns
-		int cols = 5  + // session + record + tier + group + rv
+		int cols = 6  + // session + record + tier + group + rv
 				3; // start/end time + length;
 
 		Object[] rowData = new Object[cols];
 		int col = 0;
 		rowData[col++] = sessionPath;
 		rowData[col++] = result.getRecordIndex()+1;
+		rowData[col++] = result;
 
 		if(isUseRecordInterval()) {
 			// add nothing
@@ -85,7 +77,8 @@ public class DurationNode extends PraatNode {
 		List<String> colNames = new ArrayList<>();
 
 		colNames.add("Session");
-		colNames.add("Record");
+		colNames.add("Record #");
+		colNames.add("Result");
 
 		if(isUseRecordInterval()) {
 			// no extra tiers
@@ -93,7 +86,7 @@ public class DurationNode extends PraatNode {
 			colNames.add("Text");
 		} else {
 			colNames.add("Tier");
-			colNames.add("Group");
+			colNames.add("Group #");
 			colNames.add(getColumn());
 		}
 

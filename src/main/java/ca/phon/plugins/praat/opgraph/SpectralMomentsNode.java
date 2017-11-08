@@ -1,13 +1,9 @@
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.util.ArrayList;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 import javax.swing.JPanel;
 
@@ -16,20 +12,13 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import ca.gedge.opgraph.OpNodeInfo;
 import ca.gedge.opgraph.app.GraphDocument;
 import ca.gedge.opgraph.app.extensions.NodeSettings;
-import ca.hedlund.jpraat.binding.fon.LongSound;
-import ca.hedlund.jpraat.binding.fon.Sound;
-import ca.hedlund.jpraat.binding.fon.Spectrum;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
+import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.binding.sys.Interpreter;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.plugins.praat.SpectralMomentsSettings;
-import ca.phon.plugins.praat.SpectralMomentsSettingsPanel;
-import ca.phon.query.db.Result;
-import ca.phon.query.db.ResultValue;
+import ca.phon.plugins.praat.*;
+import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
-import ca.phon.session.MediaSegment;
-import ca.phon.session.SessionPath;
+import ca.phon.session.*;
 
 @OpNodeInfo(
 	name="Spectral Moments",
@@ -79,6 +68,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			int colIdx = 0;
 			rowData[colIdx++] = sessionPath;
 			rowData[colIdx++] = result.getRecordIndex()+1;
+			rowData[colIdx++] = result;
 			
 			if(isUseRecordInterval()) {
 				// add nothing
@@ -119,6 +109,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 		final List<String> colNames = new ArrayList<>();
 		colNames.add("Session");
 		colNames.add("Record #");
+		colNames.add("Result");
 		
 		if(isUseRecordInterval()) {
 			// no extra tiers
@@ -126,7 +117,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			colNames.add("Text");
 		} else {
 			colNames.add("Tier");
-			colNames.add("Group");
+			colNames.add("Group #");
 			colNames.add(getColumn());
 		}
 		
