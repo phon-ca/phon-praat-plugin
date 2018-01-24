@@ -17,21 +17,13 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.ipa.IPAElement;
-import ca.phon.ipa.IPATranscript;
-import ca.phon.orthography.OrthoElement;
-import ca.phon.orthography.OrthoWordExtractor;
-import ca.phon.orthography.Orthography;
-import ca.phon.session.Record;
-import ca.phon.session.Tier;
-import ca.phon.session.TierString;
+import ca.phon.ipa.*;
+import ca.phon.orthography.*;
+import ca.phon.session.*;
 import ca.phon.syllable.SyllableConstituentType;
 
 public class TextGridAnnotator {
@@ -130,9 +122,10 @@ public class TextGridAnnotator {
 			long pidx = 0;
 			for(int i = 0; i < ipaTier.numberOfGroups(); i++) {
 				final IPATranscript ipaGrp = ipaTier.getGroup(i);
-				for(IPAElement ele:ipaGrp.removePunctuation()) {
+				for(IPAElement ele:ipaGrp) {
 					if(ele.getScType() == SyllableConstituentType.WORDBOUNDARYMARKER
-							|| ele.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER) continue;
+							|| ele.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER
+							|| ele.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) continue;
 					final int eleIdx = ipaGrp.indexOf(ele);
 					String txt = ele.getText();
 					if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
@@ -211,7 +204,7 @@ public class TextGridAnnotator {
 						sidx = sTgi;
 					} else {
 						LOGGER.info(
-								String.format("Unable to find interval for syllablle '%s'", ipaGrp.toString()));
+								String.format("Unable to find interval for syllable '%s'", ipaGrp.toString()));
 					}
 				}
 			}

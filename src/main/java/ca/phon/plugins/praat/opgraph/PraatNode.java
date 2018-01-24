@@ -1,62 +1,35 @@
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
+import java.awt.*;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import javax.swing.AbstractButton;
-import javax.swing.ButtonGroup;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
+import javax.swing.*;
 
 import org.jdesktop.swingx.JXTitledSeparator;
-import org.jdesktop.swingx.VerticalLayout;
 
-import ca.gedge.opgraph.InputField;
-import ca.gedge.opgraph.OpContext;
+import ca.gedge.opgraph.*;
 import ca.gedge.opgraph.app.GraphDocument;
 import ca.gedge.opgraph.app.extensions.NodeSettings;
-import ca.gedge.opgraph.exceptions.BreakpointEncountered;
-import ca.gedge.opgraph.exceptions.ProcessingException;
+import ca.gedge.opgraph.exceptions.*;
 import ca.hedlund.jpraat.TextGridUtils;
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.LongSound;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.opgraph.nodes.table.TableOpNode;
 import ca.phon.extensions.IExtendable;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
-import ca.phon.orthography.OrthoElement;
-import ca.phon.orthography.Orthography;
-import ca.phon.plugins.praat.TextGridAnnotator;
-import ca.phon.plugins.praat.TextGridManager;
+import ca.phon.orthography.*;
+import ca.phon.plugins.praat.*;
 import ca.phon.project.Project;
-import ca.phon.query.db.Result;
-import ca.phon.query.db.ResultValue;
+import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
-import ca.phon.session.MediaSegment;
-import ca.phon.session.Record;
-import ca.phon.session.Session;
-import ca.phon.session.SessionPath;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.Tier;
-import ca.phon.session.TierString;
+import ca.phon.session.*;
 import ca.phon.ui.text.PromptedTextField;
 
 public abstract class PraatNode extends TableOpNode implements NodeSettings {
@@ -359,9 +332,11 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == ipa.toString().length()) {
 						resultValue = ipa;
 					} else {
-						int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
-						int endPhone = ipa.ipaIndexOf(rv.getRange().getLast()-1);
-						resultValue = ipa.subsection(startPhone, endPhone+1);
+						if(rv.getRange().getRange() > 0) {
+							int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
+							int endPhone = ipa.ipaIndexOf(rv.getRange().getLast()-1);
+							resultValue = ipa.subsection(startPhone, endPhone+1);
+						}
 					}
 				} else if (tierVal instanceof TierString) {
 					TierString tierString = (TierString)tierVal;
