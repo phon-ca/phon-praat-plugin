@@ -1348,12 +1348,10 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			setBorder(BorderFactory.createLineBorder(Color.darkGray));
 			
 			// setup map tier button
-			final Icon mapIcn = UIManager.getIcon("Menu.arrowIcon");
-//					IconManager.getInstance().getIcon("emblems/caret-down", IconSize.SMALL);
+			final Icon mapIcn = IconManager.getInstance().getIcon("emblems/arrowhead-right", IconSize.XSMALL);
 			tierButton = new JLabel(mapIcn);
 			tierButton.setToolTipText("Show menu");
 			tierButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-//			tierButton.setOpaque(true);
 			tierButton.addMouseListener(new MouseInputAdapter() {
 				
 				@Override
