@@ -3,3 +3,4 @@ ca.phon.plugins.praat.opgraph.FormantsNode
 ca.phon.plugins.praat.opgraph.PitchNode
 ca.phon.plugins.praat.opgraph.IntensityNode
 ca.phon.plugins.praat.opgraph.SpectralMomentsNode
+ca.phon.plugins.praat.opgraph.VOTNode

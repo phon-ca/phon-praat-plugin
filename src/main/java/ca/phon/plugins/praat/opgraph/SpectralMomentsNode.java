@@ -42,7 +42,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	}
 	
 	@Override
-	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath,
+	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval, SessionPath sessionPath,
 			MediaSegment segment, Result result, ResultValue rv, Object value, DefaultTableDataSource table) {
 		final SpectralMomentsSettings settings = getSpectrumSettings();
 		try {

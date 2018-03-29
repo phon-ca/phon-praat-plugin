@@ -20,6 +20,7 @@ import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
 import ca.phon.app.opgraph.nodes.table.TableOpNode;
 import ca.phon.extensions.IExtendable;
 import ca.phon.ipa.IPATranscript;
@@ -202,8 +203,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			if(isUseRecordInterval()) {
 				if(recordList.contains(result.getRecordIndex())) continue;
 				try {
-					textInterval = TextInterval.create(startTime, endTime, "");
-					addRowToTable(longSound, textInterval, sessionName, segment, result, null, null, outputTable);
+					textInterval = TextInterval.create(startTime, endTime, ReportHelper.createResultString(result));
+					addRowToTable(longSound, textGrid, textInterval, sessionName, segment, result, null, null, outputTable);
 					recordList.add(result.getRecordIndex());
 				} catch (PraatException pe) {
 					LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
@@ -223,7 +224,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 
 						// check interval filter
 						if(checkFilter(interval)) {
-							addRowToTable(longSound, interval, sessionName, segment, result, null, null, outputTable);
+							addRowToTable(longSound, textGrid, interval, sessionName, segment, result, null, null, outputTable);
 						}
 					}
 				} catch (PraatException pe) {
@@ -391,7 +392,12 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				IExtendable extendable = (IExtendable)resultValue;
 				textInterval = getTextInterval(extendable);
 				if(textInterval == null) continue;
-				addRowToTable(longSound, textInterval, sessionName, segment, result, rv, resultValue, outputTable);
+				try {
+					textInterval.setText(resultValue.toString());
+				} catch (PraatException e) {
+					LogUtil.warning(e);
+				}
+				addRowToTable(longSound, textGrid, textInterval, sessionName, segment, result, rv, resultValue, outputTable);
 			}
 		}
 
@@ -487,7 +493,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	 * @param value
 	 * @param table
 	 */
-	public abstract void addRowToTable(LongSound longSound, TextInterval textInerval,
+	public abstract void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInerval,
 			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table);
 

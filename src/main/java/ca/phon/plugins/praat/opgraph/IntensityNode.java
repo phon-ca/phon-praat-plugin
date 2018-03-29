@@ -34,7 +34,7 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 	private IntensitySettingsPanel intensitySettingsPanel;
 
 	@Override
-	public void addRowToTable(LongSound longSound, TextInterval textInterval, SessionPath sessionPath,
+	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval, SessionPath sessionPath,
 			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
 		final IntensitySettings intensitySettings = getIntensitySettings();

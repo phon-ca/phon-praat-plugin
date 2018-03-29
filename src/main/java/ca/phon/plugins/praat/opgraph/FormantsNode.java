@@ -76,7 +76,7 @@ public class FormantsNode extends PraatNode implements NodeSettings {
 	}
 	
 	@Override
-	public void addRowToTable(LongSound longSound, TextInterval textInterval,
+	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval,
 			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table) {
 		final FormantSettings formantSettings = getFormantSettings();
