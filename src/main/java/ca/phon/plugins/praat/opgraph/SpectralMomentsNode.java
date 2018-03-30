@@ -42,7 +42,8 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	}
 	
 	@Override
-	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval, SessionPath sessionPath,
+	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval,
+			Session session, SessionPath sessionPath,
 			MediaSegment segment, Result result, ResultValue rv, Object value, DefaultTableDataSource table) {
 		final SpectralMomentsSettings settings = getSpectrumSettings();
 		try {
@@ -64,9 +65,14 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			
 			int cols = getColumnNames().size();
 			
+			final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
+			final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
+			
 			Object[] rowData = new Object[cols];
 			int colIdx = 0;
 			rowData[colIdx++] = sessionPath;
+			rowData[colIdx++] = speaker;
+			rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
 			rowData[colIdx++] = result.getRecordIndex()+1;
 			rowData[colIdx++] = result;
 			
@@ -108,6 +114,8 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 	public List<String> getColumnNames() {
 		final List<String> colNames = new ArrayList<>();
 		colNames.add("Session");
+		colNames.add("Speaker");
+		colNames.add("Age");
 		colNames.add("Record #");
 		colNames.add("Result");
 		

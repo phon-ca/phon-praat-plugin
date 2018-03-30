@@ -50,9 +50,9 @@ function setup_params(params) {
             </extensions>
         </node>
         <ogcn:macro id="bc017d0e08c14315" name="Start Report Template" type="ca.gedge.opgraph.nodes.general.MacroNode">
-            <graph id="37522960">
+            <graph id="4e47d93c">
                 <ogcn:macro id="344caaaf0e6c47ad" name="Get Process Name" type="ca.gedge.opgraph.nodes.general.MacroNode">
-                    <graph id="4603ef63">
+                    <graph id="1a1b8d06">
                         <node id="50101d1d3fc5462d" name="String#&lt;init&gt;(String)" type="class:ca.gedge.opgraph.nodes.reflect.ConstructorNode">
                             <extensions>
                                 <oga:settings>
@@ -175,7 +175,7 @@ function setup_params(params) {
 #set($tableName = "$DATA")
 #set($table = $tables.get($tableName))
 #set($caption = "")
-#printTableWithIdAndCaptionExcludingColumns( $table $tableName $caption ["Group #", "Range", "Date", "Age", "Tier", "Result"] )
+#printTableWithIdAndCaptionExcludingColumns( $table $tableName $caption ["Group #", "Range", "Date", "Tier", "Result"] )
 ]]></oga:property>
                     <oga:property key="showText"><![CDATA[true]]></oga:property>
                     <oga:property key="showTable"><![CDATA[false]]></oga:property>

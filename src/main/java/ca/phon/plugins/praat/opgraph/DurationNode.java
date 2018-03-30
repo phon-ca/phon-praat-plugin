@@ -24,16 +24,18 @@ public class DurationNode extends PraatNode {
 	private JPanel settingsPanel;
 
 	@Override
-	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval, SessionPath sessionPath,
+	public void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInterval, 
+			Session session, SessionPath sessionPath,
 			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
-		// columns
-		int cols = 6  + // session + record + tier + group + rv
-				3; // start/end time + length;
-
-		Object[] rowData = new Object[cols];
+		final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
+		final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
+		
+		Object[] rowData = new Object[getColumnNames().size()];
 		int col = 0;
 		rowData[col++] = sessionPath;
+		rowData[col++] = speaker;
+		rowData[col++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
 		rowData[col++] = result.getRecordIndex()+1;
 		rowData[col++] = result;
 
@@ -77,6 +79,8 @@ public class DurationNode extends PraatNode {
 		List<String> colNames = new ArrayList<>();
 
 		colNames.add("Session");
+		colNames.add("Speaker");
+		colNames.add("Age");
 		colNames.add("Record #");
 		colNames.add("Result");
 

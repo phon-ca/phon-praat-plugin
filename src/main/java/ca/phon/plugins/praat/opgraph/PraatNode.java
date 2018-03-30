@@ -204,7 +204,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				if(recordList.contains(result.getRecordIndex())) continue;
 				try {
 					textInterval = TextInterval.create(startTime, endTime, ReportHelper.createResultString(result));
-					addRowToTable(longSound, textGrid, textInterval, sessionName, segment, result, null, null, outputTable);
+					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, null, null, outputTable);
 					recordList.add(result.getRecordIndex());
 				} catch (PraatException pe) {
 					LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
@@ -224,7 +224,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 
 						// check interval filter
 						if(checkFilter(interval)) {
-							addRowToTable(longSound, textGrid, interval, sessionName, segment, result, null, null, outputTable);
+							addRowToTable(longSound, textGrid, interval, session, sessionName, segment, result, null, null, outputTable);
 						}
 					}
 				} catch (PraatException pe) {
@@ -397,7 +397,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				} catch (PraatException e) {
 					LogUtil.warning(e);
 				}
-				addRowToTable(longSound, textGrid, textInterval, sessionName, segment, result, rv, resultValue, outputTable);
+				addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, rv, resultValue, outputTable);
 			}
 		}
 
@@ -494,7 +494,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	 * @param table
 	 */
 	public abstract void addRowToTable(LongSound longSound, TextGrid textGrid, TextInterval textInerval,
-			SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
+			Session session, SessionPath sessionPath, MediaSegment segment, Result result, ResultValue rv, Object value,
 			DefaultTableDataSource table);
 
 	public abstract List<String> getColumnNames();
