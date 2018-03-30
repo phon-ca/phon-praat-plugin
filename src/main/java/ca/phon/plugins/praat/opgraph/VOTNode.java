@@ -194,7 +194,7 @@ public class VOTNode extends PraatNode implements NodeSettings {
 			gbc.insets = new Insets(5, 2, 2, 2);
 			
 			settingsPanel = (JPanel)super.getComponent(document);
-			settingsPanel.add(new JXTitledSeparator("VoT Settings"), gbc);
+			settingsPanel.add(new JXTitledSeparator("VOT Settings"), gbc);
 			
 			++gbc.gridy;
 			

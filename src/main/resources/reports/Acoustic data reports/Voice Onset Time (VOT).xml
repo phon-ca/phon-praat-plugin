@@ -196,7 +196,7 @@ function setup_params(params) {
                     <opqry:message/>
                 </opqry:info>
                 <opqry:node ref="35e78121" showAsStep="true">
-                    <opqry:info format="html" title="VoT">
+                    <opqry:info format="html" title="VOT">
                         <opqry:message/>
                     </opqry:info>
                 </opqry:node>
