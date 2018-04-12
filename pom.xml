@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-praat-plugin</artifactId>
-  <version>38-SNAPSHOT</version>
+  <version>39-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -63,16 +63,16 @@
   <properties>
     <!-- Project settings -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.sourceVersion>1.8</project.build.sourceVersion>
-    <project.build.targetVersion>1.8</project.build.targetVersion>
+    <project.build.sourceVersion>9</project.build.sourceVersion>
+    <project.build.targetVersion>9</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.16</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>2.2.0-SNAPSHOT</ca.phon.phon-app.version>
+    <ca.hedlund.jpraat.version>0.17</ca.hedlund.jpraat.version>
+    <ca.phon.phon-app.version>3.0.0-SNAPSHOT</ca.phon.phon-app.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     
     <!-- Plugin versions -->
-    <org.apache.maven.plugins.maven-compiler-plugin.version>3.1</org.apache.maven.plugins.maven-compiler-plugin.version>
+    <org.apache.maven.plugins.maven-compiler-plugin.version>3.7.0</org.apache.maven.plugins.maven-compiler-plugin.version>
     <org.apache.maven.plugins.maven-shade-plugin.version>2.2</org.apache.maven.plugins.maven-shade-plugin.version>
   </properties>
 
