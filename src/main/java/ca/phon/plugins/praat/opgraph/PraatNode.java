@@ -12,10 +12,6 @@ import javax.swing.*;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
-import ca.gedge.opgraph.*;
-import ca.gedge.opgraph.app.GraphDocument;
-import ca.gedge.opgraph.app.extensions.NodeSettings;
-import ca.gedge.opgraph.exceptions.*;
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
@@ -25,6 +21,10 @@ import ca.phon.app.opgraph.nodes.table.TableOpNode;
 import ca.phon.extensions.IExtendable;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.opgraph.*;
+import ca.phon.opgraph.app.GraphDocument;
+import ca.phon.opgraph.app.extensions.NodeSettings;
+import ca.phon.opgraph.exceptions.*;
 import ca.phon.orthography.*;
 import ca.phon.plugins.praat.*;
 import ca.phon.project.Project;

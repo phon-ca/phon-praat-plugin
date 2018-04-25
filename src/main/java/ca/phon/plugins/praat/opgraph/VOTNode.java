@@ -9,12 +9,12 @@ import javax.swing.*;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
-import ca.gedge.opgraph.OpNodeInfo;
-import ca.gedge.opgraph.app.GraphDocument;
-import ca.gedge.opgraph.app.extensions.NodeSettings;
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
+import ca.phon.opgraph.OpNodeInfo;
+import ca.phon.opgraph.app.GraphDocument;
+import ca.phon.opgraph.app.extensions.NodeSettings;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
 import ca.phon.session.*;

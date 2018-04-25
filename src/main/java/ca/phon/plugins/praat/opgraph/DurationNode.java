@@ -6,9 +6,9 @@ import java.util.List;
 
 import javax.swing.*;
 
-import ca.gedge.opgraph.OpNodeInfo;
-import ca.gedge.opgraph.app.GraphDocument;
 import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.opgraph.OpNodeInfo;
+import ca.phon.opgraph.app.GraphDocument;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
 import ca.phon.session.*;

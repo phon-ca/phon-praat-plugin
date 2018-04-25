@@ -87,7 +87,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.gedge.opgraph.app.components.DoubleClickableTextField;
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
@@ -108,6 +107,7 @@ import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
+import ca.phon.opgraph.app.components.DoubleClickableTextField;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.importer.TextGridImportWizard;
 import ca.phon.plugins.praat.painters.TextGridPainter;
