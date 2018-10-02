@@ -173,12 +173,16 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			if(session == null || !lastSessionName.equals(sessionName)) {
 				try {
 					session = project.openSession(sessionName.getCorpus(), sessionName.getSession());
-					final File textGridFile = tgManager.defaultTextGridFile(session);
-					textGrid = TextGridManager.loadTextGrid(textGridFile);
+					final Optional<File> textGridFile = tgManager.defaultTextGridFile(session);
+					if(textGridFile.isPresent())
+						throw new PraatException("TextGrid not found for " + sessionName);
+					
+					textGrid = TextGridManager.loadTextGrid(textGridFile.get());
 					File mediaFile = getMediaFile(project, session);
 					longSound = LongSound.open(MelderFile.fromPath(mediaFile.getAbsolutePath()));
 				} catch (IOException | PraatException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					throw new ProcessingException(null, e);
 				}
 			}
 			lastSessionName = sessionName;
@@ -197,6 +201,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				annotator.annotateRecord(recordTextGrid, record);
 			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				throw new ProcessingException(null, e);
 			}
 
 			TextInterval textInterval = null;

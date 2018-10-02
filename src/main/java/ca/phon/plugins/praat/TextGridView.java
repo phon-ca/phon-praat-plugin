@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -265,11 +266,12 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		tgManager = new TextGridManager(parent.getEditor().getProject());
 
 		// load default TextGrid
-		final File defaultTextGridFile = tgManager.defaultTextGridFile(parent.getEditor().getSession());
-		if(defaultTextGridFile != null) {
+		final Optional<File> defaultTextGridFile = 
+				tgManager.defaultTextGridFile(parent.getEditor().getSession());
+		if(defaultTextGridFile.isPresent()) {
 			try {
-				final TextGrid tg = TextGridManager.loadTextGrid(defaultTextGridFile);
-				currentTextGridFile = defaultTextGridFile;
+				final TextGrid tg = TextGridManager.loadTextGrid(defaultTextGridFile.get());
+				currentTextGridFile = defaultTextGridFile.get();
 				setTextGrid(tg);
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -415,7 +417,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 			textGridContentPane.removeAll();
 			textGridContentPane.add(buttonPane, BorderLayout.NORTH);
-			currentTextGridFile = tgManager.defaultTextGridFile(session.getCorpus(), session.getName());
+			final Optional<File> defaultTgFile = tgManager.defaultTextGridFile(session.getCorpus(), session.getName());
+			if(defaultTgFile.isPresent())
+				currentTextGridFile = defaultTgFile.get();
 			setTextGrid(mergedTextGrid);
 		} catch (IOException e) {
 			ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
@@ -558,8 +562,10 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 		final Session session = parent.getEditor().getSession();
 
-		final File tgFile = (currentTextGridFile != null ? currentTextGridFile :
-			tgManager.defaultTextGridFile(session.getCorpus(), session.getName()));
+		final Optional<File> defaultTgFile = tgManager.defaultTextGridFile(session.getCorpus(), session.getName());
+		final File tgFile = (currentTextGridFile != null ? currentTextGridFile : defaultTgFile.get() );
+		if(tgFile == null) return;
+		
 		final String tgName = FilenameUtils.getBaseName(tgFile.getAbsolutePath());
 		String tgPath = (tgFile != null ? tgFile.getAbsolutePath() : "");
 

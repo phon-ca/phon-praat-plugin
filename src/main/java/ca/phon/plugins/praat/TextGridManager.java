@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.binding.sys.Daata;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.project.Project;
 import ca.phon.session.Record;
@@ -209,14 +211,15 @@ public class TextGridManager {
 	 *
 	 * @param TextGrid file or <code>null</code> if not found
 	 */
-	public File defaultTextGridFile(String corpus, String sessionName) {
+	public Optional<File> defaultTextGridFile(String corpus, String sessionName) {
 
 		// try media name
 		try {
 			final Session session = project.openSession(corpus, sessionName);
 			return defaultTextGridFile(session);
 		} catch (IOException e) {
-			return null;
+			LogUtil.warning(e.getLocalizedMessage(), e);
+			return Optional.empty();
 		}
 	}
 
@@ -225,7 +228,7 @@ public class TextGridManager {
 	 *
 	 * @param session
 	 */
-	public File defaultTextGridFile(Session session) {
+	public Optional<File> defaultTextGridFile(Session session) {
 		List<File> textGridFiles = textGridFilesForSession(session);
 
 		// TextGrid sibling of media
@@ -235,7 +238,7 @@ public class TextGridManager {
 			final File parentFolder = mediaFile.getParentFile();
 			final File defaultTgFile = new File(parentFolder, mediaName + TEXTGRID_EXT);
 			if(defaultTgFile.exists()) {
-				return defaultTgFile;
+				return Optional.of(defaultTgFile);
 			}
 		}
 
@@ -243,20 +246,20 @@ public class TextGridManager {
 		final String textGridFolder = textGridFolder(session.getCorpus(), session.getName());
 		final File defaultTgFile = new File(textGridFolder, mediaName + TEXTGRID_EXT);
 		if(textGridFiles.contains(defaultTgFile)) {
-			return defaultTgFile;
+			return Optional.of(defaultTgFile);
 		}
 
 		final File backupTgFile = new File(textGridFolder, session.getName() + TEXTGRID_EXT);
 		if(textGridFiles.contains(backupTgFile)) {
-			return backupTgFile;
+			return Optional.of(backupTgFile);
 		}
 
 		// finally return the first file found
 		if(textGridFiles.size() > 0) {
-			return textGridFiles.get(0);
+			return Optional.of(textGridFiles.get(0));
 		}
 
-		return null;
+		return Optional.empty();
 	}
 
 //	/**
