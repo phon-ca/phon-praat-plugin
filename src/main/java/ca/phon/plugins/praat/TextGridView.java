@@ -932,7 +932,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 						final String mediaFolder = mediaFile.getParent();
 						if(textGridFile.getParentFile().equals(new File(mediaFolder))) {
 							final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
-									mediaFolder);
+									new File(mediaFolder));
 							showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Media Folder --");
 							showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, mediaFolder);
 							final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
@@ -944,7 +944,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 					final String projectFolder = tgManager.textGridFolder(session.getCorpus(), session.getName());
 					if(textGridFile.getParentFile().equals(new File(projectFolder)) && !projectHeaderAdded) {
 						final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
-								projectFolder);
+								new File(projectFolder));
 						showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Project Folder --");
 						showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, projectFolder);
 						final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
@@ -987,38 +987,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
 		praatMenu.add(toggleLabelsItem);
 
-//		final JMenu tgTiersMenu = new JMenu("Toggle TextGrid tiers");
-//		tgTiersMenu.addMenuListener(new MenuListener() {
-//
-//			@Override
-//			public void menuSelected(MenuEvent e) {
-//				tgTiersMenu.removeAll();
-//				if(tg == null) return;
-//
-//				for(int i = 1; i <= tg.numberOfTiers(); i++) {
-//					final Function tier = tg.tier(i);
-//					final boolean isHidden = getTextGridPainter().isHidden(tier.getName());
-//
-//					final PhonUIAction toggleTierAction = new PhonUIAction(TextGridView.this, "onToggleTier", tier.getName());
-//					toggleTierAction.putValue(PhonUIAction.NAME, tier.getName());
-//					toggleTierAction.putValue(PhonUIAction.SELECTED_KEY, !isHidden);
-//					toggleTierAction.putValue(PhonUIAction.SHORT_DESCRIPTION, "Toggle tier " + tier.getName());
-//
-//					tgTiersMenu.add(new JCheckBoxMenuItem(toggleTierAction));
-//				}
-//
-//				tgTiersMenu.addSeparator();
-//
-//			}
-//
-//			@Override
-//			public void menuDeselected(MenuEvent e) {
-//			}
-//
-//			@Override
-//			public void menuCanceled(MenuEvent e) {
-//			}
-//		});
 		final PhonUIAction tierMgtAct = new PhonUIAction(TextGridView.this, "onTierManagement");
 		tierMgtAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
 		praatMenu.add(new JMenuItem(tierMgtAct));
