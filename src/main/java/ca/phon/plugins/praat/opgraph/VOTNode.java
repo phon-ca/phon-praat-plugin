@@ -160,7 +160,7 @@ public class VOTNode extends PraatNode implements NodeSettings {
 				try {
 					return Optional.of(textGrid.checkSpecifiedTierIsPointTier(i));
 				} catch (PraatException e1) {
-					LogUtil.log(Level.WARNING, e1.getLocalizedMessage(), e1);
+					LogUtil.warning(e1.getLocalizedMessage(), e1);
 					return Optional.empty();
 				}
 			}

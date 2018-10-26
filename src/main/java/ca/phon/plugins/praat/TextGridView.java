@@ -19,6 +19,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -132,7 +133,6 @@ import ca.phon.ui.nativedialogs.NativeDialogs;
 import ca.phon.ui.nativedialogs.OpenDialogProperties;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.FileUtil;
-import ca.phon.util.OpenFileLauncher;
 import ca.phon.util.PrefHelper;
 import ca.phon.util.Tuple;
 import ca.phon.util.icons.IconManager;
@@ -770,7 +770,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			if(!textGridFolder.exists() && !textGridFolder.mkdirs()) {
 				throw new IOException("Unable to create TextGrid folder");
 			}
-			OpenFileLauncher.openURL(textGridFolder.toURI().toURL());
+			if(Desktop.isDesktopSupported()) {
+				Desktop.getDesktop().browseFileDirectory(textGridFolder);
+			}
 		} catch (IOException e) {
 			ToastFactory.makeToast(e.getLocalizedMessage()).start(parent.getToolbar());
 		}
@@ -929,34 +931,26 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 					if(mediaFile != null) {
 						final String mediaFolder = mediaFile.getParent();
 						if(textGridFile.getParentFile().equals(new File(mediaFolder))) {
-							try {
-								final PhonUIAction showMediaFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL",
-										(new File(mediaFolder)).toURI().toURL());
-								showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Media Folder --");
-								showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, mediaFolder);
-								final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
-								showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
-								textGridMenu.add(showMediaFolderItem);
-							} catch (MalformedURLException e1) {
-								LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
-							}
+							final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
+									mediaFolder);
+							showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Media Folder --");
+							showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, mediaFolder);
+							final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
+							showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
+							textGridMenu.add(showMediaFolderItem);
 						}
 					}
 
 					final String projectFolder = tgManager.textGridFolder(session.getCorpus(), session.getName());
 					if(textGridFile.getParentFile().equals(new File(projectFolder)) && !projectHeaderAdded) {
-						try {
-							final PhonUIAction showMediaFolderAct = new PhonUIAction(OpenFileLauncher.class, "openURL",
-									(new File(projectFolder)).toURI().toURL());
-							showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Project Folder --");
-							showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, projectFolder);
-							final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
-							showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
-							textGridMenu.add(showMediaFolderItem);
-							projectHeaderAdded = true;
-						} catch (MalformedURLException e1) {
-							LOGGER.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
-						}
+						final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
+								projectFolder);
+						showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Project Folder --");
+						showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, projectFolder);
+						final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
+						showMediaFolderItem.setFont(showMediaFolderItem.getFont().deriveFont(Font.BOLD));
+						textGridMenu.add(showMediaFolderItem);
+						projectHeaderAdded = true;
 					}
 
 					final PhonUIAction showTgAct = new PhonUIAction(TextGridView.this, "showTextGrid", textGridFile);
