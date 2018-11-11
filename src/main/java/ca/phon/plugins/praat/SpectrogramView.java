@@ -786,7 +786,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 
-		final BufferWindow bw = BufferWindow.getInstance();
+		final BufferWindow bw = BufferWindow.getBufferWindow();
 		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Pitch (" +
 				format.format(selStart) + "-" + format.format(selEnd) + ")");
@@ -865,7 +865,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 
-		final BufferWindow bw = BufferWindow.getInstance();
+		final BufferWindow bw = BufferWindow.getBufferWindow();
 		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Duration (" +
 				format.format(selStart) + "-" + format.format(selEnd) + ")");
@@ -942,7 +942,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 			return;
 		}
 
-		final BufferWindow bw = BufferWindow.getInstance();
+		final BufferWindow bw = BufferWindow.getBufferWindow();
 		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Formants (" +
 				format.format(selStart) + "-" + format.format(selEnd) + ")");
@@ -1033,7 +1033,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final int ixmin = ixminRef.get().intValue();
 		final int ixmax = ixmaxRef.get().intValue();
 
-		final BufferWindow bw = BufferWindow.getInstance();
+		final BufferWindow bw = BufferWindow.getBufferWindow();
 		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Intensity (" +
 				format.format(selStart) + "-" + format.format(selEnd) + ")");
@@ -1103,7 +1103,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		final NumberFormat format = NumberFormat.getNumberInstance();
 		format.setMaximumFractionDigits(6);
 
-		final BufferWindow bw = BufferWindow.getInstance();
+		final BufferWindow bw = BufferWindow.getBufferWindow();
 		bw.showWindow();
 		final BufferPanel bufferPanel = bw.createBuffer("Spectral Moments (" +
 				format.format(selStart) + "-" + format.format(selEnd) + ")");

@@ -146,7 +146,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 	public void onPreviewScript() {
 		final String script = generateScript();
 		
-		final BufferWindow bufferWindow = BufferWindow.getInstance();
+		final BufferWindow bufferWindow = BufferWindow.getBufferWindow();
 		final BufferPanel panel = bufferWindow.createBuffer("SendPraat - Preview Script");
 		panel.getLogBuffer().setText(script);
 		
@@ -168,7 +168,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 
 					@Override
 					public void run() {
-						final BufferWindow bw = BufferWindow.getInstance();
+						final BufferWindow bw = BufferWindow.getBufferWindow();
 						bw.showWindow();
 
 						final BufferPanel bp = bw.createBuffer("SendPraat");
