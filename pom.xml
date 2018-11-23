@@ -60,7 +60,7 @@
 
     <!-- Dependency versions -->
     <ca.hedlund.jpraat.version>0.18</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>3.0.2-SNAPSHOT</ca.phon.phon-app.version>
+    <ca.phon.phon-app.version>3.0.2</ca.phon.phon-app.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     
     <!-- Plugin versions -->
