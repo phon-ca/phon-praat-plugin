@@ -74,7 +74,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			
 			if(settings.isUsePreemphasis()) {
 				final String formula = 
-						String.format("if x >= %d then self*x else self fi", (new Double(settings.getPreempFrom())).intValue());
+						String.format("if x >= %d then self*x else self fi", (Double.valueOf(settings.getPreempFrom()).intValue()));
 				spectrum.formula(formula, Interpreter.create(), null);
 			}
 			
@@ -111,6 +111,7 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			
 			table.addRow(rowData);
 		} catch (PraatException e) {
+			addToWarningsTable(sessionPath, result, e.getLocalizedMessage());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}

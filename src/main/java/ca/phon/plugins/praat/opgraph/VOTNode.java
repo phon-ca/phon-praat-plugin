@@ -67,11 +67,16 @@ public class VOTNode extends PraatNode implements NodeSettings {
 			MediaSegment segment, Result result, ResultValue rv, Object value, DefaultTableDataSource table) {
 		// check for vot tier
 		final Optional<TextTier> votTier = findVoTTier(textGrid);
-		if(!votTier.isPresent()) return;
+		if(!votTier.isPresent()) {
+			addToWarningsTable(sessionPath, result, "VoT tier not found");
+			return;
+		}
 		
 		// find vot point for given interval
 		final Optional<TextPoint> votPoint = findVoTPoint(votTier.get(), textInterval);
-		if(!votPoint.isPresent()) return;
+		if(!votPoint.isPresent()) {
+			addToWarningsTable(sessionPath, result, "VoT point not found in VoT tier");
+		}
 		
 		final double vot = votPoint.get().getNumber() - textInterval.getXmax();
 		

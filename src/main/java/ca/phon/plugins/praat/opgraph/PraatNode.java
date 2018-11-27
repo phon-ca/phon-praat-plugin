@@ -45,6 +45,7 @@ import ca.phon.plugins.praat.*;
 import ca.phon.project.Project;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.query.report.datasource.TableDataSource;
 import ca.phon.session.*;
 import ca.phon.ui.text.PromptedTextField;
 
@@ -54,6 +55,9 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 
 	protected final InputField projectInput =
 			new InputField("project", "project", Project.class);
+	
+	protected final OutputField warningsOutput = 
+			new OutputField("warnings", "Table of warnings produced by the node", true, TableDataSource.class);
 
 	/**
 	 * These options determine what interval is passed
@@ -73,11 +77,14 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 	private String intervalFilter = "";
 	private boolean useColumnInterval = true;
 	private String column = "IPA Actual";
+	
+	private DefaultTableDataSource warningsTable;
 
 	public PraatNode() {
 		super();
 
 		putField(projectInput);
+		putField(warningsOutput);
 		putExtension(NodeSettings.class, this);
 	}
 
@@ -166,6 +173,14 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		final DefaultTableDataSource table = (DefaultTableDataSource)context.get(tableInput);
 		final DefaultTableDataSource outputTable = new DefaultTableDataSource();
 
+		warningsTable = new DefaultTableDataSource();
+		int col = 0;
+		warningsTable.setColumnTitle(col++, "Session");
+		warningsTable.setColumnTitle(col++, "Record #");
+		warningsTable.setColumnTitle(col++, "Group #");
+		warningsTable.setColumnTitle(col++, "Result");
+		warningsTable.setColumnTitle(col++, "Warning");
+		
 //		final String globalTgName = (String)context.get(TextGridNameGlobalOption.TEXTGRIDNAME_KEY);
 
 		final TextGridManager tgManager = new TextGridManager(project);
@@ -201,9 +216,16 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				}
 			}
 			lastSessionName = sessionName;
-			if(textGrid == null || longSound == null) continue;
 
 			final Result result = (Result)table.getValueAt(row, resultCol);
+			if(textGrid == null) {
+				addToWarningsTable(sessionName, result, "TextGrid not found");
+				continue;
+			}
+			if(longSound == null) {
+				addToWarningsTable(sessionName, result, "LongSound not found");
+				continue;
+			}
 			final Record record = session.getRecord(result.getRecordIndex());
 			final Tier<MediaSegment> segTier = record.getSegment();
 			if(segTier.numberOfGroups() == 0) continue;
@@ -261,7 +283,10 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 						break;
 					}
 				}
-				if(rv == null) continue;
+				if(rv == null) {
+					addToWarningsTable(sessionName, result, "Result value for " + getColumn() + " tier not found");
+					continue;
+				}
 
 				Object tierVal = null;
 				SystemTierType systemTier = SystemTierType.tierFromString(rv.getTierName());
@@ -288,7 +313,10 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					final Tier<?> tier = record.getTier(rv.getTierName());
 					tierVal = tier.getGroup(rv.getGroupIndex());
 				}
-				if(tierVal == null) continue;
+				if(tierVal == null) {
+					addToWarningsTable(sessionName, result, "Tier value for " + rv.getTierName() + " not found");
+					continue;
+				}
 
 				Object resultValue = null;
 				if(tierVal instanceof Orthography) {
@@ -355,8 +383,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					} else {
 						if(rv.getRange().getRange() > 0) {
 							int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
-							int endPhone = ipa.ipaIndexOf(rv.getRange().getLast()-1);
-							resultValue = ipa.subsection(startPhone, endPhone+1);
+							int endPhone = ipa.ipaIndexOf(rv.getRange().getLast());
+							resultValue = ipa.subsection(startPhone, endPhone + (rv.getRange().isExcludesEnd() ? 1 : 0) );
 						}
 					}
 				} else if (tierVal instanceof TierString) {
@@ -407,11 +435,17 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					String txt = tierVal.toString();
 					resultValue = txt.substring(rv.getRange().getFirst(), rv.getRange().getLast());
 				}
-				if(resultValue == null || !(resultValue instanceof IExtendable)) continue;
+				if(resultValue == null || !(resultValue instanceof IExtendable)) {
+					addToWarningsTable(sessionName, result, "Unable to locate subsection for result");
+					continue;
+				}
 
 				IExtendable extendable = (IExtendable)resultValue;
 				textInterval = getTextInterval(extendable);
-				if(textInterval == null) continue;
+				if(textInterval == null) {
+					addToWarningsTable(sessionName, result, "TextInterval not found");
+					continue;
+				}
 				try {
 					textInterval.setText(resultValue.toString());
 				} catch (PraatException e) {
@@ -427,6 +461,19 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		}
 
 		context.put(tableOutput, outputTable);
+		context.put(warningsOutput, warningsTable);
+	}
+	
+	protected void addToWarningsTable(SessionPath sp, Result r, String warning) {
+		var rowData = new Object[warningsTable.getColumnCount()];
+		var col = 0;
+		
+		rowData[col++] = sp;
+		rowData[col++] = r.getRecordIndex()+1;
+		rowData[col++] = r.getResultValue(0).getGroupIndex() + 1;
+		rowData[col++] = r;
+		rowData[col++] = warning;
+		warningsTable.addRow(rowData);
 	}
 
 	private boolean checkFilter(TextInterval interval) {

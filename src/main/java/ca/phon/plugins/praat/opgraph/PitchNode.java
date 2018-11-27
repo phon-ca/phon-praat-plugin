@@ -125,6 +125,7 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			
 			table.addRow(rowData);
 		} catch (PraatException e) {
+			addToWarningsTable(sessionPath, result, e.getLocalizedMessage());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}

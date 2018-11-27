@@ -73,7 +73,7 @@ function setup_params(params) {
             </extensions>
         </node>
         <ogcn:macro id="8822c341a7fd4c71" name="Get Report Name" type="ca.phon.opgraph.nodes.general.MacroNode">
-            <graph id="a788897">
+            <graph id="3b98791a">
                 <node id="f9abcc7533224ac5" name="String#&lt;init&gt;(String)" type="class:ca.phon.opgraph.nodes.reflect.ConstructorNode">
                     <extensions>
                         <oga:settings>
@@ -143,6 +143,17 @@ function setup_params(params) {
                 <oga:meta x="613" y="15"/>
             </extensions>
         </node>
+        <node id="b9b845edf54a4922" type="class:ca.phon.opgraph.nodes.general.ArrayNode">
+            <input name="object1" optional="false">object in array</input>
+            <extensions>
+                <oga:settings>
+                    <oga:property key="ca.phon.opgraph.nodes.general.ArrayNode.numObjects">
+                        <![CDATA[1]]>
+                    </oga:property>
+                </oga:settings>
+                <oga:meta x="569" y="389"/>
+            </extensions>
+        </node>
         <node id="30fc909" type="class:ca.phon.plugins.praat.opgraph.FormantsNode">
             <extensions>
                 <oga:settings>
@@ -194,6 +205,16 @@ function setup_params(params) {
                 <oga:meta x="810" y="15"/>
             </extensions>
         </node>
+        <node id="ed98761bc43a47bc" type="class:ca.phon.opgraph.nodes.general.TextNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="ca.phon.opgraph.nodes.general.TextNode.text">
+                        <![CDATA[%s - Warnings]]>
+                    </oga:property>
+                </oga:settings>
+                <oga:meta x="563" y="251"/>
+            </extensions>
+        </node>
         <node id="ccdddcace05e456e" type="class:ca.phon.app.opgraph.nodes.report.TableSectionNode">
             <extensions>
                 <oga:settings>
@@ -219,6 +240,25 @@ Result]]>
                 <oga:meta x="793" y="559"/>
             </extensions>
         </node>
+        <node id="13f8cf61a24c4237" type="class:ca.phon.app.opgraph.nodes.report.TableSectionNode">
+            <extensions>
+                <oga:settings>
+                    <oga:property key="ca.phon.app.opgraph.nodes.report.TableSectionNode.includeColumns">
+                        <![CDATA[true]]>
+                    </oga:property>
+                    <oga:property key="ca.phon.app.opgraph.nodes.report.TableSectionNode.columns"/>
+                </oga:settings>
+                <oga:meta x="766" y="251">
+                    <oga:default for="sectionName" type="java.lang.String">Warnings</oga:default>
+                </oga:meta>
+            </extensions>
+        </node>
+        <node id="7359930efa10483a" type="class:ca.phon.app.opgraph.nodes.report.NewReportNode">
+            <extensions>
+                <oga:settings/>
+                <oga:meta x="1016" y="265"/>
+            </extensions>
+        </node>
         <link dest="1f1663a8" destField="project" source="519fab30" sourceField="project"/>
         <link dest="1f1663a8" destField="results" source="519fab30" sourceField="result sets"/>
         <link dest="30fc909" destField="table" source="1f1663a8" sourceField="table"/>
@@ -230,6 +270,13 @@ Result]]>
         <link dest="8822c341a7fd4c71" destField="parameters" source="35ae819d3fbe4509" sourceField="parameters"/>
         <link dest="519fab30" destField="selectedResults" source="81a65410bcb94b99" sourceField="obj"/>
         <link dest="ccdddcace05e456e" destField="table" source="30fc909" sourceField="table"/>
+        <link dest="13f8cf61a24c4237" destField="sectionName" source="ed98761bc43a47bc" sourceField="value"/>
+        <link dest="7359930efa10483a" destField="root" source="13f8cf61a24c4237" sourceField="section"/>
+        <link dest="ed98761bc43a47bc" destField="objects" source="b9b845edf54a4922" sourceField="array"/>
+        <link dest="b9b845edf54a4922" destField="object1" source="8822c341a7fd4c71" sourceField="value"/>
+        <link dest="13f8cf61a24c4237" destField="table" source="30fc909" sourceField="warnings"/>
+        <link dest="13f8cf61a24c4237" destField="enabled" source="abd62b046afa498b" sourceField="finished"/>
+        <link dest="7359930efa10483a" destField="enabled" source="13f8cf61a24c4237" sourceField="finished"/>
         <extensions>
             <opqry:nodewizard type="ca.phon.app.opgraph.report.ReportWizardExtension">
                 <opqry:info format="html" title="Formants">
