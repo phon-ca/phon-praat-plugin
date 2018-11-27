@@ -131,7 +131,7 @@ public class TextGridAnnotator {
 						var t = ipaGrp.elementAt(eleIdx-1).getText() + txt;
 						pTgi = findIntervalForText(ipaPhoneTier, t, pidx+1);
 					}
-					else if(pTgi < 0) {
+					if(pTgi < 0) {
 						pTgi = findIntervalForText(ipaPhoneTier, txt, pidx+1);
 					}
 					if(pTgi >= 0) {
