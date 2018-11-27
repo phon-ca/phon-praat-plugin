@@ -126,10 +126,14 @@ public class TextGridAnnotator {
 							|| ele.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) continue;
 					final int eleIdx = ipaGrp.indexOf(ele);
 					String txt = ele.getText();
+					long pTgi = -1L;
 					if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
-						txt = ipaGrp.elementAt(eleIdx-1).getText() + txt;
+						var t = ipaGrp.elementAt(eleIdx-1).getText() + txt;
+						pTgi = findIntervalForText(ipaPhoneTier, t, pidx+1);
 					}
-					final long pTgi = findIntervalForText(ipaPhoneTier, txt, pidx+1);
+					else if(pTgi < 0) {
+						pTgi = findIntervalForText(ipaPhoneTier, txt, pidx+1);
+					}
 					if(pTgi >= 0) {
 						ele.putExtension(TextInterval.class, ipaPhoneTier.interval(pTgi));
 						pidx = pTgi;
