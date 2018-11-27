@@ -32,6 +32,8 @@ import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.prefs.PhonProperties;
+import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.painter.BufferedPainter;
 
 public class TextGridPainter extends BufferedPainter<TextGrid> {
@@ -70,6 +72,7 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		
 		g2d.setColor(Color.WHITE);
 		g2d.fill(bounds);
+		g2d.setFont(FontPreferences.getUIIpaFont());
 		
 		int visibleTierIdx = 0;
 		for(long tIdx = 1; tIdx <= obj.numberOfTiers(); tIdx++) {
