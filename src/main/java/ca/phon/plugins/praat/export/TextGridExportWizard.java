@@ -53,7 +53,6 @@ import ca.phon.session.RecordFilter;
 import ca.phon.session.Session;
 import ca.phon.session.SessionPath;
 import ca.phon.session.check.CheckTranscripts;
-import ca.phon.session.check.OverlappingSegmentsCheck;
 import ca.phon.session.check.SessionCheck;
 import ca.phon.session.check.SessionValidator;
 import ca.phon.ui.CommonModuleFrame;
@@ -295,7 +294,6 @@ public class TextGridExportWizard extends WizardFrame {
 			// run range checks and report if issues are found
 			final List<SessionCheck> checks = new ArrayList<>();
 			checks.add(new CheckTranscripts());
-			checks.add(new OverlappingSegmentsCheck());
 			
 			final SessionValidator validator = new SessionValidator(checks);
 			validator.addValidationListener( (e) -> {
