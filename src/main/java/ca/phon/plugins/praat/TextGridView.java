@@ -26,6 +26,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -54,6 +55,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -74,6 +77,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.MenuEvent;
@@ -120,13 +124,16 @@ import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.session.TierDescription;
+import ca.phon.ui.ButtonPopup;
 import ca.phon.ui.CommonModuleFrame;
+import ca.phon.ui.DropDownButton;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.layout.ButtonBarBuilder;
+import ca.phon.ui.menu.MenuBuilder;
 import ca.phon.ui.nativedialogs.FileFilter;
 import ca.phon.ui.nativedialogs.NativeDialogEvent;
 import ca.phon.ui.nativedialogs.NativeDialogs;
@@ -445,23 +452,29 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	 * Adds extra buttons to the segment panel toolbar
 	 */
 	private void setupToolbar() {
-		final PhonUIAction menuAct = new PhonUIAction(this, "onShowTextGridMenu");
-		menuAct.putValue(PhonUIAction.NAME, "TextGrid");
-		menuAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show TextGrid menu");
-		menuAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
-
-		final JButton textGridBtn = new JButton(menuAct);
-		parent.getToolbar().add(textGridBtn);
-	}
-
-	public void onShowTextGridMenu(PhonActionEvent pae) {
-		final JButton btn = (JButton)pae.getActionEvent().getSource();
-		final JMenu praatMenu = new JMenu("Praat");
-		final JMenu textGridMenu = new JMenu("TextGrid");
-		praatMenu.add(textGridMenu);
-		addMenuItems(praatMenu, true);
-
-		textGridMenu.getPopupMenu().show(btn, 0, btn.getHeight());
+		JPopupMenu spectrumMenu = new JPopupMenu();
+		Action menuAct = new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+			}
+		};
+		menuAct.putValue(Action.NAME, "TextGrid");
+		menuAct.putValue(Action.SHORT_DESCRIPTION, "Show TextGrid menu");
+		menuAct.putValue(Action.SMALL_ICON, IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+		menuAct.putValue(DropDownButton.ARROW_ICON_GAP, 2);
+		menuAct.putValue(DropDownButton.ARROW_ICON_POSITION, SwingConstants.BOTTOM);
+		menuAct.putValue(DropDownButton.BUTTON_POPUP, spectrumMenu);
+		
+		DropDownButton menuBtn = new DropDownButton(menuAct);
+		menuBtn.setOnlyPopup(true);
+		menuBtn.getButtonPopup().addPropertyChangeListener(ButtonPopup.POPUP_VISIBLE, (e) -> {
+			if((boolean)e.getNewValue()) {
+				spectrumMenu.removeAll();
+				addMenuItems(new MenuBuilder(spectrumMenu), true);
+			}
+		});
+		parent.getToolbar().addSeparator();
+		parent.getToolbar().add(menuBtn);
 	}
 
 	/**
@@ -878,22 +891,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			textGridMessage.setVisible(false);
 		}
 	}
-
-	@Override
-	public void addMenuItems(JMenu menu, boolean isContextMenu) {
-		JMenu praatMenu = null;
-		for(int i = 0; i < menu.getItemCount(); i++) {
-			if(menu.getItem(i) != null && menu.getItem(i).getText() != null
-					&& menu.getItem(i).getText().equals("TextGrid")) {
-				praatMenu = (JMenu)menu.getItem(i);
-			}
-		}
-		if(praatMenu == null) {
-			praatMenu = new JMenu("TextGrid");
-			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
-			menu.add(praatMenu);
-		}
-
+	
+	private void addMenuItems(MenuBuilder builder, boolean isContextMenu) {
 		final Session session = parent.getEditor().getSession();
 		final TextGridManager manager = new TextGridManager(parent.getEditor().getProject());
 
@@ -901,9 +900,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		toggleAct.putValue(PhonUIAction.NAME, "Show TextGrid");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, TextGridView.this.isVisible());
 		if(isContextMenu)
-			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_MASK));
+			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_DOWN_MASK));
 		final JCheckBoxMenuItem toggleItem = new JCheckBoxMenuItem(toggleAct);
-		praatMenu.add(toggleItem);
+		builder.addItem(".", toggleItem);
 
 		final ImageIcon lockIcon = IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL);
 		final ImageIcon defaultTgIcon = IconManager.getInstance().getIcon("emblems/emblem-generic", IconSize.SMALL);
@@ -979,45 +978,63 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			}
 
 		});
-		praatMenu.add(textGridMenu);
+		builder.addItem(".", textGridMenu);
 
 		final PhonUIAction toggleLabelsAct = new PhonUIAction(this, "onToggleTextGridLabels");
 		toggleLabelsAct.putValue(PhonUIAction.NAME, "Show Tier Labels");
 		toggleLabelsAct.putValue(PhonUIAction.SELECTED_KEY, TextGridView.this.showTierLabels);
 		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
-		praatMenu.add(toggleLabelsItem);
+		builder.addItem(".", toggleLabelsItem);
 
 		final PhonUIAction tierMgtAct = new PhonUIAction(TextGridView.this, "onTierManagement");
 		tierMgtAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
-		praatMenu.add(new JMenuItem(tierMgtAct));
+		builder.addItem(".", new JMenuItem(tierMgtAct));
 
-		praatMenu.addSeparator();
+		builder.addSeparator(".", "s1");
 		final PhonUIAction genTextGridAct = new PhonUIAction(TextGridView.this, "onGenerateTextGrid");
 		genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
 		genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for session...");
-		praatMenu.add(genTextGridAct);
+		builder.addItem(".", genTextGridAct);
 
 		PhonUIAction createRecordsAct = new PhonUIAction(TextGridView.this, "onCreateRecordsFromTextGrid");
 		createRecordsAct.putValue(PhonUIAction.NAME, "Create records from TextGrid...");
 		createRecordsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Create records from an existing TextGrid");
-		praatMenu.add(createRecordsAct);
+		builder.addItem(".", createRecordsAct);
 
 		// sendpraat menu items
-		praatMenu.addSeparator();
+		builder.addSeparator(".", "s2");
 		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid", Boolean.TRUE);
 		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with full audio. High memory usage.");
 		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - full audio");
-		praatMenu.add(openTextGridAct);
+		builder.addItem(".", openTextGridAct);
 
 		PhonUIAction openTextGridAct2 = new PhonUIAction(this, "openTextGrid", Boolean.FALSE);
 		openTextGridAct2.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with segment only. Low memory usage.");
 		openTextGridAct2.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - segment only");
-		praatMenu.add(openTextGridAct2);
+		builder.addItem(".", openTextGridAct2);
 
 		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
 		sendPraatAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - custom script...");
 		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid and audio in Praat and execute Praat script...");
-		praatMenu.add(sendPraatAct);
+		builder.addItem(".", sendPraatAct);
+	}
+
+	@Override
+	public void addMenuItems(JMenu menu, boolean isContextMenu) {
+		JMenu praatMenu = null;
+		for(int i = 0; i < menu.getItemCount(); i++) {
+			if(menu.getItem(i) != null && menu.getItem(i).getText() != null
+					&& menu.getItem(i).getText().equals("TextGrid")) {
+				praatMenu = (JMenu)menu.getItem(i);
+			}
+		}
+		if(praatMenu == null) {
+			praatMenu = new JMenu("TextGrid");
+			praatMenu.setIcon(IconManager.getInstance().getIcon("apps/praat", IconSize.SMALL));
+			menu.add(praatMenu);
+		}
+		
+		addMenuItems(new MenuBuilder(praatMenu), isContextMenu);
 	}
 
 	private class TextGridMouseListener extends MouseInputAdapter {
