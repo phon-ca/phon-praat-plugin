@@ -75,6 +75,7 @@ import ca.hedlund.jpraat.binding.fon.Pitch;
 import ca.hedlund.jpraat.binding.fon.Sound;
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 import ca.hedlund.jpraat.binding.fon.Spectrum;
+import ca.hedlund.jpraat.binding.fon.kFormant_unit;
 import ca.hedlund.jpraat.binding.stat.Table;
 import ca.hedlund.jpraat.binding.sys.Interpreter;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
@@ -823,7 +824,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 			sb.append(qc).append("Time(s)").append(qc);
 			sb.append(sc).append(qc).append("F0(");
 			final String unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY,
-					pitchSettings.getUnits(), Function.UNIT_TEXT_SHORT);
+					pitchSettings.getUnits().ordinal(), Function.UNIT_TEXT_SHORT);
 			sb.append(unitText).append(')').append(qc);
 			out.println(sb.toString());
 			sb.setLength(0);
@@ -1180,7 +1181,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		Spectrogram spectrogram = null;
 		try {
 			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-			final Sound part = longSound.extractPart(xmin, xmax, 1);
+			final Sound part = longSound.extractPart(xmin, xmax, true);
 
 			spectrogram = part.to_Spectrogram(
 				spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
@@ -1203,7 +1204,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		Pitch pitch = null;
 		try {
 			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, true);
 
 			if(pitchSettings.isAutoCorrelate()) {
 				pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0,
@@ -1234,7 +1235,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		Formant formants = null;
 		try {
 			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, true);
 
 			formants =
 					part.to_Formant_burg(formantSettings.getTimeStep(), formantSettings.getNumFormants(),
@@ -1256,12 +1257,12 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		Intensity intensity = null;
 		try {
 			final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()));
-			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, 1);
+			final Sound part = longSound.extractPart((double)segment.getStartValue()/1000.0, (double)segment.getEndValue()/1000.0, true);
 
 			intensity =
 					part.to_Intensity(pitchSettings.getRangeStart(),
 							0.0,
-							(intensitySettings.getSubtractMean() ? 1 : 0));
+							intensitySettings.getSubtractMean());
 		} catch (PraatException pe) {
 			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
 		}
@@ -1287,10 +1288,10 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 					xmin + parent.getWavDisplay().getSelectionLength()
 					: segment.getEndValue() / 1000.0);
 
-			final Sound part = longSound.extractPart(xmin, xmax, 1);
+			final Sound part = longSound.extractPart(xmin, xmax, true);
 			final Sound shapedPart = part.extractPart(xmin, xmax, spectralMomentsSettings.getWindowShape(), 2, true);
 
-			spectrum = shapedPart.to_Spectrum(1);
+			spectrum = shapedPart.to_Spectrum(true);
 			spectrum.passHannBand(spectralMomentsSettings.getFilterStart(), spectralMomentsSettings.getFilterEnd(), spectralMomentsSettings.getFilterSmoothing());
 
 			if(spectralMomentsSettings.isUsePreemphasis()) {
@@ -1565,7 +1566,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 					int x = 0;
 					int y = 0;
 					for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
-						final double fVal = formants.getValueAtTime(i, time, 0);
+						final double fVal = formants.getValueAtTime(i, time, kFormant_unit.HERTZ);
 
 						final String formantStr = String.format("F%d: %.2f", i, fVal);
 						final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
@@ -1579,7 +1580,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 						y += 10;
 
 						for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
-							final double bVal = formants.getBandwidthAtTime(i, time, 0);
+							final double bVal = formants.getBandwidthAtTime(i, time, kFormant_unit.HERTZ);
 
 							final String formantStr = String.format("B%d: %.2f", i, bVal);
 							final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);

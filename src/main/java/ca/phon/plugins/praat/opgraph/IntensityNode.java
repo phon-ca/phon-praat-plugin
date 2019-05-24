@@ -58,10 +58,10 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 			final double xmin = segment.getStartValue()/1000.0;
 			final double xmax = segment.getEndValue()/1000.0;
 			
-			final Sound sound = longSound.extractPart(xmin, xmax, 1);
+			final Sound sound = longSound.extractPart(xmin, xmax, true);
 			final Intensity intensity = 
 					sound.to_Intensity(intensitySettings.getViewRangeMin(), 0.0, 
-							(intensitySettings.getSubtractMean() ? 1 : 0));
+							intensitySettings.getSubtractMean());
 			
 			// columns
 			int cols = getColumnNames().size();

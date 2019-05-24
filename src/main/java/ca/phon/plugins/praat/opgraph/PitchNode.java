@@ -83,7 +83,7 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			final double xmin = segment.getStartValue()/1000.0;
 			final double xmax = segment.getEndValue()/1000.0;
 			
-			final Sound sound = longSound.extractPart(xmin, xmax, 1);
+			final Sound sound = longSound.extractPart(xmin, xmax, true);
 			final Pitch pitch = getPitch(sound);
 			
 			// columns
@@ -118,7 +118,7 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			for(int i = 1; i <= 9; i++) {
 				double f0 = 
 						pitch.getValueAtTime(
-								textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits().ordinal(), true);
+								textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits(), true);
 				f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
 				rowData[colIdx++] = f0;
 			}
@@ -158,7 +158,7 @@ public class PitchNode extends PraatNode implements NodeSettings {
 		String unitTxt = "";
 		try {
 			Pitch pitch = Pitch.create(0.0, 0.0, 0, 0.0, 0.0, 0.0, 0);
-			unitTxt = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchUnit, Function.UNIT_TEXT_SHORT);
+			unitTxt = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchUnit.ordinal(), Function.UNIT_TEXT_SHORT);
 		} catch (PraatException e) {
 			
 		}

@@ -234,7 +234,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			double endTime = segment.getEndValue() / 1000.0;
 			TextGrid recordTextGrid = textGrid;
 			try {
-				recordTextGrid = textGrid.extractPart(startTime, endTime, 1);
+				recordTextGrid = textGrid.extractPart(startTime, endTime, true);
 				annotator.annotateRecord(recordTextGrid, record);
 			} catch (PraatException e) {
 				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);

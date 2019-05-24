@@ -83,7 +83,7 @@ public class FormantsNode extends PraatNode implements NodeSettings {
 			final double xmin = segment.getStartValue()/1000.0;
 			final double xmax = segment.getEndValue()/1000.0;
 			
-			final Sound sound = longSound.extractPart(xmin, xmax, 1);
+			final Sound sound = longSound.extractPart(xmin, xmax, true);
 			final Formant formants = sound.to_Formant_burg(
 					formantSettings.getTimeStep(),
 					formantSettings.getNumFormants(),
@@ -123,11 +123,11 @@ public class FormantsNode extends PraatNode implements NodeSettings {
 			for(int formant = 1; formant <= formantSettings.getNumFormants(); formant++) {
 				for(int i = 10; i < 100; i+=10) {
 					double time = textInterval.getXmin() + (timeStep * (i/10));
-					double fval = formants.getValueAtTime(formant, time, 0);
+					double fval = formants.getValueAtTime(formant, time, kFormant_unit.HERTZ);
 					rowData[colIdx++] = fval;
 					
 					if(formantSettings.isIncludeBandwidths()) {
-						double band = formants.getBandwidthAtTime(formant, time, 0);
+						double band = formants.getBandwidthAtTime(formant, time, kFormant_unit.HERTZ);
 						rowData[colIdx++] = band;
 					}
 				}

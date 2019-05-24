@@ -533,7 +533,7 @@ public class TextGridExporter {
 		double startTime = mediaSeg.getStartValue() / 1000.0;
 		double endTime = mediaSeg.getEndValue() / 1000.0;
 
-		final TextGrid recordTextGrid = oldTextGrid.extractPart(startTime, endTime, 1);
+		final TextGrid recordTextGrid = oldTextGrid.extractPart(startTime, endTime, true);
 		for(long tierIdx = 1; tierIdx <= recordTextGrid.numberOfTiers(); tierIdx++) {
 			try {
 				final IntervalTier oldTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierIdx);

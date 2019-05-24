@@ -65,11 +65,11 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			final double xmin = segment.getStartValue()/1000.0;
 			final double xmax = segment.getEndValue()/1000.0;
 			
-			final Sound recordSound = longSound.extractPart(xmin, xmax, 1);
+			final Sound recordSound = longSound.extractPart(xmin, xmax, true);
 			final Sound shapedSound = recordSound.extractPart(textInterval.getXmin(), textInterval.getXmax(),
 					settings.getWindowShape(), 2, true);
 			
-			final Spectrum spectrum = shapedSound.to_Spectrum(1);
+			final Spectrum spectrum = shapedSound.to_Spectrum(true);
 			spectrum.passHannBand(settings.getFilterStart(), settings.getFilterEnd(), settings.getFilterSmoothing());
 			
 			if(settings.isUsePreemphasis()) {

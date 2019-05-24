@@ -1117,8 +1117,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		popup.dispose();
 	}
 	
-	
-	
 	public void mapTier(Tuple<String, JTree> tuple) {
 		final JTree tree = tuple.getObj2();
 		final TreePath path = tree.getSelectionPath();
@@ -1493,7 +1491,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 				double windowEnd = windowStart + parent.getWavDisplay().getWindowLength();
 
 				try {
-					TextGrid textGrid = tg.extractPart(windowStart, windowEnd, 1);
+					TextGrid textGrid = tg.extractPart(windowStart, windowEnd, true);
 					tgPainter.paint(textGrid, g2, getBounds());
 				} catch (PraatException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);

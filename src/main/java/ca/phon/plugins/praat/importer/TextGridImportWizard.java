@@ -219,7 +219,7 @@ public class TextGridImportWizard extends WizardFrame {
 					if(recordInterval.getText().trim().length() == 0 &&
 							step1.isIgnoreEmptyIntervals()) continue;
 
-					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
+					TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), true);
 					// create a new record for each interval
 					final Record newRecord =
 							importer.createRecordFromTextGrid(session, tg, step1.getTierMap());

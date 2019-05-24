@@ -115,7 +115,7 @@ public class TextGridImporter {
 			if(recordInterval.getText().trim().length() == 0 &&
 					ignoreEmptyIntervals) continue;
 			try {
-				TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), 1);
+				TextGrid tg = textGrid.extractPart(recordInterval.getXmin(), recordInterval.getXmax(), true);
 				// create a new record for each interval
 				final Record newRecord =
 						createRecordFromTextGrid(session, tg, tierMap);

@@ -120,7 +120,7 @@ public class PitchSpecklePainter extends BufferedPainter<Pitch> implements Praat
 	@Override
 	public void paintGarnish(Pitch pitch, Graphics2D g2d, Rectangle2D bounds, int location) {
 		final String unitText = pitch.getUnitText(Pitch.LEVEL_FREQUENCY, 
-				settings.getUnits(), Function.UNIT_TEXT_SHORT);
+				settings.getUnits().ordinal(), Function.UNIT_TEXT_SHORT);
 		final double startValue = 
 				pitch.convertStandardToSpecialUnit(settings.getRangeStart(), Pitch.LEVEL_FREQUENCY, 
 						settings.getUnits().ordinal());
