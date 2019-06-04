@@ -774,7 +774,6 @@ public class TextGridExporter {
 			// remove default interval
 			intervalTier.removeInterval(1);
 			intervalTier.setName(tierName);
-			intervalTier.setForgetOnFinalize(false);
 			textGrid.addTier(intervalTier);
 		}
 	}

@@ -477,7 +477,6 @@ public class TextGridManager {
 						IntervalTier fullIntervalTier = null;
 						if(!intervalTiers.keySet().contains(intervalTier.getName().toString())) {
 							fullIntervalTier = IntervalTier.create(xmin, xmax);
-							fullIntervalTier.setForgetOnFinalize(false);
 							fullIntervalTier.setName(intervalTier.getName());
 							fullIntervalTier.removeInterval(1);
 
@@ -507,8 +506,6 @@ public class TextGridManager {
 							TextTier fullPointTier = null;
 							if(!pointTiers.keySet().contains(pointTier.getName().toString())) {
 								fullPointTier = TextTier.create(xmin, xmax);
-								// don't delete native tier object when reference goes out of scope
-								fullPointTier.setForgetOnFinalize(false);
 								fullPointTier.setName(pointTier.getName());
 								fullPointTier.removePoint(1);
 
