@@ -39,6 +39,7 @@ import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.binding.sys.Daata;
 import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.binding.sys.Thing;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
 import ca.phon.media.util.MediaLocator;
@@ -316,6 +317,10 @@ public class TextGridManager {
 
 	/**
 	 * Load TextGrid from file
+	 * 
+	 * The returned {@link TextGrid} must be deleted
+	 * using the {@link Thing#forget()} method when
+	 * the object is no longer needed.
 	 *
 	 * @param file
 	 * @return textgrid
@@ -431,11 +436,16 @@ public class TextGridManager {
 
 	/**
 	 * Merge text grids for a session.
+	 * 
+	 * The returned {@link TextGrid} must be deleted
+	 * using the {@link Thing#forget()} method when
+	 * the object is no longer needed.
 	 *
 	 * @param session
 	 *
 	 * @return single TextGrid for merged session
 	 */
+	@Deprecated
 	public TextGrid mergeTextGrids(Session session)
 		throws IOException {
 		// get xmin and xmax

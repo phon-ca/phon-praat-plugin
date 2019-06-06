@@ -79,62 +79,61 @@ public class FormantsNode extends PraatNode implements NodeSettings {
 			DefaultTableDataSource table) {
 		final FormantSettings formantSettings = getFormantSettings();
 		
-		try {
-			final double xmin = segment.getStartValue()/1000.0;
-			final double xmax = segment.getEndValue()/1000.0;
-			
-			final Sound sound = longSound.extractPart(xmin, xmax, true);
-			final Formant formants = sound.to_Formant_burg(
+		final double xmin = segment.getStartValue()/1000.0;
+		final double xmax = segment.getEndValue()/1000.0;
+		
+		try (final Sound sound = longSound.extractPart(xmin, xmax, true)) {
+			try(final Formant formants = sound.to_Formant_burg(
 					formantSettings.getTimeStep(),
 					formantSettings.getNumFormants(),
 					formantSettings.getMaxFrequency(),
 					formantSettings.getWindowLength(),
-					formantSettings.getPreEmphasis());
-			
-			// columns
-			int cols = getColumnNames().size();
-			
-			final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
-			final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
-			
-			Object[] rowData = new Object[cols];
-			int colIdx = 0;
-			rowData[colIdx++] = sessionPath;
-			rowData[colIdx++] = speaker;
-			rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
-			rowData[colIdx++] = result.getRecordIndex()+1;
-			rowData[colIdx++] = result;
-			
-			if(isUseRecordInterval()) {
-				// add nothing
-			} else if(isUseTextGridInterval()) {
-				rowData[colIdx++] = textInterval.getText();
-			} else {
-				rowData[colIdx++] = rv.getTierName();
-				rowData[colIdx++] = rv.getGroupIndex()+1;
-				rowData[colIdx++] = value;
-			}
-			
-			rowData[colIdx++] = textInterval.getXmin();
-			rowData[colIdx++] = textInterval.getXmax();
-			
-			double len = textInterval.getXmax() - textInterval.getXmin();
-			double timeStep = len / 10.0;
-			for(int formant = 1; formant <= formantSettings.getNumFormants(); formant++) {
-				for(int i = 10; i < 100; i+=10) {
-					double time = textInterval.getXmin() + (timeStep * (i/10));
-					double fval = formants.getValueAtTime(formant, time, kFormant_unit.HERTZ);
-					rowData[colIdx++] = fval;
-					
-					if(formantSettings.isIncludeBandwidths()) {
-						double band = formants.getBandwidthAtTime(formant, time, kFormant_unit.HERTZ);
-						rowData[colIdx++] = band;
+					formantSettings.getPreEmphasis())) {
+				// columns
+				int cols = getColumnNames().size();
+				
+				final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
+				final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
+				
+				Object[] rowData = new Object[cols];
+				int colIdx = 0;
+				rowData[colIdx++] = sessionPath;
+				rowData[colIdx++] = speaker;
+				rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
+				rowData[colIdx++] = result.getRecordIndex()+1;
+				rowData[colIdx++] = result;
+				
+				if(isUseRecordInterval()) {
+					// add nothing
+				} else if(isUseTextGridInterval()) {
+					rowData[colIdx++] = textInterval.getText();
+				} else {
+					rowData[colIdx++] = rv.getTierName();
+					rowData[colIdx++] = rv.getGroupIndex()+1;
+					rowData[colIdx++] = value;
+				}
+				
+				rowData[colIdx++] = textInterval.getXmin();
+				rowData[colIdx++] = textInterval.getXmax();
+				
+				double len = textInterval.getXmax() - textInterval.getXmin();
+				double timeStep = len / 10.0;
+				for(int formant = 1; formant <= formantSettings.getNumFormants(); formant++) {
+					for(int i = 10; i < 100; i+=10) {
+						double time = textInterval.getXmin() + (timeStep * (i/10));
+						double fval = formants.getValueAtTime(formant, time, kFormant_unit.HERTZ);
+						rowData[colIdx++] = fval;
+						
+						if(formantSettings.isIncludeBandwidths()) {
+							double band = formants.getBandwidthAtTime(formant, time, kFormant_unit.HERTZ);
+							rowData[colIdx++] = band;
+						}
 					}
 				}
+				
+				table.addRow(rowData);
 			}
-			
-			table.addRow(rowData);
-		} catch (PraatException e) {
+		} catch (Exception e) {
 			addToWarningsTable(sessionPath, result, e.getLocalizedMessage());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}

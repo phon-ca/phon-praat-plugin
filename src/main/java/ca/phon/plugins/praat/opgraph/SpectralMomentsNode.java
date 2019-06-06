@@ -61,56 +61,56 @@ public class SpectralMomentsNode extends PraatNode implements NodeSettings {
 			Session session, SessionPath sessionPath,
 			MediaSegment segment, Result result, ResultValue rv, Object value, DefaultTableDataSource table) {
 		final SpectralMomentsSettings settings = getSpectrumSettings();
-		try {
-			final double xmin = segment.getStartValue()/1000.0;
-			final double xmax = segment.getEndValue()/1000.0;
-			
-			final Sound recordSound = longSound.extractPart(xmin, xmax, true);
-			final Sound shapedSound = recordSound.extractPart(textInterval.getXmin(), textInterval.getXmax(),
-					settings.getWindowShape(), 2, true);
-			
-			final Spectrum spectrum = shapedSound.to_Spectrum(true);
-			spectrum.passHannBand(settings.getFilterStart(), settings.getFilterEnd(), settings.getFilterSmoothing());
-			
-			if(settings.isUsePreemphasis()) {
-				final String formula = 
-						String.format("if x >= %d then self*x else self fi", (Double.valueOf(settings.getPreempFrom()).intValue()));
-				spectrum.formula(formula, Interpreter.create(), null);
+		final double xmin = segment.getStartValue()/1000.0;
+		final double xmax = segment.getEndValue()/1000.0;
+
+		try (final Sound recordSound = longSound.extractPart(xmin, xmax, true)) {
+			try (final Sound shapedSound = recordSound.extractPart(textInterval.getXmin(), textInterval.getXmax(),
+					settings.getWindowShape(), 2, true)) {
+				try (final Spectrum spectrum = shapedSound.to_Spectrum(true)) {
+					spectrum.passHannBand(settings.getFilterStart(), settings.getFilterEnd(), settings.getFilterSmoothing());
+					
+					if(settings.isUsePreemphasis()) {
+						final String formula = 
+								String.format("if x >= %d then self*x else self fi", (Double.valueOf(settings.getPreempFrom()).intValue()));
+						spectrum.formula(formula, Interpreter.create(), null);
+					}
+					
+					int cols = getColumnNames().size();
+					
+					final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
+					final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
+					
+					Object[] rowData = new Object[cols];
+					int colIdx = 0;
+					rowData[colIdx++] = sessionPath;
+					rowData[colIdx++] = speaker;
+					rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
+					rowData[colIdx++] = result.getRecordIndex()+1;
+					rowData[colIdx++] = result;
+					
+					if(isUseRecordInterval()) {
+						// add nothing
+					} else if(isUseTextGridInterval()) {
+						rowData[colIdx++] = textInterval.getText();
+					} else {
+						rowData[colIdx++] = rv.getTierName();
+						rowData[colIdx++] = rv.getGroupIndex()+1;
+						rowData[colIdx++] = value;
+					}
+					
+					rowData[colIdx++] = textInterval.getXmin();
+					rowData[colIdx++] = textInterval.getXmax();
+					
+					rowData[colIdx++] = spectrum.getCentreOfGravity(2);
+					rowData[colIdx++] = spectrum.getStandardDeviation(2);
+					rowData[colIdx++] = spectrum.getKurtosis(2);
+					rowData[colIdx++] = spectrum.getSkewness(2);
+					
+					table.addRow(rowData);
+				}
 			}
-			
-			int cols = getColumnNames().size();
-			
-			final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
-			final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
-			
-			Object[] rowData = new Object[cols];
-			int colIdx = 0;
-			rowData[colIdx++] = sessionPath;
-			rowData[colIdx++] = speaker;
-			rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
-			rowData[colIdx++] = result.getRecordIndex()+1;
-			rowData[colIdx++] = result;
-			
-			if(isUseRecordInterval()) {
-				// add nothing
-			} else if(isUseTextGridInterval()) {
-				rowData[colIdx++] = textInterval.getText();
-			} else {
-				rowData[colIdx++] = rv.getTierName();
-				rowData[colIdx++] = rv.getGroupIndex()+1;
-				rowData[colIdx++] = value;
-			}
-			
-			rowData[colIdx++] = textInterval.getXmin();
-			rowData[colIdx++] = textInterval.getXmax();
-			
-			rowData[colIdx++] = spectrum.getCentreOfGravity(2);
-			rowData[colIdx++] = spectrum.getStandardDeviation(2);
-			rowData[colIdx++] = spectrum.getKurtosis(2);
-			rowData[colIdx++] = spectrum.getSkewness(2);
-			
-			table.addRow(rowData);
-		} catch (PraatException e) {
+		} catch (Exception e) {
 			addToWarningsTable(sessionPath, result, e.getLocalizedMessage());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}

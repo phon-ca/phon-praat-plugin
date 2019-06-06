@@ -79,52 +79,51 @@ public class PitchNode extends PraatNode implements NodeSettings {
 			MediaSegment segment, Result result,
 			ResultValue rv, Object value, DefaultTableDataSource table) {
 		final PitchSettings pitchSettings = getPitchSettings();
-		try {
-			final double xmin = segment.getStartValue()/1000.0;
-			final double xmax = segment.getEndValue()/1000.0;
-			
-			final Sound sound = longSound.extractPart(xmin, xmax, true);
-			final Pitch pitch = getPitch(sound);
-			
-			// columns
-			int cols = getColumnNames().size();
-			
-			final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
-			final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
-			
-			Object[] rowData = new Object[cols];
-			int colIdx = 0;
-			rowData[colIdx++] = sessionPath;
-			rowData[colIdx++] = speaker;
-			rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
-			rowData[colIdx++] = result.getRecordIndex()+1;
-			rowData[colIdx++] = result;
-			
-			if(isUseRecordInterval()) {
-				// add nothing
-			} else if(isUseTextGridInterval()) {
-				rowData[colIdx++] = textInterval.getText();
-			} else {
-				rowData[colIdx++] = rv.getTierName();
-				rowData[colIdx++] = rv.getGroupIndex()+1;
-				rowData[colIdx++] = value;
+		final double xmin = segment.getStartValue()/1000.0;
+		final double xmax = segment.getEndValue()/1000.0;
+		
+		try (final Sound sound = longSound.extractPart(xmin, xmax, true)) {
+			try(final Pitch pitch = getPitch(sound)) {
+				// columns
+				int cols = getColumnNames().size();
+				
+				final Record r = (result.getRecordIndex() < session.getRecordCount() ? session.getRecord(result.getRecordIndex()) : null);
+				final Participant speaker = (r != null ? r.getSpeaker() : Participant.UNKNOWN);
+				
+				Object[] rowData = new Object[cols];
+				int colIdx = 0;
+				rowData[colIdx++] = sessionPath;
+				rowData[colIdx++] = speaker;
+				rowData[colIdx++] = (speaker != Participant.UNKNOWN ? speaker.getAge(session.getDate()) : "");
+				rowData[colIdx++] = result.getRecordIndex()+1;
+				rowData[colIdx++] = result;
+				
+				if(isUseRecordInterval()) {
+					// add nothing
+				} else if(isUseTextGridInterval()) {
+					rowData[colIdx++] = textInterval.getText();
+				} else {
+					rowData[colIdx++] = rv.getTierName();
+					rowData[colIdx++] = rv.getGroupIndex()+1;
+					rowData[colIdx++] = value;
+				}
+				
+				rowData[colIdx++] = textInterval.getXmin();
+				rowData[colIdx++] = textInterval.getXmax();
+				
+				double len = textInterval.getXmax() - textInterval.getXmin();
+				double timeStep = len / 10.0;
+				for(int i = 1; i <= 9; i++) {
+					double f0 = 
+							pitch.getValueAtTime(
+									textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits(), true);
+					f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
+					rowData[colIdx++] = f0;
+				}
+				
+				table.addRow(rowData);
 			}
-			
-			rowData[colIdx++] = textInterval.getXmin();
-			rowData[colIdx++] = textInterval.getXmax();
-			
-			double len = textInterval.getXmax() - textInterval.getXmin();
-			double timeStep = len / 10.0;
-			for(int i = 1; i <= 9; i++) {
-				double f0 = 
-						pitch.getValueAtTime(
-								textInterval.getXmin() + (i * timeStep), pitchSettings.getUnits(), true);
-				f0 = pitch.convertToNonlogarithmic(f0, Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal());
-				rowData[colIdx++] = f0;
-			}
-			
-			table.addRow(rowData);
-		} catch (PraatException e) {
+		} catch (Exception e) {
 			addToWarningsTable(sessionPath, result, e.getLocalizedMessage());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}

@@ -91,6 +91,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.HorizontalLayout;
 import org.jdesktop.swingx.VerticalLayout;
 
+import com.sun.jna.Pointer;
+
 import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
@@ -101,6 +103,7 @@ import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.binding.sys.PraatDir;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
@@ -267,6 +270,16 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 				+ SELECTED_TEXTGRID_PROP_SUXFFIX;
 	}
 
+	private void cleanup() {
+		if(this.tg != null) {
+			try {
+				this.tg.close();
+			} catch (Exception e) {
+				LogUtil.severe(e);
+			}
+		}
+	}
+	
 	private void loadTextGrid() {
 		tgManager = new TextGridManager(parent.getEditor().getProject());
 
@@ -354,6 +367,9 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
+		
+		final EditorAction editorClosingAct = new DelegateEditorAction(this, "onEditorClosing");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.EDITOR_CLOSING, editorClosingAct);
 	}
 
 	private void installKeyStrokes(SpeechAnalysisEditorView p) {
@@ -371,6 +387,14 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	public void setTextGrid(TextGrid tg) {
+		if(this.tg != null) {
+			try {
+				// delete old textgrid from memory
+				this.tg.forget();
+			} catch (PraatException e) {
+				LogUtil.severe(e);
+			}
+		}
 		this.tg = tg;
 		updateHiddenTiers();
 		updateTierLabels();
@@ -508,7 +532,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		}
 		return audioFile;
 	}
-
+	
 	private String loadTextGridTemplate() throws IOException {
 		final ClassLoader cl = getClass().getClassLoader();
 		final InputStream is = cl.getResourceAsStream(OPEN_TEXTGRID_TEMPLATE);
@@ -715,6 +739,11 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	@RunOnEDT
 	public void onMediaChanged(EditorEvent ee) {
 		loadTextGrid();
+	}
+	
+	@RunOnEDT
+	public void onEditorClosing(EditorEvent ee) {
+		cleanup();
 	}
 
 	public void onSendPraat() {
