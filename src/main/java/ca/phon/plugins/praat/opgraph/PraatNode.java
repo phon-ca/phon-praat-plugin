@@ -468,7 +468,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, rv, resultValue, outputTable);
 					
-					// delete textInterval if a new native instance was created in getTextInterval(IExtendable)
+					// delete textInterval if a new instance was created in getTextInterval(IExtendable)
 					if(textInterval != extendable.getExtension(TextInterval.class)) {
 						try {
 							textInterval.close();
