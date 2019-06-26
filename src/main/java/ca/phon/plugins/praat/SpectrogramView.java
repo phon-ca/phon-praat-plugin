@@ -72,6 +72,7 @@ import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.Intensity;
 import ca.hedlund.jpraat.binding.fon.LongSound;
 import ca.hedlund.jpraat.binding.fon.Pitch;
+import ca.hedlund.jpraat.binding.fon.PointProcess;
 import ca.hedlund.jpraat.binding.fon.Sound;
 import ca.hedlund.jpraat.binding.fon.Spectrogram;
 import ca.hedlund.jpraat.binding.fon.Spectrum;
@@ -1178,6 +1179,83 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
+	
+	public void listPulses() {
+		final PointProcess pulses = loadPulses();
+		if(pulses == null) return;
+
+		final Record r = parent.getEditor().currentRecord();
+		final MediaSegment segment =
+				(r.getSegment().numberOfGroups() > 0 ? r.getSegment().getGroup(0) : null);
+		if(segment == null ||
+				(segment.getEndValue() - segment.getStartValue()) <= 0) {
+			return;
+		}
+
+		double selStart =
+				(parent.getWavDisplay().hasSelection() ?
+						parent.getWavDisplay().getSelectionStart()
+						: segment.getStartValue() / 1000.0);
+		double selEnd =
+				(parent.getWavDisplay().hasSelection() ?
+						selStart + parent.getWavDisplay().getSelectionLength()
+						: segment.getEndValue() / 1000.0);
+
+		if(selEnd < selStart) {
+			double temp = selStart;
+			selStart = selEnd;
+			selEnd = temp;
+		}
+
+		final NumberFormat format = NumberFormat.getNumberInstance();
+		format.setMaximumFractionDigits(6);
+
+		final BufferWindow bw = BufferWindow.getBufferWindow();
+		bw.showWindow();
+		final BufferPanel bufferPanel = bw.createBuffer("Pulses (" +
+				format.format(selStart) + "-" + format.format(selEnd) + ")");
+		final LogBuffer buffer = bufferPanel.getLogBuffer();
+
+		long i1 = pulses.getHighIndex(selStart);
+		long i2 = pulses.getLowIndex(selEnd);
+		
+		// print header
+		try {
+			final PrintWriter out =
+					new PrintWriter(new OutputStreamWriter(buffer.getStdOutStream(), "UTF-8"));
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_BUSY);
+			out.flush();
+			final StringBuilder sb = new StringBuilder();
+			final char qc = '\"';
+			sb.append(qc).append("Time(s)").append(qc);
+			out.println(sb.toString());
+			sb.setLength(0);
+
+			for(long i = i1; i <= i2; i++) {
+				double t = pulses.getValueAtIndex(i);
+				
+				sb.append(qc).append(format.format(t)).append(qc);
+				out.println(sb.toString());
+				sb.setLength(0);
+			}
+
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.STOP_BUSY);
+			out.flush();
+			out.print(LogBuffer.ESCAPE_CODE_PREFIX + BufferPanel.SHOW_TABLE_CODE);
+			out.flush();
+			out.close();
+			
+		} catch(IOException e) {
+			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+		}
+		try {
+			pulses.close();
+		} catch (Exception e) {
+			LogUtil.severe(e);
+		}
+	}
 
 	private MediaSegment getSegment() {
 		final Tier<MediaSegment> segTier = parent.getEditor().currentRecord().getSegment();
@@ -1328,6 +1406,42 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		}
 
 		return spectrum;
+	}
+	
+	private PointProcess loadPulses() {
+		final MediaSegment segment = getSegment();
+		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
+			return null;
+		}
+		final File audioFile = parent.getAudioFile();
+		if(audioFile == null) return null;
+		
+		final double xmin = (double)segment.getStartValue()/1000.0;
+		final double xmax = (double)segment.getEndValue()/1000.0;
+
+		PointProcess pulses = null;
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
+				Pitch pitch = null;
+				if(pitchSettings.isAutoCorrelate()) {
+					pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0,
+						pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(),
+						pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(),
+						pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+				} else {
+					pitch = part.to_Pitch_cc(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0,
+						pitchSettings.getMaxCandidates(), (pitchSettings.isVeryAccurate() ? 1 : 0), pitchSettings.getSilenceThreshold(),
+						pitchSettings.getVoicingThreshold(), pitchSettings.getOctaveCost(),
+						pitchSettings.getOctaveJumpCost(), pitchSettings.getVoicedUnvoicedCost(), pitchSettings.getRangeEnd());
+				}
+				
+				pulses = pitch.to_PointProcess_cc(part);
+				pitch.close();
+			}
+		} catch (Exception pe) {
+			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+		}
+		return pulses;
 	}
 
 	@RunInBackground(newThread=true)
@@ -1905,6 +2019,10 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(isContextMenu)
 			listPitchAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
 		builder.addItem(".", listPitchAct);
+		
+		final PhonUIAction listPulsesAct = new PhonUIAction(this, "listPulses");
+		listPulsesAct.putValue(PhonUIAction.NAME, "Pulse listing");
+		builder.addItem(".", listPulsesAct);
 
 		builder.addSeparator(".", "s4");
 
