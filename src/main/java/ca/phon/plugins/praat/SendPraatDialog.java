@@ -39,6 +39,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import ca.hedlund.jpraat.binding.sys.SendPraat;
 import ca.phon.app.log.BufferPanel;
 import ca.phon.app.log.BufferWindow;
+import ca.phon.app.session.SessionMediaModel;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.plugins.praat.script.PraatScript;
@@ -253,6 +254,14 @@ public class SendPraatDialog extends CommonModuleFrame {
 		}
 		return new PraatScript(builder.toString());
 	}
+	
+	private File getAudioFile() {
+		SessionMediaModel mediaModel = editor.getMediaModel();
+		if(mediaModel.isSessionAudioAvailable()) {
+			return mediaModel.getSessionAudioFile();
+		}
+		return null;
+	}
 
 	private PraatScriptContext createContext() {
 		final PraatScriptContext context = new PraatScriptContext();
@@ -269,7 +278,7 @@ public class SendPraatDialog extends CommonModuleFrame {
 				.isShowing(SpeechAnalysisEditorView.VIEW_TITLE) ? (SpeechAnalysisEditorView) editor
 				.getViewModel().getView(SpeechAnalysisEditorView.VIEW_TITLE) : null);
 		if (waveformView != null) {
-			final File audioFile = waveformView.getAudioFile();
+			final File audioFile = getAudioFile();
 			if (audioFile != null) {
 				context.put("audioPath", audioFile.getAbsolutePath());
 			}

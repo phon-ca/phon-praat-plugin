@@ -85,6 +85,7 @@ import ca.phon.app.log.BufferPanel;
 import ca.phon.app.log.BufferWindow;
 import ca.phon.app.log.LogBuffer;
 import ca.phon.app.log.LogUtil;
+import ca.phon.app.session.SessionMediaModel;
 import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
@@ -1262,6 +1263,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		return (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
 	}
 
+	public File getAudioFile() {
+		SessionMediaModel mediaModel = parent.getEditor().getMediaModel();
+		if(mediaModel.isSessionAudioAvailable()) {
+			return mediaModel.getSessionAudioFile();
+		}
+		return null;
+	}
+	
 	/**
 	 * @return
 	 */
@@ -1270,14 +1279,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 
 		final double xmin = (double)segment.getStartValue()/1000.0;
 		final double xmax = (double)segment.getEndValue()/1000.0;
 
 		Spectrogram spectrogram = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
 				spectrogram = part.to_Spectrogram(
 					spectrogramSettings.getWindowLength(), spectrogramSettings.getMaxFrequency(),
@@ -1295,14 +1304,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
 		final double xmin = (double)segment.getStartValue()/1000.0;
 		final double xmax = (double)segment.getEndValue()/1000.0;
 
 		Pitch pitch = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
 				if(pitchSettings.isAutoCorrelate()) {
 					pitch = part.to_Pitch_ac(pitchSettings.getTimeStep(), pitchSettings.getRangeStart(), 3.0,
@@ -1327,14 +1336,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
 		final double xmin = (double)segment.getStartValue()/1000.0;
 		final double xmax = (double)segment.getEndValue()/1000.0;
 
 		Formant formants = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
 				formants =
 						part.to_Formant_burg(formantSettings.getTimeStep(), formantSettings.getNumFormants(),
@@ -1351,14 +1360,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 
 		final double xmin = (double)segment.getStartValue()/1000.0;
 		final double xmax = (double)segment.getEndValue()/1000.0;
 		
 		Intensity intensity = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
 				intensity =
 						part.to_Intensity(pitchSettings.getRangeStart(),
@@ -1376,11 +1385,11 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
 		Spectrum spectrum = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			final double xmin = (parent.getWavDisplay().hasSelection() ?
 					parent.getWavDisplay().getSelectionStart()
 					: segment.getStartValue() / 1000.0);
@@ -1413,14 +1422,14 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		if(segment == null || segment.getEndValue() - segment.getStartValue() <= 0.0f) {
 			return null;
 		}
-		final File audioFile = parent.getAudioFile();
+		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
 		final double xmin = (double)segment.getStartValue()/1000.0;
 		final double xmax = (double)segment.getEndValue()/1000.0;
 
 		PointProcess pulses = null;
-		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(parent.getAudioFile().getAbsolutePath()))) {
+		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
 				Pitch pitch = null;
 				if(pitchSettings.isAutoCorrelate()) {
