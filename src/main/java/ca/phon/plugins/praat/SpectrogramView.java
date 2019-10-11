@@ -315,7 +315,7 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, recordChangedAct);
 
 		final EditorAction segmentChangedAct = new DelegateEditorAction(this, "onSegmentChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGE_EVT, segmentChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segmentChangedAct);
 		
 		final EditorAction closeAct = new DelegateEditorAction(this, "onEditorClosing");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.EDITOR_CLOSING, closeAct);
@@ -1456,14 +1456,17 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
 		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		System.out.println("Updating spectrogram");
 		update();
 	}
 
 	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
 		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
-		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName()))
+		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
+			System.out.println("Updating spectrogram");
 			update();
+		}
 	}
 	
 	@RunOnEDT
@@ -1601,10 +1604,10 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	public void update(boolean force) {
-		if(!isVisible()) return;
-
 		if(parent.getEditor().currentRecord() == null) return;
-
+		
+		if(!force && !isVisible()) return;
+		
 		final MediaSegment segment = getSegment();
 		if(segment == null) {
 			clearDisplay();
