@@ -1456,7 +1456,6 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
 		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
-		System.out.println("Updating spectrogram");
 		update();
 	}
 
@@ -1464,7 +1463,6 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 	public void onSegmentChanged(EditorEvent ee) {
 		if(!isVisible() || !parent.getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
-			System.out.println("Updating spectrogram");
 			update();
 		}
 	}
@@ -1475,7 +1473,6 @@ public class SpectrogramView extends JPanel implements SpeechAnalysisTier {
 		cleanup();
 		
 		// TODO de-register event handlers
-		
 	}
 
 	/**
