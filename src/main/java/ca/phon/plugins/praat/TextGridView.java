@@ -379,7 +379,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		final String toggleTextGridId = "onToggleTextGrid";
 		final PhonUIAction toggleTextGridAct = new PhonUIAction(this, toggleTextGridId);
 		actionMap.put(toggleTextGridId, toggleTextGridAct);
-		final KeyStroke toggleTextGridKs = KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_MASK);
+		final KeyStroke toggleTextGridKs = KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_DOWN_MASK);
 		inputMap.put(toggleTextGridKs, toggleTextGridId);
 
 		p.setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMap);
@@ -387,7 +387,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	public void setTextGrid(TextGrid tg) {
-		if(this.tg != null) {
+		if(this.tg != null
+				&& this.tg != tg) {
 			try {
 				// delete old textgrid from memory
 				this.tg.forget();
