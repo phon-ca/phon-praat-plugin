@@ -25,6 +25,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
@@ -112,6 +113,7 @@ import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
+import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisViewColors;
 import ca.phon.media.sampled.PCMSegmentView;
 import ca.phon.media.util.MediaLocator;
 import ca.phon.opgraph.app.components.DoubleClickableTextField;
@@ -151,7 +153,7 @@ import ca.phon.util.icons.IconSize;
 /**
  * Display a TextGrid as a vertical list of tiers.
  */
-public class TextGridView extends JPanel implements SpeechAnalysisTier {
+public class TextGridView extends SpeechAnalysisTier {
 
 	/*
 	 * Editor event
@@ -200,7 +202,8 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	private final HidablePanel textGridMessage = new HidablePanel("TextGridView.message");
 
 	public TextGridView(SpeechAnalysisEditorView parent) {
-		super();
+		super(parent);
+		
 		setVisible(showTextGrid);
 		setFocusable(true);
 
@@ -251,10 +254,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			
 		});
 		
-		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.SELECTION_LENGTH_PROP, tierUpdater);
-		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_START_PROT, tierUpdater);
-		parent.getWavDisplay().addPropertyChangeListener(PCMSegmentView.WINDOW_LENGTH_PROP, tierUpdater);
-
 		loadTextGrid();
 		updateTierLabels();
 	}
@@ -462,11 +461,6 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 
 		final TextGridExportWizard wizard = new TextGridExportWizard(editor.getProject(), editor.getSession());
 		wizard.showWizard();
-	}
-
-	@Override
-	public JComponent getTierComponent() {
-		return this;
 	}
 
 	public SpeechAnalysisEditorView getParentView() {
@@ -906,7 +900,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 	}
 
 	public void onPlayInterval() {
-		parent.getWavDisplay().play();
+		parent.playPause();
 	}
 
 	@Override
@@ -1086,19 +1080,14 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 				try {
 					IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tierIdx);
 					long intervalIdx =
-							intervalTier.timeToLowIndex(parent.getWavDisplay().viewToModel(e.getX()));
+							intervalTier.timeToLowIndex(getTimeModel().timeAtX(e.getX()));
 
 					if(intervalIdx > 0 && intervalIdx <= intervalTier.numberOfIntervals()) {
 						final TextInterval interval = intervalTier.interval(intervalIdx);
 
 						if(interval != null) {
 							// set selection to interval
-							final PCMSegmentView wavDisplay = parent.getWavDisplay();
-							wavDisplay.setValuesAdusting(true);
-							wavDisplay.setSelectionStart((float)interval.getXmin());
-							wavDisplay.setSelectionLength(0.0f);
-							wavDisplay.setValuesAdusting(false);
-							wavDisplay.setSelectionLength((float)(interval.getXmax()-interval.getXmin()));
+							getParentView().setSelection((float)interval.getXmin(), (float)interval.getXmax());
 							requestFocus();
 						}
 					}
@@ -1404,8 +1393,7 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 			});
 			tierNameEditSupport.addPropertyChangeListener(DoubleClickableTextField.EDITING_PROPERTY, (e) -> {
 				if(tierNameEditSupport.isEditing()) {
-					getParentView().getWavDisplay().setSelectionStart(0f);
-					getParentView().getWavDisplay().setSelectionLength(0f);
+					getParentView().clearSelection();
 					tierNameRef.set(tierNameLabel.getText());
 					getParentView().setInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, new InputMap());
 				} else {
@@ -1506,37 +1494,37 @@ public class TextGridView extends JPanel implements SpeechAnalysisTier {
 		public void paintComponent(Graphics g) {
 			final Graphics2D g2 = (Graphics2D)g;
 
-			g2.setColor(parent.getWavDisplay().getBackground());
-			g2.fillRect(0, 0, getWidth(), getHeight());
-			g2.setColor(parent.getWavDisplay().getExcludedColor());
-			g2.fillRect(0, 0, getWidth(), getHeight());
-
-			final PCMSegmentView wavDisplay = parent.getWavDisplay();
+			if(isOpaque()) {
+				g2.setColor(getBackground());
+				g2.fill(getBounds());
+			}
+			
 			final int width = getWidth();
 			final int height = getHeight();
 
 			if(tg != null) {
 				// get text grid for visible rect
-				double windowStart = parent.getWavDisplay().getWindowStart();
-				double windowEnd = windowStart + parent.getWavDisplay().getWindowLength();
+				double windowStart = parent.getWindowStart();
+				double windowEnd = parent.getWindowEnd();
 
-				try {
-					TextGrid textGrid = tg.extractPart(windowStart, windowEnd, true);
-					tgPainter.paint(textGrid, g2, getBounds());
-				} catch (PraatException e) {
+				try (TextGrid textGrid = tg.extractPart(windowStart, windowEnd, true)) {
+					Rectangle tgRect = new Rectangle((int)parent.getWindowStartX(), 0,
+							(int)(parent.getWindowEndX() - parent.getWindowStartX()), (int)getBounds().getHeight());
+					tgPainter.paint(textGrid, g2, tgRect);
+				} catch (Exception e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 				}
 			}
 
 			// paint selection
-			if(isEnabled() && wavDisplay.hasSelection()) {
-				double x1 = wavDisplay.modelToView(wavDisplay.getSelectionStart());
-				double x2 = wavDisplay.modelToView(wavDisplay.getSelectionStart()+wavDisplay.getSelectionLength());
+			if(isEnabled() && parent.getSelectionInterval() != null) {
+				double x1 = parent.getTimeModel().xForTime(parent.getSelectionInterval().getStartMarker().getTime());
+				double x2 = parent.getTimeModel().xForTime(parent.getSelectionInterval().getEndMarker().getTime());
 
 				Rectangle2D selRect = new Rectangle2D.Double(x1, 0, x2-x1,
 								height);
 
-				g2.setColor(parent.getWavDisplay().getSelectionColor());
+				g2.setColor(UIManager.getColor(SpeechAnalysisViewColors.SELECTED_INTERVAL_BACKGROUND));
 				g2.fill(selRect);
 			}
 

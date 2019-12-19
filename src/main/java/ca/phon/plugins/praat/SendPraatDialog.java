@@ -283,17 +283,17 @@ public class SendPraatDialog extends CommonModuleFrame {
 				context.put("audioPath", audioFile.getAbsolutePath());
 			}
 
-			final float selStart = waveformView.getWavDisplay()
-					.getSelectionStart();
-			final float selEnd = waveformView.getWavDisplay()
-					.getSelectionStart() + waveformView.getWavDisplay().getSelectionLength();
-			if (selStart >= 0 && selEnd > selStart) {
-				final MediaSegment sel = (SessionFactory.newFactory()
-						.createMediaSegment());
-				sel.setStartValue((float) selStart);
-				sel.setEndValue((float) selEnd);
-				sel.setUnitType(MediaUnit.Second);
-				context.put("selection", sel);
+			if(waveformView.getSelectionInterval() != null) {
+				final float selStart = waveformView.getSelectionInterval().getStartMarker().getTime();
+				final float selEnd = waveformView.getSelectionInterval().getEndMarker().getTime();
+				if (selStart >= 0 && selEnd > selStart) {
+					final MediaSegment sel = (SessionFactory.newFactory()
+							.createMediaSegment());
+					sel.setStartValue((float) selStart);
+					sel.setEndValue((float) selEnd);
+					sel.setUnitType(MediaUnit.Second);
+					context.put("selection", sel);
+				}
 			}
 		}
 
