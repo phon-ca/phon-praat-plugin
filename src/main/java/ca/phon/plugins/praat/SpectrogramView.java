@@ -1331,13 +1331,13 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
-		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
 	}
 
 	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
-		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowing(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
