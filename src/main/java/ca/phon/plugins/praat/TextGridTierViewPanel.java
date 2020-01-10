@@ -66,14 +66,14 @@ import ca.phon.util.icons.IconSize;
 
 /**
  * Interface for modifying the visibility and
- * name/mapping for the given {@link TextGridView}
+ * name/mapping for the given {@link TextGridSpeechAnalysisTier}
  *
  */
 public class TextGridTierViewPanel extends JPanel {
 
 	private final static Logger LOGGER = Logger.getLogger(TextGridTierViewPanel.class.getName());
 
-	private TextGridView parentView;
+	private TextGridSpeechAnalysisTier parentView;
 
 	private JXTable tierViewTable;
 
@@ -87,11 +87,14 @@ public class TextGridTierViewPanel extends JPanel {
 
 	private JButton mapTierButton;
 
-	public TextGridTierViewPanel(TextGridView view) {
+	public TextGridTierViewPanel(TextGridSpeechAnalysisTier view) {
 		super();
 
 		this.parentView = view;
 
+		setOpaque(true);
+		setBackground(Color.white);
+		
 		init();
 	}
 
@@ -443,7 +446,7 @@ public class TextGridTierViewPanel extends JPanel {
 			final Function tier = parentView.getTextGrid().tier(rowIndex+1);
 
 			if(columnIndex == 0) {
-				return !parentView.getTextGridPainter().isHidden(tier.getName());
+				return parentView.isTextGridTierVisible(tier.getName());
 			} else if(columnIndex == 1) {
 				return tier.getName();
 			} else if(columnIndex == 2) {

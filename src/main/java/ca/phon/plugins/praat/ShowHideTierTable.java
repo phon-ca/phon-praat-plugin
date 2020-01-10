@@ -28,12 +28,12 @@ import ca.hedlund.jpraat.binding.fon.Function;
  */
 public class ShowHideTierTable extends JXTable {
 
-	private final TextGridView textGridView;
+	private final TextGridSpeechAnalysisTier textGridSpeechAnalysisTier;
 
-	public ShowHideTierTable(TextGridView viewer) {
+	public ShowHideTierTable(TextGridSpeechAnalysisTier viewer) {
 		super();
 		
-		this.textGridView = viewer;
+		this.textGridSpeechAnalysisTier = viewer;
 	
 		setModel(new TextGridTableModel());
 	}
@@ -42,7 +42,7 @@ public class ShowHideTierTable extends JXTable {
 
 		@Override
 		public int getRowCount() {
-			return (int)textGridView.getTextGrid().numberOfTiers();
+			return (int)textGridSpeechAnalysisTier.getTextGrid().numberOfTiers();
 		}
 
 		@Override
@@ -75,18 +75,18 @@ public class ShowHideTierTable extends JXTable {
 
 		@Override
 		public void setValueAt(Object value, int rowIndex, int columnIndex) {
-			final Function tier = textGridView.getTextGrid().tier(rowIndex+1);
+			final Function tier = textGridSpeechAnalysisTier.getTextGrid().tier(rowIndex+1);
 			
 			final Boolean show = Boolean.parseBoolean(value.toString());
-			textGridView.getTextGridPainter().setHidden(tier.getName(), !show);
+			textGridSpeechAnalysisTier.setTextGridTierVisible(tier.getName(), show);
 		}
 		
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			final Function tier = textGridView.getTextGrid().tier(rowIndex+1);
+			final Function tier = textGridSpeechAnalysisTier.getTextGrid().tier(rowIndex+1);
 			
 			if(columnIndex == 0) {
-				return !textGridView.getTextGridPainter().isHidden(tier.getName());
+				return !textGridSpeechAnalysisTier.isTextGridTierVisible(tier.getName());
 			} else {
 				return tier.getName();
 			}

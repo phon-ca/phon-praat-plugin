@@ -21,7 +21,7 @@ import ca.phon.plugin.IPluginExtensionFactory;
 import ca.phon.plugin.IPluginExtensionPoint;
 
 @ca.phon.plugin.PhonPlugin(name="Text Grid",version="0.1",minPhonVersion="1.6.2")
-public class TextGridViewExtPt implements IPluginExtensionPoint<SpeechAnalysisTier> {
+public class TextGridSATierExtPt implements IPluginExtensionPoint<SpeechAnalysisTier> {
 
 	@Override
 	public Class<?> getExtensionType() {
@@ -37,7 +37,7 @@ public class TextGridViewExtPt implements IPluginExtensionPoint<SpeechAnalysisTi
 				throw new IllegalArgumentException();
 			
 			final SpeechAnalysisEditorView parent = SpeechAnalysisEditorView.class.cast(args[0]);
-			return new TextGridView(parent);
+			return new TextGridSpeechAnalysisTier(parent);
 		};
 	}
 	

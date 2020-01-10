@@ -1836,7 +1836,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			spectrogramLoader.updateLock.unlock();
 		
 			for(var i:getTimeModel().getIntervals()) {
-				getUI().paintInterval(g2, i);
+				getUI().paintInterval(g2, i, false);
 			}
 			
 			for(var marker:getTimeModel().getMarkers()) {
