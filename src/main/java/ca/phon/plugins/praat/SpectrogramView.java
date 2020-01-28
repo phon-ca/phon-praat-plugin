@@ -89,6 +89,7 @@ import ca.phon.app.media.TimeComponent;
 import ca.phon.app.media.TimeComponentUI;
 import ca.phon.app.media.TimeUIModel;
 import ca.phon.app.media.TimeUIModel.Interval;
+import ca.phon.app.media.TimeUIModel.Marker;
 import ca.phon.app.media.WaveformDisplay;
 import ca.phon.app.session.SessionMediaModel;
 import ca.phon.app.session.editor.DelegateEditorAction;
@@ -263,6 +264,10 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		maxAnalysisMessage.addAction(forceUpdateAct);
 		maxAnalysisMessage.setDefaultAction(forceUpdateAct);
 		maxAnalysisMessage.setVisible(false);
+		
+		getParentView().getCursorMarker().addPropertyChangeListener("time", (e) -> {
+			spectrogramPanel.repaint();
+		});
 
 		getParentView().getErrorPane().add(maxAnalysisMessage);
 	}
@@ -1567,8 +1572,6 @@ public class SpectrogramView extends SpeechAnalysisTier {
 					RenderingHints.VALUE_STROKE_PURE);
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-//			Interval interval = getParentView().getCurrentRecordInterval();
-//			if(interval == null) return;
 			if(isOpaque()) {
 				g2.setColor(getBackground());
 				g2.fill(g2.getClipBounds());
@@ -1577,13 +1580,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			spectrogramLoader.updateLock.lock();
 			Spectrogram spectrogram = spectrogramRef.get();
 			if(spectrogram == null) return;
-			
-//			Record r = getParentView().getEditor().currentRecord();
-//			if(r == null) return;
-//			
-//			MediaSegment segment = r.getSegment().getGroup(0);
-//			if(segment == null) return;
-			
+						
 			final TimeUIModel timeModel = getTimeModel();
 			final int height = getHeight();
 			
@@ -1623,93 +1620,94 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			nf.setMaximumFractionDigits(2);
 			nf.setGroupingUsed(false);
 
-//			if(wavDisplay.getCursorPosition() >= 0 && contentRect.contains(wavDisplay.getCursorPosition(), contentRect.getY())) {
-//				final Line2D line = new Line2D.Double(wavDisplay.getCursorPosition(), contentRect.getY(),
-//						wavDisplay.getCursorPosition(), contentRect.getY() + contentRect.getHeight());
-//				float time = wavDisplay.viewToModel(wavDisplay.getCursorPosition());
-//
-//				g2.setStroke(dashed);
-//				g2.setColor(Color.WHITE);
-//				g2.draw(line);
-//
-//				if(showFormants && formantRef.get() != null) {
-//					final Formant formants = formantRef.get();
-//
-//					int x = 0;
-//					int y = 0;
-//					for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
-//						final double fVal = formants.getValueAtTime(i, time, kFormant_unit.HERTZ);
-//
-//						final String formantStr = String.format("F%d: %.2f", i, fVal);
-//						final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
-//
-//						y += (int)Math.ceil(bounds.getHeight());
-//						g2.setColor(Color.red);
-//						g2.drawString(formantStr, x, y);
-//					}
-//
-//					if(formantSettings.isIncludeBandwidths()) {
-//						y += 10;
-//
-//						for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
-//							final double bVal = formants.getBandwidthAtTime(i, time, kFormant_unit.HERTZ);
-//
-//							final String formantStr = String.format("B%d: %.2f", i, bVal);
-//							final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
-//
-//							y += (int)Math.ceil(bounds.getHeight());
-//							g2.setColor(Color.red);
-//							g2.drawString(formantStr, x, y);
-//						}
-//					}
-//				}
-//
-//				if(showPitch && pitchRef.get() != null && !wavDisplay.hasSelection()) {
-//					final Pitch pitch = pitchRef.get();
-//					// get pitch at current x
-//					double pitchVal = pitch.getValueAtX(time, Pitch.LEVEL_FREQUENCY,
-//							pitchSettings.getUnits().ordinal(), true);
-//					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
-//						final double hzPerPixel =
-//								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();
-//						final double yPos =
-//								getHeight() - ((pitchVal - pitchSettings.getRangeStart()) / hzPerPixel);
-//						pitchVal = pitch.convertStandardToSpecialUnit(pitchVal, Pitch.LEVEL_FREQUENCY,
-//								pitchSettings.getUnits().ordinal());
-//						final String pitchUnitStr =
-//								pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal(),
-//										Function.UNIT_TEXT_SHORT).toString();
-//
-//						final String pitchStr =
-//								nf.format(pitchVal) + " " + pitchUnitStr;
-//
-//						g2.setColor(Color.blue);
-//						g2.drawString(pitchStr, (float)contentRect.getX() + (float)contentRect.getWidth(), (float)yPos);
-//					}
-//				}
-//
-//				if(showIntensity && intensityRef.get() != null && !wavDisplay.hasSelection()) {
-//					final Intensity intensity = intensityRef.get();
-//					double intensityVal = intensity.getValueAtX(time, 1, Intensity.UNITS_DB, true);
-//
-//					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
-//						final double dbPerPixel =
-//								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();
-//						final double yPos =
-//								getHeight() - ((intensityVal - intensitySettings.getViewRangeMin()) / dbPerPixel);
-//						final String intensityUnitStr = "dB";
-//						final String intensityStr =
-//								nf.format(intensityVal) + " " + intensityUnitStr;
-//						final Rectangle2D intensityRect =
-//								g2.getFontMetrics().getStringBounds(intensityStr, g2);
-//						final double intensityX = (contentRect.getX() + contentRect.getWidth()) -
-//								intensityRect.getWidth();
-//
-//						g2.setColor(Color.yellow);
-//						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
-//					}
-//				}
-//			}
+			Marker cursorMarker = getParentView().getCursorMarker();
+			double cursorX = (cursorMarker != null ? getTimeModel().xForTime(cursorMarker.getTime()) : -1.0);
+			if(cursorMarker != null && cursorX >= 0.0 && contentRect.contains(cursorX, contentRect.getY())) {
+				final Line2D line = new Line2D.Double(cursorX, contentRect.getY(),
+						cursorX, contentRect.getY() + contentRect.getHeight());
+
+				g2.setStroke(dashed);
+				g2.setColor(Color.WHITE);
+				g2.draw(line);
+
+				if(showFormants && formantRef.get() != null) {
+					final Formant formants = formantRef.get();
+
+					int x = (int)(getVisibleRect().x);
+					int y = (int)(contentRect.getCenterY() - ((g2.getFontMetrics().getHeight() * formantSettings.getNumFormants()) / 2.0));
+					for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
+						final double fVal = formants.getValueAtTime(i, cursorMarker.getTime(), kFormant_unit.HERTZ);
+
+						final String formantStr = (!Double.isNaN(fVal) ? String.format("F%d: %.2f Hz", i, fVal) : String.format("F%d:", i));
+						final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
+
+						y += (int)Math.ceil(bounds.getHeight());
+						g2.setColor(Color.red);
+						g2.drawString(formantStr, x, y);
+					}
+
+					if(formantSettings.isIncludeBandwidths()) {
+						y += 10;
+
+						for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
+							final double bVal = formants.getBandwidthAtTime(i, cursorMarker.getTime(), kFormant_unit.HERTZ);
+
+							final String formantStr = String.format("B%d: %.2f", i, bVal);
+							final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
+
+							y += (int)Math.ceil(bounds.getHeight());
+							g2.setColor(Color.red);
+							g2.drawString(formantStr, x, y);
+						}
+					}
+				}
+
+				if(showPitch && pitchRef.get() != null && getParentView().getSelectionInterval() == null) {
+					final Pitch pitch = pitchRef.get();
+					// get pitch at current x
+					double pitchVal = pitch.getValueAtX(cursorMarker.getTime(), Pitch.LEVEL_FREQUENCY,
+							pitchSettings.getUnits().ordinal(), true);
+					if(!Double.isInfinite(pitchVal) && !Double.isNaN(pitchVal)) {
+						final double hzPerPixel =
+								(pitchSettings.getRangeEnd() - pitchSettings.getRangeStart()) / getHeight();
+						final double yPos =
+								getHeight() - ((pitchVal - pitchSettings.getRangeStart()) / hzPerPixel);
+						pitchVal = pitch.convertStandardToSpecialUnit(pitchVal, Pitch.LEVEL_FREQUENCY,
+								pitchSettings.getUnits().ordinal());
+						final String pitchUnitStr =
+								pitch.getUnitText(Pitch.LEVEL_FREQUENCY, pitchSettings.getUnits().ordinal(),
+										Function.UNIT_TEXT_SHORT).toString();
+
+						final String pitchStr =
+								nf.format(pitchVal) + " " + pitchUnitStr;
+
+						g2.setColor(Color.blue);
+						g2.drawString(pitchStr, (float)contentRect.getX() + (float)contentRect.getWidth(), (float)yPos);
+					}
+				}
+
+				if(showIntensity && intensityRef.get() != null && getParentView().getSelectionInterval() == null) {
+					final Intensity intensity = intensityRef.get();
+					double intensityVal = intensity.getValueAtX(cursorMarker.getTime(), 1, Intensity.UNITS_DB, true);
+
+					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
+						final double dbPerPixel =
+								(intensitySettings.getViewRangeMax() - intensitySettings.getViewRangeMin()) / getHeight();
+						final double yPos =
+								getHeight() - ((intensityVal - intensitySettings.getViewRangeMin()) / dbPerPixel);
+						final String intensityUnitStr = "dB";
+						final String intensityStr =
+								nf.format(intensityVal) + " " + intensityUnitStr;
+						final Rectangle2D intensityRect =
+								g2.getFontMetrics().getStringBounds(intensityStr, g2);
+						final double intensityX = (contentRect.getX() + contentRect.getWidth()) -
+								intensityRect.getWidth();
+
+						g2.setColor(Color.yellow);
+						g2.drawString(intensityStr, (float)intensityX, (float)yPos);
+					}
+				}
+			}
 
 			Interval selectionInterval = getParentView().getSelectionInterval();
 			if(selectionInterval != null) {
@@ -1998,82 +1996,4 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	};
 
-//	private final MouseInputAdapter selectionListener = new MouseInputAdapter() {
-//
-//		private boolean isDraggingSelection = false;
-//
-//		private int dragStartX = 0;
-//
-//		@Override
-//		public void mouseExited(MouseEvent e) {
-//			// clear cursor position
-//			getParentView().getWavDisplay().setCursorPosition(-1);
-//		}
-//
-//		@Override
-//		public void mouseMoved(MouseEvent e) {
-//			if(!isDraggingSelection) {
-//				getParentView().getWavDisplay().setCursorPosition(e.getX());
-//			}
-//		}
-//
-//		@Override
-//		public void mousePressed(MouseEvent e) {
-//			getParentView().getWavDisplay().requestFocus();
-//			if(e.getButton() != MouseEvent.BUTTON1) return;
-//			dragStartX = e.getX();
-//
-//			final int x = e.getX();
-//			final float time = getParentView().getWavDisplay().viewToModel(x);
-//			getParentView().getWavDisplay().setValuesAdusting(true);
-//			getParentView().getWavDisplay().setSelectionStart(time);
-//			getParentView().getWavDisplay().setValuesAdusting(false);
-//			getParentView().getWavDisplay().setSelectionLength(0.0f);
-//			getParentView().getWavDisplay().setCursorPosition(-1);
-//			isDraggingSelection = true;
-//		}
-//
-//		@Override
-//		public void mouseReleased(MouseEvent e) {
-//			isDraggingSelection = false;
-//		}
-//
-//		@Override
-//		public void mouseDragged(MouseEvent e) {
-//			if(isDraggingSelection) {
-//				final int x = e.getX();
-//				final float time = getParentView().getWavDisplay().viewToModel(x);
-//				final float dragStartTime = getParentView().getWavDisplay().viewToModel(dragStartX);
-//
-//				final float startValue =
-//						Math.min(time, dragStartTime);
-//				final float endValue =
-//						Math.max(time, dragStartTime);
-//				final float len = endValue - startValue;
-//
-//				getParentView().getWavDisplay().setValuesAdusting(true);
-//				getParentView().getWavDisplay().setSelectionStart(startValue);
-//				getParentView().getWavDisplay().setValuesAdusting(false);
-//				getParentView().getWavDisplay().setSelectionLength(len);
-//			}
-//		}
-//
-//		@Override
-//		public void mouseWheelMoved(MouseWheelEvent e) {
-//			if((e.getModifiers() & KeyEvent.CTRL_MASK) > 0) {
-//				final int numTicks = e.getWheelRotation();
-//
-//				final float zoomAmount = 0.25f * numTicks;
-//				float windowLength = getParentView().getWavDisplay().getWindowLength() + zoomAmount;
-//
-//				if(windowLength < 0.1f) {
-//					windowLength = 0.1f;
-//				} else if(windowLength > getParentView().getWavDisplay().getSampled().getLength()) {
-//					windowLength = getParentView().getWavDisplay().getSampled().getLength();
-//				}
-//				getParentView().getWavDisplay().setWindowLength(windowLength);
-//			}
-//		}
-//
-//	};
 }
