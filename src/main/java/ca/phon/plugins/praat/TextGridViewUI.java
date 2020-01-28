@@ -1,27 +1,39 @@
 package ca.phon.plugins.praat;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputAdapter;
+
+import org.jdesktop.swingx.HorizontalLayout;
 
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
@@ -36,10 +48,14 @@ import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
 import ca.phon.app.media.TimeComponentUI;
 import ca.phon.app.media.TimeUIModel.Interval;
+import ca.phon.opgraph.app.components.DoubleClickableTextField;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.TierDescription;
+import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.util.Tuple;
+import ca.phon.util.icons.IconManager;
+import ca.phon.util.icons.IconSize;
 
 public class TextGridViewUI extends TimeComponentUI {
 		
@@ -49,12 +65,11 @@ public class TextGridViewUI extends TimeComponentUI {
 	
 	private JLabel label;
 	
-	// tuple is tier num and interval index
+	private RTree<Long, com.github.davidmoten.rtree.geometry.Rectangle> tierLabelTree;
+	
 	private RTree<Tuple<Long, Long>, com.github.davidmoten.rtree.geometry.Rectangle> intervalTree;
 	
 	private RTree<String, com.github.davidmoten.rtree.geometry.Rectangle> messageTree;
-	
-	private RTree<Action, com.github.davidmoten.rtree.geometry.Rectangle> actionsTree;
 	
 	public TextGridViewUI() {
 		super();
@@ -69,6 +84,7 @@ public class TextGridViewUI extends TimeComponentUI {
 		tgView = (TextGridView)super.getTimeComponent();
 		
 		tgView.addMouseListener(mouseListener);
+		tgView.addMouseMotionListener(mouseListener);
 	}
 
 	@Override
@@ -76,6 +92,7 @@ public class TextGridViewUI extends TimeComponentUI {
 		super.uninstallUI(c);
 		
 		tgView.removeMouseListener(mouseListener);
+		tgView.removeMouseMotionListener(mouseListener);
 	}
 	
 	private JLabel getLabel() {
@@ -95,7 +112,7 @@ public class TextGridViewUI extends TimeComponentUI {
 		int txtHeight = lbl.getPreferredSize().height;
 		lbl.setText(oldTxt);
 		
-		return labelInsets.top + labelInsets.bottom + txtHeight;
+		return labelInsets.top + labelInsets.bottom + txtHeight + getTierLabelHeight();
 	}
 	
 	public int getTierLabelHeight() {
@@ -112,7 +129,7 @@ public class TextGridViewUI extends TimeComponentUI {
 	public Dimension getPreferredSize(JComponent c) {
 		int numTiers = tgView.getVisibleTierCount();
 		int prefWidth = getTimeComponent().getTimeModel().getPreferredWidth();
-		int prefHeight = numTiers * getTierLabelHeight() + numTiers * getTierHeight();
+		int prefHeight = numTiers * getTierHeight();
 		
 		return new Dimension(prefWidth, prefHeight);
 	}
@@ -121,6 +138,7 @@ public class TextGridViewUI extends TimeComponentUI {
 	public void paint(Graphics g, JComponent c) {
 		intervalTree = RTree.create();
 		messageTree = RTree.create();
+		tierLabelTree = RTree.create();
 		
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -141,8 +159,8 @@ public class TextGridViewUI extends TimeComponentUI {
 				final Function tier = tg.tier(tIdx);
 				if(!tgView.isTierVisible(tier.getName())) continue;
 				
-				int tierLabelY = visibleTierIdx * tierHeight + visibleTierIdx * tierLabelHeight;
-				int tierY = tierLabelY + tierLabelHeight;
+				int tierLabelY = visibleTierIdx * tierHeight;
+				int tierY = tierLabelY;
 				// tier rect
 				final Rectangle2D tierRect = new Rectangle2D.Double(
 						0, tierY, tgView.getWidth(), tierHeight);
@@ -150,13 +168,21 @@ public class TextGridViewUI extends TimeComponentUI {
 				
 				try {
 					final IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tIdx);
-					paintTierLabel(intervalTier, g2d, tierLabelY);
 					paintIntervalTier(tIdx, intervalTier, g2d, tierRect);
+					if(tgView.isShowLabels()) {
+						var lblRect = paintTierLabel(intervalTier, g2d, tierLabelY);
+						tierLabelTree = 
+								tierLabelTree.add(tIdx, Geometries.rectangle(lblRect.getX(), lblRect.getY(), lblRect.getMaxX(), lblRect.getMaxY()));
+					}
 				} catch (PraatException pe) {
 					try {
 						final TextTier pointTier = tg.checkSpecifiedTierIsPointTier(tIdx);
-						paintTierLabel(pointTier, g2d, tierLabelY);
 						paintPointTier(pointTier, g2d, tierRect);
+						if(tgView.isShowLabels()) {
+							var lblRect = paintTierLabel(pointTier, g2d, tierLabelY);
+							tierLabelTree = 
+									tierLabelTree.add(tIdx, Geometries.rectangle(lblRect.getX(), lblRect.getY(), lblRect.getMaxX(), lblRect.getMaxY()));
+						}
 					} catch (PraatException pe1) {
 						LogUtil.severe(pe1.getLocalizedMessage(), pe1);
 					}
@@ -173,26 +199,26 @@ public class TextGridViewUI extends TimeComponentUI {
 		}
 	}
 
-	public void paintTierLabel(Function tier, Graphics2D g2d, int y) {
+	public Rectangle2D paintTierLabel(Function tier, Graphics2D g2d, int y) {
 		final String name = (tier.getName() != null ? tier.getName().toString() : "");
 		int x = tgView.getVisibleRect().x;
-		if(name.length() > 0) {
-			// get bounding rectangle of tier name
-			Rectangle2D tierNameBounds = g2d.getFontMetrics().getStringBounds(name, g2d);
-			
-			// create a rounded rectangle
-			Rectangle2D labelRect = new Rectangle2D.Double(x, y, tierNameBounds.getWidth() + 20, 
-					tierNameBounds.getHeight());
-			final Color tierBgColor = new Color(255, 255, 0, 120);
-			g2d.setColor(tierBgColor);
-			g2d.fill(labelRect);
-			g2d.setColor(Color.darkGray);
-			g2d.draw(labelRect);
-			
-			g2d.setColor(Color.black);
-			g2d.drawString(name, x+10,
-					(float)(y + (float)tierNameBounds.getHeight() - g2d.getFontMetrics().getDescent()) );
-		}
+		
+		// get bounding rectangle of tier name
+		Rectangle2D tierNameBounds = g2d.getFontMetrics().getStringBounds(name, g2d);
+		
+		// create a rounded rectangle
+		Rectangle2D labelRect = new Rectangle2D.Double(x, y, tierNameBounds.getWidth() + 20, 
+				tierNameBounds.getHeight());
+		final Color tierBgColor = tgView.getLabelBackground(name);
+		g2d.setColor(tierBgColor);
+		g2d.fill(labelRect);
+		g2d.setColor(Color.darkGray);
+		g2d.draw(labelRect);
+		
+		g2d.setColor(Color.black);
+		g2d.drawString(name, x+10,
+				(float)(y + (float)tierNameBounds.getHeight() - g2d.getFontMetrics().getDescent()) );
+		return labelRect;
 	}
 	
 	public void paintIntervalTier(long tierIndex, IntervalTier intervalTier, Graphics2D g2d, Rectangle2D bounds) {
@@ -303,32 +329,59 @@ public class TextGridViewUI extends TimeComponentUI {
 		return hitTest(intervalTree, p);
 	}
 	
+	private Optional<String> messageHitTest(com.github.davidmoten.rtree.geometry.Point p) {
+		return hitTest(messageTree, p);
+	}
+	
+	private Optional<Long> tierLabelHitTest(com.github.davidmoten.rtree.geometry.Point p) {
+		return hitTest(tierLabelTree, p);
+	}
+	
 	private final MouseInputAdapter mouseListener = new MouseInputAdapter() {
 
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			// TODO Auto-generated method stub
-			super.mouseClicked(e);
+			
 		}
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			if(e.getButton() == MouseEvent.BUTTON1
-				 && tgView.getUI().getCurrentlyDraggedMarker() == null) {
-				Optional<Tuple<Long, Long>> optionalInterval = intervalHitTest(Geometries.point(e.getX(), e.getY()));
-				if(optionalInterval.isPresent()) {
-					tgView.fireIntervalSelected(optionalInterval.get());
+			if(tgView.getUI().getCurrentlyDraggedMarker() == null) {
+				Optional<Long> tierIndex = tierLabelHitTest(Geometries.point(e.getX(), e.getY()));
+				if(tierIndex.isPresent()) {
+					tgView.fireTierLabelClicked(tierIndex.get(), e);
+				} else {
+					Optional<Tuple<Long, Long>> optionalInterval = intervalHitTest(Geometries.point(e.getX(), e.getY()));
+					if(e.getButton() == MouseEvent.BUTTON1 && optionalInterval.isPresent()) {
+						tgView.fireIntervalSelected(optionalInterval.get());
+					}
 				}
 			}
 		}
 
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			// TODO Auto-generated method stub
-			super.mouseReleased(e);
 		}
-	
-		
+
+		@Override
+		public void mouseMoved(MouseEvent e) {
+			if(tgView.getUI().getCurrentlyDraggedMarker() == null) {
+				Optional<Long> tierIndex = tierLabelHitTest(Geometries.point(e.getX(), e.getY()));
+				if(tierIndex.isPresent()) {
+					tgView.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				} else if(tgView.getCursor() == Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)) {
+					tgView.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				}
+			
+				Optional<String> toolTip = messageHitTest(Geometries.point(e.getX(), e.getY()));
+				if(toolTip.isPresent()) {
+					tgView.setToolTipText(toolTip.get());
+				} else {
+					tgView.setToolTipText(null);
+				}
+			}
+		}
 		
 	};
+	
 }

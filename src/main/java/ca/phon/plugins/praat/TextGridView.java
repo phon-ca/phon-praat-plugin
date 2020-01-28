@@ -1,6 +1,7 @@
 package ca.phon.plugins.praat;
 
 import java.awt.Color;
+import java.awt.event.MouseEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,6 +21,10 @@ public class TextGridView extends TimeComponent {
 	private TextGrid textGrid;
 
 	private boolean showLabels = true;
+	
+	private Map<String, Color> tierColorMap = new LinkedHashMap<String, Color>();
+	
+	public final static Color DEFAULT_TIER_LABEL_COLOR = new Color(255, 255, 0);
 	
 	private Map<String, Boolean> tierVisibilityMap = new LinkedHashMap<String, Boolean>();
 	
@@ -68,6 +73,16 @@ public class TextGridView extends TimeComponent {
 	@Override
 	public TextGridViewUI getUI() {
 		return (TextGridViewUI)super.getUI();
+	}
+	
+	public Color getLabelBackground(String tierName) {
+		return tierColorMap.getOrDefault(tierName, DEFAULT_TIER_LABEL_COLOR);
+	}
+	
+	public void setLabelBackground(String tierName, Color color) {
+		Color oldColor = getLabelBackground(tierName);
+		tierColorMap.put(tierName, color);
+		super.firePropertyChange(tierName + ".labelBackground", oldColor, color);
 	}
 	
 	public boolean isShowLabels() {
@@ -136,6 +151,12 @@ public class TextGridView extends TimeComponent {
 	public void fireIntervalSelected(Tuple<Long, Long> intervalIdx) {
 		for(TextGridViewListener listener:listenerList.getListeners(TextGridViewListener.class)) {
 			listener.intervalSelected(getTextGrid(), intervalIdx);
+		}
+	}
+	
+	public void fireTierLabelClicked(Long tierIdx, MouseEvent me) {
+		for(TextGridViewListener listener:listenerList.getListeners(TextGridViewListener.class)) {
+			listener.tierLabelClicked(getTextGrid(), tierIdx, me);
 		}
 	}
 	

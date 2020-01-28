@@ -220,17 +220,30 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		add(buttonPane, BorderLayout.NORTH);
 
 		textGridView = new TextGridView(getTimeModel());
-		textGridView.addTextGridViewListener( (tg, tuple) -> {
-			// update selection
-			try {
-				IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tuple.getObj1());
-				TextInterval textInterval = intervalTier.interval(tuple.getObj2());
-				
-				getParentView().setSelection((float)textInterval.getXmin(), (float)textInterval.getXmax());
-			} catch (PraatException e) {
-				LogUtil.severe(e);
+		textGridView.setFont(FontPreferences.getUIIpaFont());
+		textGridView.addTextGridViewListener( new TextGridViewListener() {
+			
+			@Override
+			public void tierLabelClicked(TextGrid textGrid, Long tierIdx, MouseEvent me) {
+				String tierName = textGrid.tier(tierIdx).getName();
+				showTierMenu(tierName, me);
 			}
-		});
+			
+			@Override
+			public void intervalSelected(TextGrid textGrid, Tuple<Long, Long> intervalIndex) {
+				try {
+					IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(intervalIndex.getObj1());
+					TextInterval textInterval = intervalTier.interval(intervalIndex.getObj2());
+					
+					getParentView().setSelection((float)textInterval.getXmin(), (float)textInterval.getXmax());
+				} catch (PraatException e) {
+					LogUtil.severe(e);
+				}
+			}
+			
+		} );
+
+		textGridView.addMouseListener(getParentView().getContextMenuAdapter());
 		
 		add(textGridView, BorderLayout.CENTER);
 		
@@ -378,6 +391,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		textGridView.setTextGrid(this.tg);
 		
 		updateHiddenTiers();
+		updateTierLabelBackgrounds();
 	}
 
 	public TextGrid getTextGrid() {
@@ -558,7 +572,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		} catch (IOException e) {
 			server.stop();
 			unlock();
-			serverMap.remove(tgName);
+			serverMap.remove(tgFile);
 			Toolkit.getDefaultToolkit().beep();
 			ToastFactory.makeToast(e.getLocalizedMessage()).start(parent.getToolbar());
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -608,6 +622,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 	private void update() {
 		revalidate();
+		updateTierLabelBackgrounds();
 		textGridView.repaint();
 	}
 
@@ -761,6 +776,35 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		dialog.setLocationRelativeTo(parent);
 		dialog.setVisible(true);
 	}
+	
+	public void showTierMenu(String tierName, MouseEvent me) {
+		final JPopupMenu popupMenu = new JPopupMenu();
+		
+		// add 'Map to tier' options
+//		final PhonUIAction mapAct = new PhonUIAction(TextGridView.this, "onMapTier", this);
+//		mapAct.putValue(PhonUIAction.NAME, "Map to Phon tier...");
+//		mapAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Map interval values to groups/words in a Phon tier.");
+//		popupMenu.add(new JMenuItem(mapAct));
+//		popupMenu.addSeparator();
+
+//		final PhonUIAction renameAct = new PhonUIAction(tierNameEditSupport, "setEditing", Boolean.TRUE);
+//		renameAct.putValue(PhonUIAction.NAME, "Rename tier");
+//		renameAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Rename tier");
+//		popupMenu.add(new JMenuItem(renameAct));
+		
+		final PhonUIAction hideTierAct = new PhonUIAction(this, "onToggleTier", tierName);
+		hideTierAct.putValue(PhonUIAction.NAME, "Hide tier");
+		hideTierAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Hide tier, to view again use the 'TextGrid Tier Management' dialog found in the TextGrid menu.");
+		popupMenu.add(new JMenuItem(hideTierAct));
+		
+		popupMenu.addSeparator();
+		
+		final PhonUIAction tierManagementAct = new PhonUIAction(this, "onTierManagement");
+		tierManagementAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
+		popupMenu.add(new JMenuItem(tierManagementAct));
+		
+		popupMenu.show(me.getComponent(), me.getX(), me.getY());
+	}
 
 	@RunOnEDT
 	public void onToggleTier(String tierName) {
@@ -803,6 +847,47 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		final String hiddenTiers = buffer.toString();
 
 		PrefHelper.getUserPreferences().put(propName, hiddenTiers);
+	}
+	
+	private final String mappedTierRegex = "([- _\\w]+)\\s?:\\s?((Tier|Group|Word|Syllable|Phone))";
+	private boolean isMappedTier(String tierName) {
+		boolean retVal = false;
+		
+		final Pattern pattern = Pattern.compile(mappedTierRegex);
+		final Matcher matcher = pattern.matcher(tierName);
+		
+		if(matcher.matches()) {
+			final String name = matcher.group(1);
+			final String domain = matcher.group(2);
+
+			boolean isUserTier = false;
+			for(TierDescription td:getParentView().getEditor().getSession().getUserTiers()) {
+				if(td.getName().equals(name)) {
+					isUserTier = true;
+					break;
+				}
+			}
+			retVal = SystemTierType.isSystemTier(name) || isUserTier;
+			
+			if(domain.equals("Syllable") || domain.equals("Phone")) {
+				final SystemTierType systemTier = SystemTierType.tierFromString(name);
+				retVal = (systemTier != null &&  (systemTier == SystemTierType.IPATarget || systemTier == SystemTierType.IPAActual) );
+			}
+		}
+		
+		return retVal;
+	}
+	
+	public void updateTierLabelBackgrounds() {
+		TextGrid tg = getTextGrid();
+		for(long i = 1; i <= tg.numberOfTiers(); i++) {
+			Function tier = tg.tier(i);
+			if(isMappedTier(tier.getName())) {
+				textGridView.setLabelBackground(tier.getName(), new Color(50, 255, 120, 120));
+			} else {
+				textGridView.setLabelBackground(tier.getName(), TextGridView.DEFAULT_TIER_LABEL_COLOR);
+			}
+		}
 	}
 	
 	public boolean isTextGridTierVisible(String tierName) {
@@ -975,62 +1060,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		addMenuItems(new MenuBuilder(praatMenu), isContextMenu);
 	}
 
-	private class TextGridMouseListener extends MouseInputAdapter {
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			if(!textGridView.isEnabled()) return;
-			if(tg == null) return;
-
-			if(e.getButton() != MouseEvent.BUTTON1
-					&& e.getButton() != MouseEvent.BUTTON3) return;
-
-			int tierNum = tierForPoint(e.getPoint());
-			String tierName = (tierNum >= 0 && tierNum < getVisibleTiers().size() ?
-					getVisibleTiers().get(tierNum) : null);
-			long tierIdx = TextGridUtils.tierNumberFromName(tg, tierName);
-
-			if(tierIdx > 0 && tierIdx <= tg.numberOfTiers()) {
-				try {
-					IntervalTier intervalTier = tg.checkSpecifiedTierIsIntervalTier(tierIdx);
-					long intervalIdx =
-							intervalTier.timeToLowIndex(getTimeModel().timeAtX(e.getX()));
-
-					if(intervalIdx > 0 && intervalIdx <= intervalTier.numberOfIntervals()) {
-						final TextInterval interval = intervalTier.interval(intervalIdx);
-
-						if(interval != null) {
-							// set selection to interval
-							getParentView().setSelection((float)interval.getXmin(), (float)interval.getXmax());
-							requestFocus();
-						}
-					}
-				} catch (PraatException pe) {
-					// do nothing
-				}
-			}
-			// dispatch event to parent listeners
-			TextGridSpeechAnalysisTier.this.dispatchEvent(e);
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent me) {
-			// dispatch event to parent container
-			TextGridSpeechAnalysisTier.this.dispatchEvent(me);
-		}
-
-		private int tierForPoint(Point p) {
-			int retVal = -1;
-
-			if(tg != null) {
-				retVal = (int)(p.getY() / 50);
-			}
-
-			return retVal;
-		}
-
-	}
-
 	public List<String> getVisibleTiers() {
 		final List<String> visibleTiers = new ArrayList<>();
 		if(tg != null) {
@@ -1189,7 +1218,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 				try {
 					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
-					final SessionEditor model = parent.getEditor();
 					TextGridManager.saveTextGrid(tg, textGridFile);
 
 					if(currentTextGridFile.equals(textGridFile)) {

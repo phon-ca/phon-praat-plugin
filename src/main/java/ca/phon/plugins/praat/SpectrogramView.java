@@ -247,8 +247,9 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		SpeechAnalysisTierDivider divider = new SpeechAnalysisTierDivider(spectrogramPanel);
 		add(divider, BorderLayout.SOUTH);
 		
-		spectrogramPanel.addMouseListener(getParentView().getMouseAdapter());
-		spectrogramPanel.addMouseMotionListener(getParentView().getMouseAdapter());
+		spectrogramPanel.addMouseListener(getParentView().getContextMenuAdapter());
+		spectrogramPanel.addMouseListener(getParentView().getCursorAndSelectionAdapter());
+		spectrogramPanel.addMouseMotionListener(getParentView().getCursorAndSelectionAdapter());
 		spectrogramPanel.addMouseListener(pointListener);
 
 		spectrogramPanel.setDefaultCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
