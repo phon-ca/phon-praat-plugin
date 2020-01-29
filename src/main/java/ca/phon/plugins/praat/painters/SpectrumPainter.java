@@ -22,7 +22,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ca.hedlund.jpraat.binding.fon.Spectrum;
-
 import ca.phon.ui.painter.BufferedPainter;
 
 public class SpectrumPainter extends BufferedPainter<Spectrum> implements PraatPainter<Spectrum> {

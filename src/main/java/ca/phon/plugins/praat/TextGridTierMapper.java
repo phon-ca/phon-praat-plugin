@@ -17,7 +17,6 @@ package ca.phon.plugins.praat;
 
 import java.util.List;
 
-import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;

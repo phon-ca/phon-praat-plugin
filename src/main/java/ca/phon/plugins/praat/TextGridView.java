@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.swing.event.EventListenerList;
-import javax.swing.event.EventListenerList;
 import javax.swing.plaf.ComponentUI;
 
 import ca.hedlund.jpraat.binding.fon.TextGrid;

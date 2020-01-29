@@ -15,18 +15,27 @@
  */
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JPanel;
 
-import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.fon.LongSound;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.phon.opgraph.OpNodeInfo;
 import ca.phon.opgraph.app.GraphDocument;
-import ca.phon.query.db.*;
+import ca.phon.query.db.Result;
+import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
-import ca.phon.session.*;
+import ca.phon.session.MediaSegment;
+import ca.phon.session.Participant;
+import ca.phon.session.Record;
+import ca.phon.session.Session;
+import ca.phon.session.SessionPath;
 
 @OpNodeInfo(
 		name="Duration",

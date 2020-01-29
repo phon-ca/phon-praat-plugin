@@ -25,7 +25,6 @@ import java.awt.event.ItemEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,13 +32,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -47,7 +44,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
@@ -55,13 +51,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.VerticalLayout;
 
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
-
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.session.TierNameTextCompleterModel;
 import ca.phon.app.session.editor.EditorEventType;
 import ca.phon.app.session.editor.view.tier_management.TierEditorDialog;
 import ca.phon.formatter.Formatter;
@@ -75,13 +67,9 @@ import ca.phon.session.TierString;
 import ca.phon.session.TierViewItem;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.ipamap.io.Grid;
-import ca.phon.ui.text.DefaultTextCompleterModel;
-import ca.phon.ui.text.TextCompleter;
 import ca.phon.ui.toast.Toast;
 import ca.phon.ui.toast.ToastFactory;
 import ca.phon.ui.wizard.WizardStep;
-import ca.phon.util.PrefHelper;
 
 public class TextGridImportSettingsStep extends WizardStep {
 

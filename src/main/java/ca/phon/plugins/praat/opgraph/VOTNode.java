@@ -15,24 +15,41 @@
  */
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.Optional;
+import java.util.Properties;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
-import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.fon.Function;
+import ca.hedlund.jpraat.binding.fon.LongSound;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.hedlund.jpraat.binding.fon.TextInterval;
+import ca.hedlund.jpraat.binding.fon.TextPoint;
+import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
 import ca.phon.opgraph.OpNodeInfo;
 import ca.phon.opgraph.app.GraphDocument;
 import ca.phon.opgraph.app.extensions.NodeSettings;
-import ca.phon.query.db.*;
+import ca.phon.query.db.Result;
+import ca.phon.query.db.ResultValue;
 import ca.phon.query.report.datasource.DefaultTableDataSource;
-import ca.phon.session.*;
+import ca.phon.session.MediaSegment;
+import ca.phon.session.Participant;
+import ca.phon.session.Record;
+import ca.phon.session.Session;
+import ca.phon.session.SessionPath;
 import ca.phon.ui.text.PromptedTextField;
 
 /**

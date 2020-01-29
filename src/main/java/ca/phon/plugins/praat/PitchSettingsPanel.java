@@ -29,12 +29,12 @@ import javax.swing.JRadioButton;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.hedlund.jpraat.binding.fon.kPitch_unit;
-import ca.phon.ui.action.PhonUIAction;
-
 import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
+
+import ca.hedlund.jpraat.binding.fon.kPitch_unit;
+import ca.phon.ui.action.PhonUIAction;
 
 public class PitchSettingsPanel extends JPanel {
 

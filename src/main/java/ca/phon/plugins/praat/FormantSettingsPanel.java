@@ -26,11 +26,11 @@ import javax.swing.JPanel;
 
 import org.jdesktop.swingx.VerticalLayout;
 
-import ca.phon.ui.action.PhonUIAction;
-
 import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
+
+import ca.phon.ui.action.PhonUIAction;
 
 public class FormantSettingsPanel extends JPanel {
 

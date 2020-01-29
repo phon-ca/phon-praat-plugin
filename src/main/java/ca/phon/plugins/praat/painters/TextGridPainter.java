@@ -32,7 +32,6 @@ import ca.hedlund.jpraat.binding.fon.TextInterval;
 import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.prefs.PhonProperties;
 import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.painter.BufferedPainter;
 

@@ -23,16 +23,15 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
-
-import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
-import ca.phon.ui.action.PhonUIAction;
-
 import javax.swing.JPanel;
 
 import org.jdesktop.swingx.VerticalLayout;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
+
+import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
+import ca.phon.ui.action.PhonUIAction;
 
 public class SpectralMomentsSettingsPanel extends JPanel {
 	

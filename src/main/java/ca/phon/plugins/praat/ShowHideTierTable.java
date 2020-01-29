@@ -15,9 +15,7 @@
  */
 package ca.phon.plugins.praat;
 
-import javax.swing.JPanel;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 
 import org.jdesktop.swingx.JXTable;
 

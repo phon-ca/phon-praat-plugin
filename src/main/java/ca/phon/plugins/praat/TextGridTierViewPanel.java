@@ -17,13 +17,10 @@ package ca.phon.plugins.praat;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,8 +38,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -52,12 +47,8 @@ import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.session.Session;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.TierViewItem;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.action.PhonUIAction;
-import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.ui.nativedialogs.MessageDialogProperties;
 import ca.phon.ui.nativedialogs.NativeDialogs;
@@ -280,6 +271,8 @@ public class TextGridTierViewPanel extends JPanel {
 				final TextGrid newTextGrid = reoderTiers(allTiers);
 				parentView.setTextGrid(newTextGrid);
 				parentView.saveTextGrid();
+				parentView.revalidate();
+				parentView.repaint();
 
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsInserted(newLocation, newLocation);
@@ -309,6 +302,8 @@ public class TextGridTierViewPanel extends JPanel {
 				final TextGrid newTextGrid = reoderTiers(allTiers);
 				parentView.setTextGrid(newTextGrid);
 				parentView.saveTextGrid();
+				parentView.revalidate();
+				parentView.repaint();
 
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 				((TextGridTableModel)tierViewTable.getModel()).fireTableRowsInserted(newLocation, newLocation);
@@ -349,8 +344,8 @@ public class TextGridTierViewPanel extends JPanel {
 					((TextGridTableModel)tierViewTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
 
 					parentView.saveTextGrid();
-
-					parentView.setTextGrid(parentView.getTextGrid());
+					parentView.revalidate();
+					parentView.repaint();
 				} catch (PraatException e) {
 					Toolkit.getDefaultToolkit().beep();
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
@@ -434,8 +429,8 @@ public class TextGridTierViewPanel extends JPanel {
 					if(TextGridUtils.tierNumberFromName(parentView.getTextGrid(), newName) <= 0) {
 						tier.setName(newName);
 						parentView.saveTextGrid();
-
-						parentView.setTextGrid(parentView.getTextGrid());
+						parentView.revalidate();
+						parentView.repaint();
 					}
 				}
 			}
