@@ -847,6 +847,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	
 	public void updateTierLabelBackgrounds() {
 		TextGrid tg = getTextGrid();
+		if(tg == null) return;
+		
 		for(long i = 1; i <= tg.numberOfTiers(); i++) {
 			Function tier = tg.tier(i);
 			if(isMappedTier(tier.getName())) {
