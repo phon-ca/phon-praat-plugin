@@ -271,7 +271,10 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, recordChangedAct);
+		
+		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
+		getParentView().getEditor().getEventManager().registerActionForEvent(SessionMediaModel.SESSION_AUDIO_AVAILABLE, mediaChangedAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
 
 		final EditorAction segmentChangedAct = new DelegateEditorAction(this, "onSegmentChanged");
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segmentChangedAct);
@@ -1325,6 +1328,12 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	@RunInBackground(newThread=true)
+	public void onMediaChanged(EditorEvent ee) {
+		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		update(true);
+	}
+	
+	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
 		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
@@ -1375,7 +1384,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				updateLock.unlock();
 				return;
 			}
-
+			
 			updateLock.lock();
 
 			try {
@@ -1500,7 +1509,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			return;
 		}
 
-		if(sameSegment) {
+		if(sameSegment && !force) {
 			// don't re-load data, return
 			return;
 		}
@@ -1568,7 +1577,10 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			
 			spectrogramLoader.updateLock.lock();
 			Spectrogram spectrogram = spectrogramRef.get();
-			if(spectrogram == null) return;
+			if(spectrogram == null) {
+				spectrogramLoader.updateLock.unlock();
+				return;
+			}
 						
 			final TimeUIModel timeModel = getTimeModel();
 			final int height = getHeight();
