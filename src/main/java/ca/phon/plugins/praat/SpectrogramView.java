@@ -366,6 +366,11 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		p.setActionMap(actionMap);
 	}
 
+	@Override
+	public boolean shouldShow() {
+		return PrefHelper.getUserPreferences().getBoolean(SHOW_SPECTROGRAM_PROP, super.shouldShow());
+	}
+	
 	public void onToggleSpectrogram() {
 		showSpectrogram = !showSpectrogram;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_SPECTROGRAM_PROP, showSpectrogram);
@@ -1329,19 +1334,19 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	@RunInBackground(newThread=true)
 	public void onMediaChanged(EditorEvent ee) {
-		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update(true);
 	}
 	
 	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
-		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
 	}
 
 	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
-		if(!isVisible() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
@@ -1483,7 +1488,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	public void update(boolean force) {
 		if(getParentView().getEditor().currentRecord() == null) return;
 		
-		if(!force && !isVisible()) return;
+		if(!force && !shouldShow()) return;
 		
 		final MediaSegment segment = getSegment();
 		if(segment == null) {
@@ -1636,7 +1641,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 					int x = (int)(getVisibleRect().x);
 					int y = (int)(contentRect.getCenterY() - ((g2.getFontMetrics().getHeight() * formantSettings.getNumFormants()) / 2.0));
-					for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
+					for(int i = formantSettings.getNumFormants(); i > 0; i--) {
 						final double fVal = formants.getValueAtTime(i, cursorMarker.getTime(), kFormant_unit.HERTZ);
 
 						final String formantStr = (!Double.isNaN(fVal) ? String.format("F%d: %.2f Hz", i, fVal) : String.format("F%d:", i));
@@ -1650,7 +1655,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 					if(formantSettings.isIncludeBandwidths()) {
 						y += 10;
 
-						for(int i = 1; i <= formantSettings.getNumFormants(); i++) {
+						for(int i = formantSettings.getNumFormants(); i > 0; i--) {
 							final double bVal = formants.getBandwidthAtTime(i, cursorMarker.getTime(), kFormant_unit.HERTZ);
 
 							final String formantStr = String.format("B%d: %.2f", i, bVal);
@@ -1850,7 +1855,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	@Override
 	public void onRefresh() {
-		update();
+		update(true);
 	}
 
 	@Override
@@ -1864,7 +1869,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleSpectrogram");
 		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show Spectrogram");
-		toggleAct.putValue(PhonUIAction.SELECTED_KEY, SpectrogramView.this.isVisible());
+		toggleAct.putValue(PhonUIAction.SELECTED_KEY, shouldShow());
 		if(isContextMenu)
 			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.SHIFT_DOWN_MASK));
 		builder.addItem(".", new JCheckBoxMenuItem(toggleAct));

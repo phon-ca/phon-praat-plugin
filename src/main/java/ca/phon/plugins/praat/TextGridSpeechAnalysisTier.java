@@ -708,6 +708,11 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		}
 	}
 
+	@Override
+	public boolean shouldShow() {
+		return PrefHelper.getUserPreferences().getBoolean(SHOW_TEXTGRID_PROP, super.shouldShow());
+	}
+	
 	public void onToggleTextGrid() {
 		showTextGrid = !showTextGrid;
 		PrefHelper.getUserPreferences().putBoolean(SHOW_TEXTGRID_PROP, showTextGrid);
