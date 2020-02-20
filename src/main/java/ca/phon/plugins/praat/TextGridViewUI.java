@@ -31,7 +31,7 @@ import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
-import ca.phon.app.media.TimeComponentUI;
+import ca.phon.media.TimeComponentUI;
 import ca.phon.util.Tuple;
 
 public class TextGridViewUI extends TimeComponentUI {

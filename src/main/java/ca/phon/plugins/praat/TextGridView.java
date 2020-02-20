@@ -9,8 +9,8 @@ import javax.swing.event.EventListenerList;
 import javax.swing.plaf.ComponentUI;
 
 import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.phon.app.media.TimeComponent;
-import ca.phon.app.media.TimeUIModel;
+import ca.phon.media.TimeComponent;
+import ca.phon.media.TimeUIModel;
 import ca.phon.util.Tuple;
 
 public class TextGridView extends TimeComponent {
