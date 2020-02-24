@@ -207,6 +207,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	private transient volatile double lastStartTime = 0.0;
 	private transient volatile double lastEndTime = 0.0;
+	
+	private boolean forceLoadSpectrogram = false;
 
 	public SpectrogramView(SpeechAnalysisEditorView p) {
 		super(p);
@@ -244,7 +246,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		spectrogramPanel.setDefaultCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 
-		final PhonUIAction forceUpdateAct = new PhonUIAction(this, "update", true);
+		final PhonUIAction forceUpdateAct = new PhonUIAction(this, "onForceLoadSpectrogram");
 		forceUpdateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Force load spectrogram");
 
 		maxAnalysisMessage.setTopLabelText("<html><b>Spectrogram Not Loaded</b></htmlL>");
@@ -369,6 +371,11 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	@Override
 	public boolean shouldShow() {
 		return PrefHelper.getUserPreferences().getBoolean(SHOW_SPECTROGRAM_PROP, super.shouldShow());
+	}
+	
+	public void onForceLoadSpectrogram() {
+		forceLoadSpectrogram = true;
+		update(true);
 	}
 	
 	public void onToggleSpectrogram() {
@@ -1331,7 +1338,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		}
 		return pulses;
 	}
-
+	
 	@RunInBackground(newThread=true)
 	public void onMediaChanged(EditorEvent ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
@@ -1505,7 +1512,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		if(len <= 0.0) return;
 
-		if(len > maxAnalysisLength && !force && !sameSegment) {
+		if(len > maxAnalysisLength && !forceLoadSpectrogram && !sameSegment) {
 			lastStartTime = -1;
 			lastEndTime = -1;
 
@@ -1518,6 +1525,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			// don't re-load data, return
 			return;
 		}
+		forceLoadSpectrogram = false;
 
 		SwingUtilities.invokeLater( () -> maxAnalysisMessage.setVisible(false) );
 
