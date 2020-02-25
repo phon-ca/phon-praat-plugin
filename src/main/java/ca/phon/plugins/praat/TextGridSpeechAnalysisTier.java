@@ -80,6 +80,7 @@ import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.ErrorBanner;
 import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
@@ -162,7 +163,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	public final static String SELECTED_TEXTGRID_PROP_SUXFFIX =
 			".selectedTextGrid";
 
-	private final HidablePanel textGridMessage = new HidablePanel("TextGridSpeechAnalysisTier.message");
+	private final ErrorBanner textGridMessage = new ErrorBanner();
 
 	public TextGridSpeechAnalysisTier(SpeechAnalysisEditorView parent) {
 		super(parent);
@@ -258,6 +259,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			}
 		} else {
 			setTextGrid(null);
+			textGridMessage.clearActions();
 
 			textGridMessage.setTopLabelText("<html><b>No TextGrid found</b></html>");
 			boolean hasRecordTextGrids = hasOldTextGridFiles();
@@ -290,6 +292,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				textGridMessage.setBottomLabelText("<html>Click here to generate TextGrid tiers from Phon tiers.</html>");
 			}
 			parent.getErrorPane().add(textGridMessage);
+			textGridMessage.setVisible(true);
 		}
 	}
 
@@ -588,9 +591,10 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	private void update() {
-		revalidate();
 		updateTierLabelBackgrounds();
 		textGridView.repaint();
+		
+		revalidate();
 	}
 
 	@RunOnEDT

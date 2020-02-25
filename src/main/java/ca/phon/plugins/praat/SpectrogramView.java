@@ -84,6 +84,7 @@ import ca.phon.app.session.editor.DelegateEditorAction;
 import ca.phon.app.session.editor.EditorAction;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.EditorEventType;
+import ca.phon.app.session.editor.ErrorBanner;
 import ca.phon.app.session.editor.RunInBackground;
 import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
@@ -136,7 +137,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	public final static double DEFAULT_MAX_ANALYSIS_LENGTH = 10.0;
 	private double maxAnalysisLength = PrefHelper.getDouble(MAX_ANALYSIS_LENGTH_PROP, DEFAULT_MAX_ANALYSIS_LENGTH);
 
-	private final HidablePanel maxAnalysisMessage = new HidablePanel("SpectrogramView.maxAnalysisLengthMessage");
+	private final ErrorBanner maxAnalysisMessage = new ErrorBanner();
 
 	/*
 	 * Spectrogram
