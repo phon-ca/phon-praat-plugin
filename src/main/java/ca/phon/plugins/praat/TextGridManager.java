@@ -331,7 +331,6 @@ public class TextGridManager {
 		TextGrid retVal = null;
 
 		try {
-			LOGGER.info(tgFile.getAbsolutePath());
 			retVal = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
 		} catch (PraatException e) {
 			throw new IOException(e);
