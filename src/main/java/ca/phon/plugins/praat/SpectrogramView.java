@@ -100,6 +100,7 @@ import ca.phon.plugins.praat.painters.IntensityPainter;
 import ca.phon.plugins.praat.painters.PitchSpecklePainter;
 import ca.phon.plugins.praat.painters.SpectrogramPainter;
 import ca.phon.session.MediaSegment;
+import ca.phon.session.Record;
 import ca.phon.session.SystemTierType;
 import ca.phon.session.Tier;
 import ca.phon.ui.ButtonPopup;
@@ -1150,6 +1151,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	private MediaSegment getSegment() {
+		Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord == null) return null;
 		final Tier<MediaSegment> segTier = getParentView().getEditor().currentRecord().getSegment();
 		return (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
 	}
@@ -1394,7 +1397,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 			final MediaSegment segment = getSegment();
 			if(segment == null) {
-				updateLock.unlock();
+				if(updateLock.isLocked())
+					updateLock.unlock();
 				return;
 			}
 			

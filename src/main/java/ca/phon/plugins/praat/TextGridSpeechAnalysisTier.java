@@ -233,6 +233,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		if(this.tg != null) {
 			try {
 				this.tg.close();
+				this.tg = null;
 			} catch (Exception e) {
 				LogUtil.severe(e);
 			}
