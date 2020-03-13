@@ -101,8 +101,6 @@ public class SendPraatDialog extends CommonModuleFrame {
 
 		contentPane.add(topPanel, BorderLayout.NORTH);
 
-//		AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory)TokenMakerFactory.getDefaultInstance();
-//		atmf.putMapping("text/vm", "ca.phon.plugins.praat.VelocityTokenMaker");
 		textArea = new RSyntaxTextArea() {
 			@Override
 			public void paintComponent(Graphics g) {

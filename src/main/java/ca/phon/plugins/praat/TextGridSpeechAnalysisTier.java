@@ -117,6 +117,7 @@ import ca.phon.util.PrefHelper;
 import ca.phon.util.Tuple;
 import ca.phon.util.icons.IconManager;
 import ca.phon.util.icons.IconSize;
+import ca.phon.worker.PhonWorker;
 
 /**
  * Display a TextGrid as a vertical list of tiers.
@@ -148,8 +149,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 	private TextGridView textGridView;
 
-	private JPanel buttonPane;
-
 	public final static String SHOW_TEXTGRID_PROP = TextGridSpeechAnalysisTier.class.getName() + ".showTextGrid";
 	private boolean showTextGrid =
 			PrefHelper.getBoolean(SHOW_TEXTGRID_PROP, false);
@@ -164,6 +163,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			".selectedTextGrid";
 
 	private final ErrorBanner textGridMessage = new ErrorBanner();
+	
+	private ErrorBanner forceUnlockBtn;
 
 	public TextGridSpeechAnalysisTier(SpeechAnalysisEditorView parent) {
 		super(parent);
@@ -184,9 +185,13 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 	private void init() {
 		setLayout(new BorderLayout());
-		buttonPane = new JPanel(new VerticalLayout());
-		add(buttonPane, BorderLayout.NORTH);
-
+		
+		forceUnlockBtn = new ErrorBanner();
+		forceUnlockBtn.setToolTipText("Click to unlock TextGrid");
+		forceUnlockBtn.getTopLabel().setIcon(IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
+		forceUnlockBtn.setTopLabelText("TextGrid Locked");
+		forceUnlockBtn.setBottomLabelText("TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
+		
 		textGridView = new TextGridView(getTimeModel());
 		textGridView.setFont(FontPreferences.getUIIpaFont());
 		textGridView.addTextGridViewListener( new TextGridViewListener() {
@@ -349,20 +354,27 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	public void setTextGrid(TextGrid tg) {
-		if(this.tg != null
-				&& this.tg != tg) {
-			try {
-				// delete old textgrid from memory
-				this.tg.forget();
-			} catch (PraatException e) {
-				LogUtil.severe(e);
-			}
-		}
+		@SuppressWarnings("resource")
+		final TextGrid oldTextGrid = (this.tg != null && this.tg != tg ? this.tg : null);
+		
 		this.tg = tg;
 		textGridView.setTextGrid(this.tg);
 		
 		updateHiddenTiers();
 		updateTierLabelBackgrounds();
+		
+		if(oldTextGrid != null) {
+			PhonWorker.getInstance().invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						oldTextGrid.forget();
+					} catch (Exception e) {
+						LogUtil.severe(e);
+					}
+				}
+			});
+		}
 	}
 
 	public TextGrid getTextGrid() {
@@ -552,16 +564,18 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 	private void lock(File textGridFile) {
 		textGridView.setEnabled(false);
-
-		final JButton forceUnlockBtn = new JButton();
+		
 		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridFile);
 		forceUnlockAct.putValue(PhonUIAction.NAME, "Unlock TextGrid");
 		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
-		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
-		forceUnlockBtn.setAction(forceUnlockAct);
-
-		buttonPane.add(forceUnlockBtn);
-
+		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
+		forceUnlockAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
+		forceUnlockBtn.setDefaultAction(forceUnlockAct);
+		forceUnlockBtn.addAction(forceUnlockAct);
+		
+		getParentView().getErrorPane().add(forceUnlockBtn);
+		getParentView().revalidate();
+		
 		update();
 	}
 
@@ -578,14 +592,16 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			serverMap.remove(textGridFile);
 		}
 
-		buttonPane.remove((JButton)pae.getActionEvent().getSource());
+		getParentView().getErrorPane().remove(forceUnlockBtn);
+		getParentView().revalidate();
 
 		update();
 	}
 
 	private void unlock() {
 		textGridView.setEnabled(true);
-		buttonPane.removeAll();
+		getParentView().getErrorPane().remove(forceUnlockBtn);
+		getParentView().revalidate();
 
 		revalidate();
 		textGridView.repaint();
