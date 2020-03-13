@@ -39,6 +39,7 @@ import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
+import ca.phon.opgraph.InputField;
 import ca.phon.opgraph.OpNodeInfo;
 import ca.phon.opgraph.app.GraphDocument;
 import ca.phon.opgraph.app.extensions.NodeSettings;
@@ -61,7 +62,7 @@ import ca.phon.ui.text.PromptedTextField;
 @OpNodeInfo(name="Voice Onset Time (VOT)", category="Praat", description="Calculate voice onset time", showInLibrary=true)
 public class VOTNode extends PraatNode implements NodeSettings {
 	
-	private final static String DEFAULT_VOT_TIER = "Release";
+	private final static String DEFAULT_VOT_TIER = "Voicing";
 	private String votTier = DEFAULT_VOT_TIER;
 	
 	private final static float DEFAULT_THRESHOLD = 0.5f;
@@ -71,7 +72,7 @@ public class VOTNode extends PraatNode implements NodeSettings {
 	private PromptedTextField votTierNameField;
 	
 	private final Collection<TextPoint> processedPoints = new ArrayList<>();
-
+	
 	public VOTNode() {
 		super();
 
@@ -248,7 +249,7 @@ public class VOTNode extends PraatNode implements NodeSettings {
 			
 			votTierNameField = new PromptedTextField("Enter name of Point tier which contains onset release times");
 			votTierNameField.setText(this.votTier);
-			votPanel.add(new JLabel("VOT Release Tier:"), BorderLayout.WEST);
+			votPanel.add(new JLabel("VOT Tier:"), BorderLayout.WEST);
 			votPanel.add(votTierNameField, BorderLayout.CENTER);
 			
 			settingsPanel.add(votPanel, gbc);

@@ -164,7 +164,7 @@ function setup_params(params) {
                     </oga:property>
                     <oga:property key="textGridTier"/>
                     <oga:property key="votTier">
-                        <![CDATA[Release]]>
+                        <![CDATA[Voicing]]>
                     </oga:property>
                     <oga:property key="useTextGridInterval">
                         <![CDATA[false]]>
