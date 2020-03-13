@@ -108,6 +108,7 @@ import ca.phon.ui.fonts.FontPreferences;
 import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.ui.menu.MenuBuilder;
 import ca.phon.ui.nativedialogs.FileFilter;
+import ca.phon.ui.nativedialogs.MessageDialogProperties;
 import ca.phon.ui.nativedialogs.NativeDialogEvent;
 import ca.phon.ui.nativedialogs.NativeDialogs;
 import ca.phon.ui.nativedialogs.OpenDialogProperties;
@@ -557,7 +558,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			unlock();
 			serverMap.remove(tgFile);
 			Toolkit.getDefaultToolkit().beep();
-			ToastFactory.makeToast(e.getLocalizedMessage()).start(parent.getToolbar());
+			
+			getParentView().getEditor().showMessageDialog("Unable to open TextGrid", e.getLocalizedMessage(), MessageDialogProperties.okOptions);
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
@@ -566,12 +568,11 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		textGridView.setEnabled(false);
 		
 		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridFile);
-		forceUnlockAct.putValue(PhonUIAction.NAME, "Unlock TextGrid");
+		forceUnlockAct.putValue(PhonUIAction.NAME, "TextGrid open in Praat");
 		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
 		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
 		forceUnlockAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
 		forceUnlockBtn.setDefaultAction(forceUnlockAct);
-		forceUnlockBtn.addAction(forceUnlockAct);
 		
 		getParentView().getErrorPane().add(forceUnlockBtn);
 		getParentView().revalidate();
@@ -750,6 +751,11 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	public void onTierManagement() {
+		if(!textGridView.isEnabled()) {
+			Toolkit.getDefaultToolkit().beep();
+			return;
+		}
+		
 		final JDialog dialog = new JDialog(CommonModuleFrame.getCurrentFrame(), "TextGrid Tier Management");
 		dialog.setModal(false);
 

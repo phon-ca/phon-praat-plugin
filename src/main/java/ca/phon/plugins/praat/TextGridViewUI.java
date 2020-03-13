@@ -174,6 +174,11 @@ public class TextGridViewUI extends TimeComponentUI {
 		for(var marker:tgView.getTimeModel().getMarkers()) {
 			paintMarker(g2d, marker);
 		}
+		
+		if(!tgView.isEnabled()) {
+			g.setColor(new Color(255, 255, 255, 120));
+			g.fillRect(0, 0, tgView.getWidth(), tgView.getHeight());
+		}
 	}
 
 	public Rectangle2D paintTierLabel(Function tier, Graphics2D g2d, int y) {
@@ -323,6 +328,8 @@ public class TextGridViewUI extends TimeComponentUI {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
+			if(!tgView.isEnabled()) return;
+			
 			if(tgView.getUI().getCurrentlyDraggedMarker() == null) {
 				Optional<Long> tierIndex = tierLabelHitTest(Geometries.point(e.getX(), e.getY()));
 				if(tierIndex.isPresent()) {
@@ -342,6 +349,8 @@ public class TextGridViewUI extends TimeComponentUI {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
+			if(!tgView.isEnabled()) return;
+			
 			if(tgView.getUI().getCurrentlyDraggedMarker() == null) {
 				Optional<Long> tierIndex = tierLabelHitTest(Geometries.point(e.getX(), e.getY()));
 				if(tierIndex.isPresent()) {
