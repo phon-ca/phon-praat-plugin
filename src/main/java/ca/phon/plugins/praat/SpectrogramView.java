@@ -1343,19 +1343,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		return pulses;
 	}
 	
-	@RunInBackground(newThread=true)
 	public void onMediaChanged(EditorEvent ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update(true);
 	}
 	
-	@RunInBackground(newThread=true)
 	public void onRecordChanged(EditorEvent ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
 	}
 
-	@RunInBackground(newThread=true)
 	public void onSegmentChanged(EditorEvent ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
@@ -1501,6 +1498,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		if(getParentView().getEditor().currentRecord() == null) return;
 		
 		if(!force && !shouldShow()) return;
+		
+		if(!getParentView().getEditor().getMediaModel().isSessionAudioAvailable()) return;
 		
 		final MediaSegment segment = getSegment();
 		if(segment == null) {
