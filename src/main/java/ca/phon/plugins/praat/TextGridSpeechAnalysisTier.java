@@ -191,7 +191,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		forceUnlockBtn.setToolTipText("Click to unlock TextGrid");
 		forceUnlockBtn.getTopLabel().setIcon(IconManager.getInstance().getIcon("emblems/emblem-readonly", IconSize.SMALL));
 		forceUnlockBtn.setTopLabelText("TextGrid Locked");
-		forceUnlockBtn.setBottomLabelText("TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
+		forceUnlockBtn.setBottomLabelText("<html>TextGrid open in Praat: Select menu <i>File</i> &gt; <i>Send back to calling program</i> (in Praat), or click this message to unlock</html>");
 		
 		textGridView = new TextGridView(getTimeModel());
 		textGridView.setFont(FontPreferences.getUIIpaFont());
@@ -568,8 +568,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		textGridView.setEnabled(false);
 		
 		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridFile);
-		forceUnlockAct.putValue(PhonUIAction.NAME, "TextGrid open in Praat");
-		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid is open in Praat.  Use 'File' -> 'Send back to calling program' in Praat or click to unlock.");
+		forceUnlockAct.putValue(PhonUIAction.NAME, "TextGrid locked");
+		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid open in Praat: Select menu 'File' > 'Send back to calling program' (in Praat), or click this message to unlock");
 		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
 		forceUnlockAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
 		forceUnlockBtn.setDefaultAction(forceUnlockAct);
