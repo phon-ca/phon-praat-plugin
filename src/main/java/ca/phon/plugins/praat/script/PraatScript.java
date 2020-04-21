@@ -89,7 +89,10 @@ public class PraatScript {
 		final Properties p = new Properties();
 		p.setProperty(RuntimeConstants.RESOURCE_LOADER, "string");
 		p.setProperty("string.resource.loader.class", "org.apache.velocity.runtime.resource.loader.StringResourceLoader");
-	
+		p.setProperty("runtime.log.logsystem.class", "org.apache.velocity.runtime.log.JdkLogChute");
+		p.setProperty("runtime.log.logsystem.jdk.logger", "ca.phon.velocity");
+		p.setProperty("runtime.log.logsystem.jdk.logger.level", "FINE");
+		
 		final VelocityEngine ve = new VelocityEngine();
 		ve.init(p);
 		
