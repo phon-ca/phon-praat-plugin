@@ -9,10 +9,6 @@ import ca.phon.app.log.LogUtil;
 import ca.phon.media.LongSound;
 import ca.phon.media.Sound;
 import ca.phon.media.sampled.Channel;
-import ca.phon.plugin.IPluginExtensionFactory;
-import ca.phon.plugin.IPluginExtensionPoint;
-import ca.phon.plugin.PhonPlugin;
-import ca.phon.plugin.Rank;
 
 public class PraatLongSound extends LongSound  {
 	

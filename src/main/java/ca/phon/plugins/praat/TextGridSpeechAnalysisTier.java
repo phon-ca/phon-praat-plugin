@@ -31,11 +31,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -53,7 +51,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
@@ -64,7 +61,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.apache.commons.io.FilenameUtils;
-import org.jdesktop.swingx.VerticalLayout;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.IntervalTier;
@@ -90,8 +89,6 @@ import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.importer.TextGridImportWizard;
 import ca.phon.plugins.praat.script.PraatScript;
 import ca.phon.plugins.praat.script.PraatScriptContext;
-import ca.phon.plugins.praat.script.PraatScriptTcpHandler;
-import ca.phon.plugins.praat.script.PraatScriptTcpServer;
 import ca.phon.session.MediaSegment;
 import ca.phon.session.Session;
 import ca.phon.session.SystemTierType;
@@ -100,7 +97,6 @@ import ca.phon.session.TierDescription;
 import ca.phon.ui.ButtonPopup;
 import ca.phon.ui.CommonModuleFrame;
 import ca.phon.ui.DropDownButton;
-import ca.phon.ui.HidablePanel;
 import ca.phon.ui.action.PhonActionEvent;
 import ca.phon.ui.action.PhonUIAction;
 import ca.phon.ui.decorations.DialogHeader;
@@ -166,6 +162,14 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	private final ErrorBanner textGridMessage = new ErrorBanner();
 	
 	private ErrorBanner forceUnlockBtn;
+	
+	/**
+	 * Static reference to locked TextGrid
+	 * Only one TextGrid may be locked at a time!
+	 * 
+	 * @since Phon 3.1
+	 */
+	private static final AtomicReference<Tuple<File, FileAlterationMonitor>> lockedTextGridRef = new AtomicReference<>();
 
 	public TextGridSpeechAnalysisTier(SpeechAnalysisEditorView parent) {
 		super(parent);
@@ -482,7 +486,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	 * @param textGridFile
 	 */
 	public void showTextGrid(File textGridFile) {
-		final TextGridManager manager = new TextGridManager(parent.getEditor().getProject());
 		try {
 			final TextGrid textGrid = TextGridManager.loadTextGrid(textGridFile);
 			if(textGrid != null) {
@@ -490,7 +493,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				setTextGrid(textGrid);
 
 				// lock textgrid if necessary
-				if(serverMap.containsKey(textGridFile)) {
+				if(lockedTextGridRef.get() != null && lockedTextGridRef.get().getObj1().equals(textGridFile)) {
 					lock(textGridFile);
 				} else {
 					unlock();
@@ -502,8 +505,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		}
 	}
 
-	private final Map<File, PraatScriptTcpServer> serverMap =
-			Collections.synchronizedMap(new HashMap<File, PraatScriptTcpServer>());
+//	private final Map<File, PraatScriptTcpServer> serverMap =
+//			Collections.synchronizedMap(new HashMap<File, PraatScriptTcpServer>());
 	/**
 	 * Send TextGrid to Praat.
 	 */
@@ -513,7 +516,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		if(mediaFile == null) return;
 
 		// don't open if contentpane is current disabled (locked)
-		if(!textGridView.isEnabled()) return;
+		if(!textGridView.isEnabled() || lockedTextGridRef.get() != null) return;
 
 		final SessionEditor model = parent.getEditor();
 		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
@@ -532,11 +535,12 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		String tgPath = (tgFile != null ? tgFile.getAbsolutePath() : "");
 
 		final PraatScriptContext map = new PraatScriptContext();
-		final PraatScriptTcpServer server = new PraatScriptTcpServer();
-		server.setHandler(new TextGridTcpHandler(tgFile));
-
+		File praatDir = new File(PraatDir.getPath());
+		FileAlterationObserver observer = new FileAlterationObserver(praatDir);
+		observer.addListener(new PraatTextGridResponseListener());
+		FileAlterationMonitor monitor = new FileAlterationMonitor(100, observer);
+		
 		map.put("replyToPhon", Boolean.TRUE);
-		map.put("socket", server.getPort());
 		map.put("audioPath", mediaFile.getAbsolutePath());
 		map.put("textGridPath", tgPath);
 		map.put("textGridName", tgName);
@@ -544,19 +548,18 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		map.put("useFullAudio", useFullAudio);
 
 		try {
-			server.startServer();
+			lockedTextGridRef.set(new Tuple<>(tgFile, monitor));
 			lock(tgFile);
-			serverMap.put(tgFile, server);
+			monitor.start();
+
 			final PraatScript ps = new PraatScript(loadTextGridTemplate());
 			final String script = ps.generateScript(map);
 			final String err = SendPraat.sendpraat(null, "Praat", 0, script);
 			if(err != null && err.length() > 0) {
 				throw new IOException(err);
 			}
-		} catch (IOException e) {
-			server.stop();
+		} catch (Exception e) {
 			unlock();
-			serverMap.remove(tgFile);
 			Toolkit.getDefaultToolkit().beep();
 			
 			getParentView().getEditor().showMessageDialog("Unable to open TextGrid", e.getLocalizedMessage(), MessageDialogProperties.okOptions);
@@ -581,28 +584,33 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	public void onForceUnlock(PhonActionEvent pae) {
-		textGridView.setEnabled(true);
-
-		final File textGridFile = (File)pae.getData();
-
-		// stop server
-		final PraatScriptTcpServer server = serverMap.get(textGridFile);
-
-		if(server != null) {
-			server.stop();
-			serverMap.remove(textGridFile);
+		Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+		if(lockInfo != null) {
+			final File textGridFile = (File)pae.getData();
+			// issue warning if TextGrid files don't match
+			if(!lockInfo.getObj1().equals(textGridFile)) {
+				LogUtil.warning("LockedText grid " + lockInfo.getObj1() + " does not match requested unlock of " + textGridFile);
+			}
+			
+			unlock();
+			update();
 		}
-
-		getParentView().getErrorPane().remove(forceUnlockBtn);
-		getParentView().revalidate();
-
-		update();
 	}
 
 	private void unlock() {
 		textGridView.setEnabled(true);
 		getParentView().getErrorPane().remove(forceUnlockBtn);
 		getParentView().revalidate();
+		
+		Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+		if(lockInfo != null) {
+			try {
+				lockInfo.getObj2().stop();
+			} catch (Exception e) {
+				LogUtil.severe(e);
+			}
+			lockedTextGridRef.set(null);
+		}
 
 		revalidate();
 		textGridView.repaint();
@@ -654,14 +662,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	@RunOnEDT
 	public void onEditorClosing(EditorEvent ee) {
 		cleanup();
-	}
-
-	public void onSendPraat() {
-		final SendPraatDialog dlg = new SendPraatDialog(parent.getEditor());
-		dlg.pack();
-
-		dlg.centerWindow();
-		dlg.setVisible(true);
 	}
 
 	public void onCreateRecordsFromTextGrid() {
@@ -944,7 +944,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 					ImageIcon icn = null;
 					String menuTxt = textGridName;
 
-					if(serverMap.containsKey(textGridName)) {
+					if(lockedTextGridRef.get() != null && lockedTextGridRef.get().getObj1().equals(currentTextGridFile)) {
 						icn = lockIcon;
 					}
 
@@ -1036,11 +1036,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		openTextGridAct2.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with segment only. Low memory usage.");
 		openTextGridAct2.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - segment only");
 		builder.addItem(".", openTextGridAct2);
-
-		final PhonUIAction sendPraatAct = new PhonUIAction(this, "onSendPraat");
-		sendPraatAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - custom script...");
-		sendPraatAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Open TextGrid and audio in Praat and execute Praat script...");
-		builder.addItem(".", sendPraatAct);
 	}
 
 	@Override
@@ -1134,105 +1129,30 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		}
 	}
 	
-//	public void onMapTier(TierLabel tierLabel) {
-//		final TextGridTierMapper mapper = new TextGridTierMapper(
-//				getParentView().getEditor().getSession(),
-//				getTextGrid());
-//		final JTree tree = new JTree(mapper.createTreeModel());
-//		final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)tree.getModel().getRoot();
-//		final TreePath rootPath = new TreePath(rootNode);
-//		for(int i = 0; i < rootNode.getChildCount(); i++) {
-//			final TreePath treePath = rootPath.pathByAddingChild(rootNode.getChildAt(i));
-//			tree.expandPath(treePath);
-//		}
-//
-//		tree.setVisibleRowCount(10);
-//		tree.expandPath(new TreePath(tree.getModel().getRoot()));
-//		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-//		final JScrollPane scroller = new JScrollPane(tree);
-//
-//		final Point p = new Point(0, tierLabel.tierButton.getHeight());
-//		SwingUtilities.convertPointToScreen(p, tierLabel.tierButton);
-//
-//		final JFrame popup = new JFrame("Map TextGrid Tier");
-//		popup.setUndecorated(true);
-//		popup.addWindowFocusListener(new WindowFocusListener() {
-//
-//			@Override
-//			public void windowLostFocus(WindowEvent e) {
-//				destroyPopup(popup);
-//			}
-//
-//			@Override
-//			public void windowGainedFocus(WindowEvent e) {
-//			}
-//
-//		});
-//
-//		final PhonUIAction cancelAct = new PhonUIAction(this, "destroyPopup", popup);
-//		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
-//		final JButton cancelBtn = new JButton(cancelAct);
-//
-//		final PhonUIAction okAct = new PhonUIAction(this, "mapTier", new Tuple<String, JTree>(tierLabel.tierName, tree));
-//		okAct.putValue(PhonUIAction.NAME, "Map to Selected Phon Tier and Dimension");
-//		final JButton okBtn = new JButton(okAct);
-//		okBtn.addActionListener( (e) -> {
-//			final TreePath selectedPath = tree.getSelectionPath();
-//			if(selectedPath != null) {
-//				final DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)selectedPath.getLastPathComponent();
-//				if(treeNode.isLeaf()) {
-//					destroyPopup(popup);
-//				}
-//			}
-//		} );
-//
-//		final JComponent btnBar = ButtonBarBuilder.buildOkCancelBar(okBtn, cancelBtn);
-//
-//		popup.setLayout(new BorderLayout());
-//		popup.add(scroller, BorderLayout.CENTER);
-//		popup.add(btnBar, BorderLayout.SOUTH);
-//
-//		popup.pack();
-//		popup.setLocation(p.x, p.y);
-//		popup.setVisible(true);
-//
-//		popup.getRootPane().setDefaultButton(okBtn);
-//	}
-	
-	private class TextGridTcpHandler implements PraatScriptTcpHandler {
-
-		private File textGridFile;
-
-		public TextGridTcpHandler(File textGridFile) {
-			this.textGridFile = textGridFile;
-		}
+	private class PraatTextGridResponseListener extends FileAlterationListenerAdaptor {
 
 		@Override
-		public void praatScriptFinished(String data) {
-			serverMap.remove(textGridFile);
-			unlock();
-
-			// grab new TextGrid from default praat save location
-			final File tgFile = new File(
-					PraatDir.getPath() + File.separator + "praat_backToCaller.Data");
-			if(tgFile.exists() && tgFile.isFile()) {
-
+		public void onFileChange(File file) {
+			File praatDataFile = new File(PraatDir.getPath(), "praat_backToCaller.Data");
+			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+			if(praatDataFile.equals(file) && lockInfo != null) {
+				// we have our return message
 				try {
-					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(tgFile.getAbsolutePath()));
-					TextGridManager.saveTextGrid(tg, textGridFile);
+					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(praatDataFile.getAbsolutePath()));
+					TextGridManager.saveTextGrid(tg, lockInfo.getObj1());
 
-					if(currentTextGridFile.equals(textGridFile)) {
+					if(currentTextGridFile.equals(lockInfo.getObj1())) {
 						setTextGrid(tg);
 					}
 				} catch (PraatException | IOException e) {
 					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 					ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
 				}
-
+				unlock();
+				update();
 			}
-
-			update();
 		}
+		
 	}
 
 }

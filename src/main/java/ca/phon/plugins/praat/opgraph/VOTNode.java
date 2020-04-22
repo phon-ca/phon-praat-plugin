@@ -39,7 +39,6 @@ import ca.hedlund.jpraat.binding.fon.TextPoint;
 import ca.hedlund.jpraat.binding.fon.TextTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
-import ca.phon.opgraph.InputField;
 import ca.phon.opgraph.OpNodeInfo;
 import ca.phon.opgraph.app.GraphDocument;
 import ca.phon.opgraph.app.extensions.NodeSettings;
