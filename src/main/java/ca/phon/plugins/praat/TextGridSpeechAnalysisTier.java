@@ -1150,6 +1150,10 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				}
 				unlock();
 				update();
+				
+				if(Desktop.isDesktopSupported())
+					Desktop.getDesktop().requestForeground(true);
+				getParentView().getEditor().requestFocus();
 			}
 		}
 		
