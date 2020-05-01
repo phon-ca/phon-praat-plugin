@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-praat-plugin</artifactId>
-  <version>45</version>
+  <version>45-SNAPSHOT</version>
 
   <distributionManagement>
     <repository>
