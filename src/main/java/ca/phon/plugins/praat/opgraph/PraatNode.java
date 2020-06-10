@@ -47,7 +47,7 @@ import ca.phon.app.log.LogUtil;
 import ca.phon.app.opgraph.nodes.table.TableOpNode;
 import ca.phon.extensions.IExtendable;
 import ca.phon.ipa.IPATranscript;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.media.MediaLocator;
 import ca.phon.opgraph.InputField;
 import ca.phon.opgraph.OpContext;
 import ca.phon.opgraph.OutputField;

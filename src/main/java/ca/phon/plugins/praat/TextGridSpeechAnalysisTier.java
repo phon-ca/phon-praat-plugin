@@ -84,7 +84,7 @@ import ca.phon.app.session.editor.RunOnEDT;
 import ca.phon.app.session.editor.SessionEditor;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
 import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.media.MediaLocator;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.importer.TextGridImportWizard;
 import ca.phon.plugins.praat.script.PraatScript;

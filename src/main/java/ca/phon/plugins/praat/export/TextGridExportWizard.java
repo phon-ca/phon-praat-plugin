@@ -41,7 +41,7 @@ import ca.phon.app.session.RecordFilterPanel;
 import ca.phon.app.session.SessionSelector;
 import ca.phon.app.session.editor.EditorEvent;
 import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.media.MediaLocator;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.TextGridSpeechAnalysisTier;
 import ca.phon.project.Project;

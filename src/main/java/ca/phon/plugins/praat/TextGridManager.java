@@ -42,7 +42,7 @@ import ca.hedlund.jpraat.binding.sys.MelderFile;
 import ca.hedlund.jpraat.binding.sys.Thing;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.media.MediaLocator;
 import ca.phon.project.Project;
 import ca.phon.session.Record;
 import ca.phon.session.Session;

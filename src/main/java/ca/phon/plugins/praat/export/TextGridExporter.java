@@ -38,9 +38,12 @@ import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.IPAElement;
 import ca.phon.ipa.IPATranscript;
 import ca.phon.ipa.IntraWordPause;
-import ca.phon.media.sampled.PCMSampled;
-import ca.phon.media.sampled.Sampled;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.audio.AudioFileSampled;
+import ca.phon.audio.AudioIO;
+import ca.phon.audio.InvalidHeaderException;
+import ca.phon.audio.Sampled;
+import ca.phon.audio.UnsupportedFormatException;
+import ca.phon.media.MediaLocator;
 import ca.phon.plugins.praat.Segmentation;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.plugins.praat.script.PraatScript;
@@ -451,14 +454,16 @@ public class TextGridExporter {
 	 *  tiers to the existing TextGrid
 	 *
 	 * @throws IOException
+	 * @throws InvalidHeaderException 
+	 * @throws UnsupportedFormatException 
 	 */
 	public void generateTextGrid(Project project, Session session, RecordFilter recordFilter,
-			List<TextGridExportEntry> exports, File file, boolean appendTiers) throws IOException {
+			List<TextGridExportEntry> exports, File file, boolean appendTiers) throws IOException, UnsupportedFormatException, InvalidHeaderException {
 		// get audio file
 		final File audioFile = getAudioFile(project, session);
 		if(audioFile == null) throw new IOException("Unable to open audio");
 
-		final Sampled sampled = new PCMSampled(audioFile);
+		final Sampled sampled = new AudioFileSampled(AudioIO.openAudioFile(audioFile));
 		if(sampled.getLength() == 0) throw new IOException("Unable to read audio file");
 
 		final TextGridManager manager = new TextGridManager(project);
