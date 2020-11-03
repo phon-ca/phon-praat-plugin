@@ -15,25 +15,16 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
+import java.awt.*;
+import java.awt.geom.*;
+import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import ca.hedlund.jpraat.binding.fon.Function;
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.fon.TextPoint;
-import ca.hedlund.jpraat.binding.fon.TextTier;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.ui.fonts.FontPreferences;
-import ca.phon.ui.painter.BufferedPainter;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.ui.fonts.*;
+import ca.phon.ui.painter.*;
 
 public class TextGridPainter extends BufferedPainter<TextGrid> {
 	

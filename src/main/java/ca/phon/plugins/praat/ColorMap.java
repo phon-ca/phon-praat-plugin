@@ -15,7 +15,7 @@
  */
 package ca.phon.plugins.praat;
 
- import java.util.Arrays;
+ import java.util.*;
  
  public class ColorMap
  {

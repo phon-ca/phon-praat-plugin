@@ -15,10 +15,8 @@
  */
 package ca.phon.plugins.praat;
 
-import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisEditorView;
-import ca.phon.app.session.editor.view.speech_analysis.SpeechAnalysisTier;
-import ca.phon.plugin.IPluginExtensionFactory;
-import ca.phon.plugin.IPluginExtensionPoint;
+import ca.phon.app.session.editor.view.speech_analysis.*;
+import ca.phon.plugin.*;
 
 @ca.phon.plugin.PhonPlugin(name="Text Grid",version="0.1",minPhonVersion="1.6.2")
 public class TextGridSATierExtPt implements IPluginExtensionPoint<SpeechAnalysisTier> {

@@ -15,12 +15,9 @@
  */
 package ca.phon.plugins.praat;
 
-import javax.swing.text.Segment;
+import javax.swing.text.*;
 
-import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker;
-import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
-import org.fife.ui.rsyntaxtextarea.Token;
-import org.fife.ui.rsyntaxtextarea.TokenMap;
+import org.fife.ui.rsyntaxtextarea.*;
 
 public class VelocityTokenMaker extends AbstractTokenMaker {
 

@@ -15,37 +15,21 @@
  */
 package ca.phon.plugins.praat;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.logging.*;
+import java.util.stream.*;
 
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.*;
 
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.fon.TextPoint;
-import ca.hedlund.jpraat.binding.fon.TextTier;
-import ca.hedlund.jpraat.binding.sys.Daata;
-import ca.hedlund.jpraat.binding.sys.MelderFile;
-import ca.hedlund.jpraat.binding.sys.Thing;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.log.LogUtil;
-import ca.phon.media.MediaLocator;
-import ca.phon.project.Project;
-import ca.phon.session.Record;
-import ca.phon.session.Session;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.sys.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.app.log.*;
+import ca.phon.media.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
 
 /**
  * Utility class for reading/writing TextGrid files

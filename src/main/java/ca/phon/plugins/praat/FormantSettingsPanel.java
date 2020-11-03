@@ -15,22 +15,17 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.BorderLayout;
-import java.text.NumberFormat;
+import java.awt.*;
+import java.text.*;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFormattedTextField;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 
-import org.jdesktop.swingx.VerticalLayout;
+import org.jdesktop.swingx.*;
 
-import com.jgoodies.forms.builder.PanelBuilder;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.builder.*;
+import com.jgoodies.forms.layout.*;
 
-import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.action.*;
 
 public class FormantSettingsPanel extends JPanel {
 

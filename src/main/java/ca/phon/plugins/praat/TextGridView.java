@@ -1,17 +1,15 @@
 package ca.phon.plugins.praat;
 
-import java.awt.Color;
-import java.awt.event.MouseEvent;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
 
-import javax.swing.event.EventListenerList;
-import javax.swing.plaf.ComponentUI;
+import javax.swing.event.*;
+import javax.swing.plaf.*;
 
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.phon.media.TimeComponent;
-import ca.phon.media.TimeUIModel;
-import ca.phon.util.Tuple;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.media.*;
+import ca.phon.util.*;
 
 public class TextGridView extends TimeComponent {
 	

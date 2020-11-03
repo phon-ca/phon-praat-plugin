@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.phon</groupId>
   <artifactId>phon-praat-plugin</artifactId>
-  <version>48</version>
+  <version>49</version>
 
   <distributionManagement>
     <repository>
@@ -59,7 +59,7 @@
     <project.build.targetVersion>15</project.build.targetVersion>
 
     <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>0.20.0-SNAPSHOT</ca.hedlund.jpraat.version>
+    <ca.hedlund.jpraat.version>1.0.0</ca.hedlund.jpraat.version>
     <ca.phon.phon-app.version>3.2.0-SNAPSHOT</ca.phon.phon-app.version>
     <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
     

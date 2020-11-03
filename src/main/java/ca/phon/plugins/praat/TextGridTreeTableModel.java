@@ -15,13 +15,11 @@
  */
 package ca.phon.plugins.praat;
 
-import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
+import org.jdesktop.swingx.treetable.*;
 
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.util.Tuple;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.util.*;
 
 /**
  *

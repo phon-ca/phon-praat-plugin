@@ -15,20 +15,18 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.Toolkit;
-import java.io.IOException;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.awt.*;
+import java.io.*;
+import java.util.*;
+import java.util.logging.*;
 
-import ca.phon.app.modules.EntryPointArgs;
-import ca.phon.app.project.ProjectWindow;
-import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.plugin.IPluginEntryPoint;
-import ca.phon.plugin.PhonPlugin;
-import ca.phon.plugins.praat.export.TextGridExportWizard;
-import ca.phon.project.Project;
-import ca.phon.session.Session;
+import ca.phon.app.modules.*;
+import ca.phon.app.project.*;
+import ca.phon.app.session.editor.*;
+import ca.phon.plugin.*;
+import ca.phon.plugins.praat.export.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
 
 @PhonPlugin(name="phon-textgrid-plugin",version="0.1",author="Greg J. Hedlund")
 public class GenerateTextGridsEP implements IPluginEntryPoint {

@@ -15,10 +15,10 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.prefs.Preferences;
+import java.util.prefs.*;
 
-import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
-import ca.phon.util.PrefHelper;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.util.*;
 
 /**
  * Settings used for generating the Spectrogram.

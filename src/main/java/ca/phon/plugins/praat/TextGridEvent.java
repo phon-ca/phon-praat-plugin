@@ -15,7 +15,7 @@
  */
 package ca.phon.plugins.praat;
 
-import ca.phon.project.Project;
+import ca.phon.project.*;
 
 /**
  * Event sent to TextGridListeners when a TextGrid file

@@ -15,18 +15,13 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.List;
+import java.util.*;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeModel;
+import javax.swing.tree.*;
 
-import ca.hedlund.jpraat.TextGridUtils;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.phon.session.Session;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.Tier;
-import ca.phon.session.TierViewItem;
+import ca.hedlund.jpraat.*;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.session.*;
 
 /**
  * Utility methods for mapping {@link TextGrid} tiers to Phon {@link Tier}s.

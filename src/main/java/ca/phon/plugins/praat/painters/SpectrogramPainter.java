@@ -15,17 +15,13 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.Color;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.geom.Rectangle2D;
-import java.text.NumberFormat;
+import java.awt.*;
+import java.awt.geom.*;
+import java.text.*;
 
-import ca.hedlund.jpraat.binding.fon.Spectrogram;
-import ca.phon.plugins.praat.ColorMap;
-import ca.phon.plugins.praat.SpectrogramSettings;
-import ca.phon.ui.painter.BufferedPainter;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.plugins.praat.*;
+import ca.phon.ui.painter.*;
 
 /**
  * Spectrogram painter.

@@ -1,38 +1,22 @@
 package ca.phon.plugins.praat;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.RenderingHints;
-import java.awt.event.MouseEvent;
-import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.event.MouseInputAdapter;
+import javax.swing.*;
+import javax.swing.event.*;
 
-import com.github.davidmoten.rtree.RTree;
-import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.*;
+import com.github.davidmoten.rtree.geometry.*;
 
-import ca.hedlund.jpraat.binding.fon.Function;
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.fon.TextPoint;
-import ca.hedlund.jpraat.binding.fon.TextTier;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.log.LogUtil;
-import ca.phon.media.TimeComponentUI;
-import ca.phon.util.Tuple;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.app.log.*;
+import ca.phon.media.*;
+import ca.phon.util.*;
 
 public class TextGridViewUI extends TimeComponentUI {
 		

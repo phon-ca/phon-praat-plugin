@@ -15,21 +15,14 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.Color;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Rectangle2D;
-import java.text.NumberFormat;
-import java.util.concurrent.atomic.AtomicReference;
+import java.awt.*;
+import java.awt.geom.*;
+import java.text.*;
+import java.util.concurrent.atomic.*;
 
-import ca.hedlund.jpraat.binding.fon.Function;
-import ca.hedlund.jpraat.binding.fon.Pitch;
-import ca.hedlund.jpraat.binding.fon.kPitch_unit;
-import ca.phon.plugins.praat.PitchSettings;
-import ca.phon.ui.painter.BufferedPainter;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.plugins.praat.*;
+import ca.phon.ui.painter.*;
 
 public class PitchSpecklePainter extends BufferedPainter<Pitch> implements PraatPainter<Pitch> {
 	

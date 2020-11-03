@@ -15,50 +15,24 @@
  */
 package ca.phon.plugins.praat.export;
 
-import java.beans.XMLDecoder;
-import java.beans.XMLEncoder;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.beans.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+import java.util.logging.*;
 
-import ca.hedlund.jpraat.binding.fon.Function;
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.binding.fon.TextPoint;
-import ca.hedlund.jpraat.binding.fon.TextTier;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.ipa.IPAElement;
-import ca.phon.ipa.IPATranscript;
-import ca.phon.ipa.IntraWordPause;
-import ca.phon.audio.AudioFileSampled;
-import ca.phon.audio.AudioIO;
-import ca.phon.audio.InvalidHeaderException;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.audio.*;
 import ca.phon.audio.Sampled;
-import ca.phon.audio.UnsupportedFormatException;
-import ca.phon.media.MediaLocator;
-import ca.phon.plugins.praat.Segmentation;
-import ca.phon.plugins.praat.TextGridManager;
-import ca.phon.plugins.praat.script.PraatScript;
-import ca.phon.plugins.praat.script.PraatScriptContext;
-import ca.phon.project.Project;
-import ca.phon.session.Group;
-import ca.phon.session.MediaSegment;
-import ca.phon.session.MediaUnit;
-import ca.phon.session.Record;
-import ca.phon.session.Session;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.Tier;
-import ca.phon.session.Word;
-import ca.phon.session.filter.RecordFilter;
-import ca.phon.syllable.SyllableConstituentType;
+import ca.phon.ipa.*;
+import ca.phon.media.*;
+import ca.phon.plugins.praat.*;
+import ca.phon.plugins.praat.script.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
+import ca.phon.session.filter.*;
+import ca.phon.syllable.*;
 
 /**
  * Utility methods for exporting Phon tier data into

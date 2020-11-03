@@ -15,58 +15,35 @@
  */
 package ca.phon.plugins.praat.export;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.awt.*;
+import java.io.*;
+import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
+import javax.swing.*;
 
-import org.apache.commons.io.FilenameUtils;
-import org.jdesktop.swingx.JXBusyLabel;
-import org.jdesktop.swingx.VerticalLayout;
+import org.apache.commons.io.*;
+import org.jdesktop.swingx.*;
 
-import ca.phon.app.session.RecordFilterPanel;
-import ca.phon.app.session.SessionSelector;
-import ca.phon.app.session.editor.EditorEvent;
-import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.media.MediaLocator;
-import ca.phon.plugins.praat.TextGridManager;
-import ca.phon.plugins.praat.TextGridSpeechAnalysisTier;
-import ca.phon.project.Project;
-import ca.phon.session.Session;
-import ca.phon.session.SessionPath;
-import ca.phon.session.check.CheckTranscripts;
-import ca.phon.session.check.SessionCheck;
-import ca.phon.session.check.SessionValidator;
-import ca.phon.session.filter.RecordFilter;
-import ca.phon.ui.CommonModuleFrame;
-import ca.phon.ui.HidablePanel;
-import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.app.session.*;
+import ca.phon.app.session.editor.*;
+import ca.phon.media.*;
+import ca.phon.plugins.praat.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
+import ca.phon.session.check.*;
+import ca.phon.session.filter.*;
+import ca.phon.ui.*;
+import ca.phon.ui.decorations.*;
+import ca.phon.ui.nativedialogs.*;
 import ca.phon.ui.nativedialogs.FileFilter;
-import ca.phon.ui.nativedialogs.MessageDialogProperties;
-import ca.phon.ui.nativedialogs.NativeDialogs;
-import ca.phon.ui.nativedialogs.SaveDialogProperties;
-import ca.phon.ui.toast.ToastFactory;
-import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel;
-import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.CheckingMode;
-import ca.phon.ui.wizard.WizardFrame;
-import ca.phon.ui.wizard.WizardStep;
-import ca.phon.worker.PhonTask;
-import ca.phon.worker.PhonTask.TaskStatus;
-import ca.phon.worker.PhonTaskListener;
-import ca.phon.worker.PhonWorker;
+import ca.phon.ui.toast.*;
+import ca.phon.ui.tristatecheckbox.*;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.*;
+import ca.phon.ui.wizard.*;
+import ca.phon.worker.*;
+import ca.phon.worker.PhonTask.*;
 
 public class TextGridExportWizard extends WizardFrame {
 

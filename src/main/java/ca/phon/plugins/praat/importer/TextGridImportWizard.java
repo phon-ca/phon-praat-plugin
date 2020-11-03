@@ -15,50 +15,29 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import java.awt.BorderLayout;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
+import java.awt.*;
+import java.io.*;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import javax.swing.SwingUtilities;
-import javax.swing.undo.AbstractUndoableEdit;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
-import javax.swing.undo.CompoundEdit;
+import javax.swing.*;
+import javax.swing.undo.*;
 
-import au.com.bytecode.opencsv.CSVWriter;
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.app.log.BufferPanel;
-import ca.phon.app.log.LogBuffer;
-import ca.phon.app.modules.EntryPointArgs;
-import ca.phon.app.session.editor.EditorEvent;
-import ca.phon.app.session.editor.EditorEventType;
-import ca.phon.app.session.editor.SessionEditor;
-import ca.phon.app.session.editor.undo.AddRecordEdit;
-import ca.phon.app.session.editor.undo.AddTierEdit;
-import ca.phon.plugin.PluginEntryPointRunner;
-import ca.phon.plugin.PluginException;
-import ca.phon.plugins.praat.TextGridManager;
-import ca.phon.project.Project;
-import ca.phon.session.Record;
-import ca.phon.session.Session;
-import ca.phon.session.SessionFactory;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.TierDescription;
-import ca.phon.session.TierDescriptions;
-import ca.phon.session.TierViewItem;
-import ca.phon.ui.decorations.DialogHeader;
-import ca.phon.ui.wizard.WizardFrame;
-import ca.phon.ui.wizard.WizardStep;
-import ca.phon.worker.PhonTask;
-import ca.phon.worker.PhonWorker;
+import au.com.bytecode.opencsv.*;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.app.log.*;
+import ca.phon.app.modules.*;
+import ca.phon.app.session.editor.*;
+import ca.phon.app.session.editor.undo.*;
+import ca.phon.plugin.*;
+import ca.phon.plugins.praat.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
+import ca.phon.ui.decorations.*;
+import ca.phon.ui.wizard.*;
+import ca.phon.worker.*;
 
 public class TextGridImportWizard extends WizardFrame {
 

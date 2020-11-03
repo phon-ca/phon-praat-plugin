@@ -15,18 +15,15 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
-import com.sun.jna.NativeLibrary;
+import com.sun.jna.*;
 
-import ca.hedlund.jpraat.binding.Praat;
-import ca.hedlund.jpraat.binding.sys.PraatVersion;
-import ca.phon.app.hooks.PhonStartupHook;
-import ca.phon.plugin.IPluginExtensionFactory;
-import ca.phon.plugin.IPluginExtensionPoint;
-import ca.phon.plugin.PluginException;
-import ca.phon.util.PrefHelper;
+import ca.hedlund.jpraat.binding.*;
+import ca.hedlund.jpraat.binding.sys.*;
+import ca.phon.app.hooks.*;
+import ca.phon.plugin.*;
+import ca.phon.util.*;
 
 /**
  * Init Praat library on startup.

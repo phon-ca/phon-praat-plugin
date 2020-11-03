@@ -15,39 +15,19 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.text.*;
+import java.util.*;
+import java.util.logging.*;
 
-import ca.hedlund.jpraat.binding.fon.IntervalTier;
-import ca.hedlund.jpraat.binding.fon.TextGrid;
-import ca.hedlund.jpraat.binding.fon.TextInterval;
-import ca.hedlund.jpraat.exceptions.PraatException;
-import ca.phon.extensions.UnvalidatedValue;
-import ca.phon.ipa.IPATranscript;
-import ca.phon.ipa.alignment.PhoneAligner;
-import ca.phon.ipa.alignment.PhoneMap;
-import ca.phon.orthography.Orthography;
-import ca.phon.project.Project;
-import ca.phon.session.Group;
-import ca.phon.session.MediaSegment;
-import ca.phon.session.MediaUnit;
-import ca.phon.session.Record;
-import ca.phon.session.Session;
-import ca.phon.session.SessionFactory;
-import ca.phon.session.SyllabifierInfo;
-import ca.phon.session.SystemTierType;
-import ca.phon.session.Tier;
-import ca.phon.session.TierDescription;
-import ca.phon.session.TierString;
-import ca.phon.syllabifier.Syllabifier;
-import ca.phon.syllabifier.SyllabifierLibrary;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.*;
+import ca.phon.extensions.*;
+import ca.phon.ipa.*;
+import ca.phon.ipa.alignment.*;
+import ca.phon.orthography.*;
+import ca.phon.project.*;
+import ca.phon.session.*;
+import ca.phon.syllabifier.*;
 
 public class TextGridImporter {
 

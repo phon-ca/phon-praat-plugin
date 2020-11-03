@@ -15,22 +15,17 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.BorderLayout;
-import java.text.NumberFormat;
+import java.awt.*;
+import java.text.*;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFormattedTextField;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 
-import org.jdesktop.swingx.VerticalLayout;
+import org.jdesktop.swingx.*;
 
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.*;
 
-import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
-import ca.phon.ui.action.PhonUIAction;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.ui.action.*;
 
 /**
  * Panel for modifying spectrogram settings.

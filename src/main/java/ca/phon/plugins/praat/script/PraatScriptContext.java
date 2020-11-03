@@ -15,7 +15,7 @@
  */
 package ca.phon.plugins.praat.script;
 
-import org.apache.velocity.VelocityContext;
+import org.apache.velocity.*;
 
 /**
  * <p>This class is responsible for the following:
