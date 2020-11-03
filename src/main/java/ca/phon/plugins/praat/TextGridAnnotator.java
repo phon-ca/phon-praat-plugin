@@ -22,6 +22,7 @@ import ca.hedlund.jpraat.exceptions.*;
 import ca.phon.ipa.*;
 import ca.phon.orthography.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.syllable.*;
 
 public class TextGridAnnotator {

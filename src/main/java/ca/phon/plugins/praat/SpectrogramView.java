@@ -42,6 +42,7 @@ import ca.phon.media.*;
 import ca.phon.media.TimeUIModel.*;
 import ca.phon.plugins.praat.painters.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.ui.*;
 import ca.phon.ui.action.*;
 import ca.phon.ui.decorations.*;

@@ -31,6 +31,7 @@ import ca.phon.plugins.praat.*;
 import ca.phon.plugins.praat.script.*;
 import ca.phon.project.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.session.filter.*;
 import ca.phon.syllable.*;
 

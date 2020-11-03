@@ -35,6 +35,7 @@ import ca.phon.plugin.*;
 import ca.phon.plugins.praat.*;
 import ca.phon.project.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.ui.decorations.*;
 import ca.phon.ui.wizard.*;
 import ca.phon.worker.*;

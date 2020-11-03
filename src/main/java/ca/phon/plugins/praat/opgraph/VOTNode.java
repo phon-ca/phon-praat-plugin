@@ -32,6 +32,7 @@ import ca.phon.opgraph.app.extensions.*;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.ui.text.*;
 
 /**

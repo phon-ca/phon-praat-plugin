@@ -27,6 +27,7 @@ import ca.phon.ipa.alignment.*;
 import ca.phon.orthography.*;
 import ca.phon.project.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.syllabifier.*;
 
 public class TextGridImporter {

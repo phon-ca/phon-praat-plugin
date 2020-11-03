@@ -47,6 +47,7 @@ import ca.phon.project.*;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 import ca.phon.ui.text.*;
 
 public abstract class PraatNode extends TableOpNode implements NodeSettings {

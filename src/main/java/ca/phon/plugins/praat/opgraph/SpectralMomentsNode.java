@@ -33,6 +33,7 @@ import ca.phon.plugins.praat.*;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 
 @OpNodeInfo(
 	name="Spectral Moments",

@@ -30,6 +30,7 @@ import ca.phon.app.log.*;
 import ca.phon.media.*;
 import ca.phon.project.*;
 import ca.phon.session.*;
+import ca.phon.session.Record;
 
 /**
  * Utility class for reading/writing TextGrid files
