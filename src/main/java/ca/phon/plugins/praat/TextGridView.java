@@ -7,6 +7,8 @@ import java.util.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 
+import com.sun.jna.*;
+
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.phon.media.*;
 import ca.phon.util.*;
@@ -129,7 +131,7 @@ public class TextGridView extends TimeComponent {
 	public int getVisibleTierCount() {
 		int retVal = 0;
 		
-		if(textGrid != null) {
+		if(textGrid != null && textGrid.getPointer() != Pointer.NULL) {
 			for(long i = 1; i <= textGrid.numberOfTiers(); i++) {
 				if(isTierVisible(textGrid.tier(i).getName())) ++retVal;
 			}
