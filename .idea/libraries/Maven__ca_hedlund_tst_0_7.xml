@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: ca.hedlund:tst:0.7">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/ca/hedlund/tst/0.7/tst-0.7.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/ca/hedlund/tst/0.7/tst-0.7-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/ca/hedlund/tst/0.7/tst-0.7-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

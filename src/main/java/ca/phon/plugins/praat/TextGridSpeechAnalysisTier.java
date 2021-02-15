@@ -137,7 +137,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		forceUnlockBtn.setBottomLabelText("<html>TextGrid open in Praat: Select menu <i>File</i> &gt; <i>Send back to calling program</i> (in Praat), or click this message to unlock</html>");
 		
 		textGridView = new TextGridView(getTimeModel());
-		textGridView.setFont(FontPreferences.getUIIpaFont());
+		textGridView.setFont(FontPreferences.getTierFont());
 		textGridView.addTextGridViewListener( new TextGridViewListener() {
 			
 			@Override

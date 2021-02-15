@@ -62,7 +62,7 @@ public class TextGridPainter extends BufferedPainter<TextGrid> {
 		
 		g2d.setColor(Color.WHITE);
 		g2d.fill(bounds);
-		g2d.setFont(FontPreferences.getUIIpaFont());
+		g2d.setFont(FontPreferences.getTierFont());
 		
 		int visibleTierIdx = 0;
 		for(long tIdx = 1; tIdx <= obj.numberOfTiers(); tIdx++) {

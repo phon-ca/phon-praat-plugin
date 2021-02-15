@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.teamdev:jxbrowser:license-phon:6.X">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/teamdev/jxbrowser/6.X/jxbrowser-6.X-license-phon.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/teamdev/jxbrowser/6.X/jxbrowser-6.X-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/teamdev/jxbrowser/6.X/jxbrowser-6.X-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

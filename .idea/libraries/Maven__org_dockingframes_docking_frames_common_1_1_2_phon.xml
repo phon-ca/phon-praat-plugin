@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.dockingframes:docking-frames-common:1.1.2-phon">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/dockingframes/docking-frames-common/1.1.2-phon/docking-frames-common-1.1.2-phon.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/dockingframes/docking-frames-common/1.1.2-phon/docking-frames-common-1.1.2-phon-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/dockingframes/docking-frames-common/1.1.2-phon/docking-frames-common-1.1.2-phon-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
