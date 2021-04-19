@@ -309,6 +309,9 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		final EditorAction segChangedAct = new DelegateEditorAction(this, "onTierChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segChangedAct);
 
+		final EditorAction tierViewChangedAct = new DelegateEditorAction(this, "onTierViewChanged");
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_VIEW_CHANGED_EVT, tierViewChangedAct);
+
 		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
 		
@@ -690,6 +693,11 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		if(ee.getEventData() != null && ee.getEventData().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
+	}
+
+	@RunOnEDT
+	public void onTierViewChanged(EditorEvent ee) {
+		update();
 	}
 
 	@RunOnEDT
