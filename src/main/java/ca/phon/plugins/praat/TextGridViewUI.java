@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.event.*;
 
+import ca.phon.ui.fonts.FontPreferences;
 import com.github.davidmoten.rtree.*;
 import com.github.davidmoten.rtree.geometry.*;
 
@@ -78,6 +79,7 @@ public class TextGridViewUI extends TimeComponentUI {
 	
 	public int getTierLabelHeight() {
 		JLabel lbl = getLabel();
+		lbl.setFont(lbl.getFont().deriveFont(FontPreferences.getDefaultFontSize()));
 		String oldTxt = lbl.getText();
 		lbl.setText("WWWW");
 		int retVal = lbl.getPreferredSize().height;
