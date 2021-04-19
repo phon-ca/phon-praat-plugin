@@ -29,7 +29,7 @@ import javax.swing.event.*;
 import javax.swing.tree.*;
 
 import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
-import ca.phon.media.util.MediaLocator;
+import ca.phon.media.MediaLocator;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
 
@@ -436,7 +436,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 				fontSizeMenu.addSeparator();
 
-				final PhonUIAction useDefaultFontSizeAct = new PhonUIAction(RecordDataEditorView.this, "setFontSizeDelta", 0.0f);
+				final PhonUIAction useDefaultFontSizeAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "setFontSizeDelta", 0.0f);
 				useDefaultFontSizeAct.putValue(PhonUIAction.NAME, "Use default font size");
 				useDefaultFontSizeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Reset font size");
 				fontSizeMenu.add(useDefaultFontSizeAct);
@@ -463,6 +463,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		fontSizeButton = new DropDownButton(fontSizeAct);
 		fontSizeButton.setOnlyPopup(true);
+
+		parent.getToolbar().add(fontSizeButton);
 	}
 
 	/**
