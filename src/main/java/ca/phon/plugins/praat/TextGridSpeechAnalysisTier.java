@@ -182,12 +182,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		this.addPropertyChangeListener("fontSizeDelta", e -> {
 			PrefHelper.getUserPreferences().putFloat(FONT_SIZE_DELTA_PROP, getFontSizeDelta());
-			Font tierFont = FontPreferences.getTierFont();
-			float newSize = (getFontSizeDelta() < 0
-					? Math.max(2, tierFont.getSize()+getFontSizeDelta())
-					: Math.min(34, tierFont.getSize()+getFontSizeDelta()));
-			tierFont = tierFont.deriveFont(newSize);
-			textGridView.setFont(tierFont);
+			update();
 		});
 		
 		add(textGridView, BorderLayout.CENTER);
@@ -343,6 +338,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		textGridView.setTextGrid(this.tg);
 		
 		updateHiddenTiers();
+		updateTierFonts();
 		updateTierLabelBackgrounds();
 		
 		if(oldTextGrid != null) {
@@ -658,6 +654,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	private void update() {
+		updateTierFonts();
 		updateTierLabelBackgrounds();
 		textGridView.repaint();
 		
@@ -916,6 +913,42 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		}
 		
 		return retVal;
+	}
+
+	public void updateTierFonts() {
+		textGridView.clearTierFonts();
+
+		TextGrid tg = getTextGrid();
+		if(tg == null) return;
+
+		Font defaultFont = FontPreferences.getTierFont();
+		defaultFont = getFontSizeDelta() < 0
+				? defaultFont.deriveFont(Math.max(2, defaultFont.getSize() + getFontSizeDelta()))
+				: defaultFont.deriveFont(Math.min(34, defaultFont.getSize() + getFontSizeDelta()));
+
+		for(long i = 1; i <= tg.numberOfTiers(); i++) {
+			Function tier = tg.tier(i);
+			if(isMappedTier(tier.getName())) {
+				String phonTierName = tier.getName().split(":")[0];
+				Optional<TierViewItem> tvi = getParentView().getEditor().getSession().getTierView()
+						.stream()
+						.filter( tv -> tv.getTierName().equals(phonTierName) )
+						.findFirst();
+				Font tierFont = defaultFont;
+				if(tvi.isPresent()) {
+					if(!"default".equals(tvi.get().getTierFont())) {
+						tierFont = Font.decode(tvi.get().getTierFont());
+						tierFont = getFontSizeDelta() < 0
+								? tierFont.deriveFont(Math.max(2, tierFont.getSize() + getFontSizeDelta()))
+								: tierFont.deriveFont(Math.min(34, tierFont.getSize() + getFontSizeDelta()));
+					}
+				}
+
+				textGridView.setTierFont(tier.getName(), tierFont);
+			} else {
+				textGridView.setTierFont(tier.getName(), defaultFont);
+			}
+		}
 	}
 	
 	public void updateTierLabelBackgrounds() {

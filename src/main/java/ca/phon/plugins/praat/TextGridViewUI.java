@@ -62,13 +62,30 @@ public class TextGridViewUI extends TimeComponentUI {
 			label = new JLabel();
 			label.setDoubleBuffered(false);
 		}
-		if(tgView != null)
-			label.setFont(tgView.getFont());
 		return label;
 	}
+
+	public Font getTierFont(String tierName) {
+		return tgView.getTierFont(tierName);
+	}
+
+	public int getTierY(String tierName) {
+		int y = 0;
+		for(long i = 1; i <= tgView.getTextGrid().numberOfTiers(); i++) {
+			Function tier = tgView.getTextGrid().tier(i);
+
+			if(tier.getName().equals(tierName)) {
+				break;
+			} else {
+				y += getTierHeight(tier.getName());
+			}
+		}
+		return y;
+	}
 	
-	public int getTierHeight() {
+	public int getTierHeight(String tierName) {
 		JLabel lbl = getLabel();
+		lbl.setFont(getTierFont(tierName));
 		String oldTxt = lbl.getText();
 		lbl.setText("WWWW");
 		int txtHeight = lbl.getPreferredSize().height;
@@ -92,7 +109,15 @@ public class TextGridViewUI extends TimeComponentUI {
 	public Dimension getPreferredSize(JComponent c) {
 		int numTiers = tgView.getVisibleTierCount();
 		int prefWidth = getTimeComponent().getTimeModel().getPreferredWidth();
-		int prefHeight = numTiers * getTierHeight();
+		int prefHeight = 0;
+		if(tgView.getTextGrid() != null && numTiers > 0) {
+			for (long i = 1; i <= tgView.getTextGrid().numberOfTiers(); i++) {
+				Function tier = tgView.getTextGrid().tier(i);
+				if(tgView.isTierVisible(tier.getName())) {
+					prefHeight += getTierHeight(tier.getName());
+				}
+			}
+		}
 		
 		return new Dimension(prefWidth, prefHeight);
 	}
@@ -111,10 +136,7 @@ public class TextGridViewUI extends TimeComponentUI {
 			g2d.setColor(tgView.getBackground());
 			g2d.fillRect(0, 0, tgView.getWidth(), tgView.getHeight());
 		}
-		
-		int tierHeight = getTierHeight();
-		int tierLabelHeight = getTierLabelHeight();
-		
+
 		TextGrid tg = tgView.getTextGrid();
 		if(tg != null) {
 			int visibleTierIdx = 0;
@@ -122,7 +144,8 @@ public class TextGridViewUI extends TimeComponentUI {
 				final Function tier = tg.tier(tIdx);
 				if(!tgView.isTierVisible(tier.getName())) continue;
 				
-				int tierLabelY = visibleTierIdx * tierHeight;
+				int tierLabelY = getTierY(tier.getName());
+				int tierHeight = getTierHeight(tier.getName());
 				int tierY = tierLabelY;
 				// tier rect
 				final Rectangle2D tierRect = new Rectangle2D.Double(
@@ -193,6 +216,9 @@ public class TextGridViewUI extends TimeComponentUI {
 	}
 	
 	public void paintIntervalTier(long tierIndex, IntervalTier intervalTier, Graphics2D g2d, Rectangle2D bounds) {
+		Font tierFont = getTierFont(intervalTier.getName());
+		g2d.setFont(tierFont);
+
 		for(long i = 1; i <= intervalTier.numberOfIntervals(); i++) {
 			final TextInterval interval = intervalTier.interval(i);
 			
@@ -218,11 +244,10 @@ public class TextGridViewUI extends TimeComponentUI {
 					endX, bounds.getY() + bounds.getHeight());
 			g2d.draw(endLine);
 
-			g2d.setFont(tgView.getFont());
-
 			final String labelText = interval.getText();
 			JLabel lbl = getLabel();
 			lbl.setText(labelText);
+			lbl.setFont(tierFont);
 			
 			lbl.setHorizontalAlignment(SwingConstants.CENTER);
 			lbl.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -244,6 +269,9 @@ public class TextGridViewUI extends TimeComponentUI {
 	}
 	
 	public void paintPointTier(TextTier textTier, Graphics2D g2d, Rectangle2D bounds) {
+		Font tierFont = getTierFont(textTier.getName());
+		g2d.setFont(tierFont);
+
 		double contentWidth = bounds.getWidth();
 		double tgLen = textTier.getXmax() - textTier.getXmin();
 		double pxPerSec = contentWidth / tgLen;

@@ -7,6 +7,7 @@ import java.util.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 
+import ca.phon.ui.fonts.FontPreferences;
 import com.sun.jna.*;
 
 import ca.hedlund.jpraat.binding.fon.*;
@@ -22,6 +23,8 @@ public class TextGridView extends TimeComponent {
 	private boolean showLabels = true;
 	
 	private Map<String, Color> tierColorMap = new LinkedHashMap<String, Color>();
+
+	private Map<String, Font> tierFontMap = new LinkedHashMap<String, Font>();
 	
 	public final static Color DEFAULT_TIER_LABEL_COLOR = new Color(255, 255, 0);
 	
@@ -127,7 +130,24 @@ public class TextGridView extends TimeComponent {
 		tierVisibilityMap.put(tierName, visible);
 		super.firePropertyChange(tierName + ".visible", oldVal, visible);
 	}
-	
+
+	public void clearTierFonts() {
+		tierFontMap.clear();
+	}
+
+	public Font getTierFont(String tierName) {
+		Font retVal = tierFontMap.get(tierName);
+		if(retVal == null)
+			retVal = super.getFont();
+		return retVal;
+	}
+
+	public void setTierFont(String tierName, Font tierFont) {
+		Font oldVal = getTierFont(tierName);
+		tierFontMap.put(tierName, tierFont);
+		firePropertyChange(tierName + ".font", oldVal, tierFont);
+	}
+
 	public int getVisibleTierCount() {
 		int retVal = 0;
 		
