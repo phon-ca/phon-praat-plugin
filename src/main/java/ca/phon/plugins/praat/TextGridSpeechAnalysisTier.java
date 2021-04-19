@@ -28,6 +28,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
 
+import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
+import ca.phon.media.util.MediaLocator;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
 
@@ -37,7 +39,6 @@ import ca.hedlund.jpraat.exceptions.*;
 import ca.phon.app.log.*;
 import ca.phon.app.session.editor.*;
 import ca.phon.app.session.editor.view.speech_analysis.*;
-import ca.phon.media.*;
 import ca.phon.plugins.praat.export.*;
 import ca.phon.plugins.praat.importer.*;
 import ca.phon.plugins.praat.script.*;
@@ -54,6 +55,7 @@ import ca.phon.ui.toast.*;
 import ca.phon.util.*;
 import ca.phon.util.icons.*;
 import ca.phon.worker.*;
+import org.jdesktop.swingx.HorizontalLayout;
 
 /**
  * Display a TextGrid as a vertical list of tiers.
@@ -84,6 +86,16 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	private SpeechAnalysisEditorView parent;
 
 	private TextGridView textGridView;
+
+	/**
+	 * Font size
+	 */
+	private DropDownButton fontSizeButton;
+	private JPopupMenu fontSizeMenu;
+
+	public final static String FONT_SIZE_DELTA_PROP = TextGridSpeechAnalysisTier.class.getName() + ".fontSizeDelta";
+	public final static float DEFAULT_FONT_SIZE_DELTA = 0.0f;
+	public float fontSizeDelta = PrefHelper.getFloat(FONT_SIZE_DELTA_PROP, DEFAULT_FONT_SIZE_DELTA);
 
 	public final static String SHOW_TEXTGRID_PROP = TextGridSpeechAnalysisTier.class.getName() + ".showTextGrid";
 	private boolean showTextGrid =
@@ -161,10 +173,30 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		} );
 
 		textGridView.addMouseListener(getParentView().getContextMenuAdapter());
+
+		this.addPropertyChangeListener("fontSizeDelta", e -> {
+			PrefHelper.getUserPreferences().putFloat(FONT_SIZE_DELTA_PROP, getFontSizeDelta());
+			Font tierFont = FontPreferences.getTierFont();
+			float newSize = (getFontSizeDelta() < 0
+					? Math.max(2, tierFont.getSize()+getFontSizeDelta())
+					: Math.min(34, tierFont.getSize()+getFontSizeDelta()));
+			tierFont = tierFont.deriveFont(newSize);
+			textGridView.setFont(tierFont);
+		});
 		
 		add(textGridView, BorderLayout.CENTER);
 		
 		loadTextGrid();
+	}
+
+	public float getFontSizeDelta() {
+		return this.fontSizeDelta;
+	}
+
+	public void setFontSizeDelta(int fontSizeDelta) {
+		float oldVal = this.fontSizeDelta;
+		this.fontSizeDelta = fontSizeDelta;
+		firePropertyChange("fontSizeDelta", oldVal, fontSizeDelta);
 	}
 
 	public File getCurrentTextGridFile() {
@@ -369,6 +401,68 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		});
 		parent.getToolbar().addSeparator();
 		parent.getToolbar().add(menuBtn);
+
+		fontSizeMenu = new JPopupMenu();
+		fontSizeMenu.addPopupMenuListener(new PopupMenuListener() {
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+				fontSizeMenu.removeAll();
+
+				// setup font scaler
+				final JLabel smallLbl = new JLabel("A");
+				smallLbl.setFont(getFont().deriveFont(FontPreferences.getDefaultFontSize()));
+				smallLbl.setHorizontalAlignment(SwingConstants.CENTER);
+				JLabel largeLbl = new JLabel("A");
+				largeLbl.setFont(getFont().deriveFont(FontPreferences.getDefaultFontSize()*2));
+				largeLbl.setHorizontalAlignment(SwingConstants.CENTER);
+
+				final JSlider scaleSlider = new JSlider(-8, 24);
+				scaleSlider.setValue((int)getFontSizeDelta());
+				scaleSlider.setMajorTickSpacing(8);
+				scaleSlider.setMinorTickSpacing(2);
+				scaleSlider.setSnapToTicks(true);
+				scaleSlider.setPaintTicks(true);
+				scaleSlider.addChangeListener( changeEvent -> {
+					int sliderVal = scaleSlider.getValue();
+					setFontSizeDelta(sliderVal);
+				});
+
+				JComponent fontComp = new JPanel(new HorizontalLayout());
+				fontComp.add(smallLbl);
+				fontComp.add(scaleSlider);
+				fontComp.add(largeLbl);
+
+				fontSizeMenu.add(fontComp);
+
+				fontSizeMenu.addSeparator();
+
+				final PhonUIAction useDefaultFontSizeAct = new PhonUIAction(RecordDataEditorView.this, "setFontSizeDelta", 0.0f);
+				useDefaultFontSizeAct.putValue(PhonUIAction.NAME, "Use default font size");
+				useDefaultFontSizeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Reset font size");
+				fontSizeMenu.add(useDefaultFontSizeAct);
+			}
+
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+
+			}
+
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent e) {
+
+			}
+		});
+
+		final PhonUIAction fontSizeAct = new PhonUIAction(this, null);
+		fontSizeAct.putValue(PhonUIAction.NAME, "Font size");
+		fontSizeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show font size menu");
+		fontSizeAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("apps/preferences-desktop-font", IconSize.SMALL));
+		fontSizeAct.putValue(DropDownButton.BUTTON_POPUP, fontSizeMenu);
+		fontSizeAct.putValue(DropDownButton.ARROW_ICON_POSITION, SwingConstants.BOTTOM);
+		fontSizeAct.putValue(DropDownButton.ARROW_ICON_GAP, 2);
+
+		fontSizeButton = new DropDownButton(fontSizeAct);
+		fontSizeButton.setOnlyPopup(true);
 	}
 
 	/**
