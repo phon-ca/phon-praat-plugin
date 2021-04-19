@@ -149,7 +149,13 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		forceUnlockBtn.setBottomLabelText("<html>TextGrid open in Praat: Select menu <i>File</i> &gt; <i>Send back to calling program</i> (in Praat), or click this message to unlock</html>");
 		
 		textGridView = new TextGridView(getTimeModel());
-		textGridView.setFont(FontPreferences.getTierFont());
+
+		Font font = FontPreferences.getTierFont();
+		float fontSize = getFontSizeDelta() < 0
+				? Math.max(2, font.getSize() + getFontSizeDelta())
+				: Math.min(34, font.getSize() + getFontSizeDelta());
+		font = font.deriveFont(fontSize);
+		textGridView.setFont(font);
 		textGridView.addTextGridViewListener( new TextGridViewListener() {
 			
 			@Override
@@ -193,7 +199,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		return this.fontSizeDelta;
 	}
 
-	public void setFontSizeDelta(int fontSizeDelta) {
+	public void setFontSizeDelta(float fontSizeDelta) {
 		float oldVal = this.fontSizeDelta;
 		this.fontSizeDelta = fontSizeDelta;
 		firePropertyChange("fontSizeDelta", oldVal, fontSizeDelta);

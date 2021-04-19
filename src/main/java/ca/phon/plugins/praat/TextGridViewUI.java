@@ -170,7 +170,10 @@ public class TextGridViewUI extends TimeComponentUI {
 	public Rectangle2D paintTierLabel(Function tier, Graphics2D g2d, int y) {
 		final String name = (tier.getName() != null ? tier.getName().toString() : "");
 		int x = tgView.getVisibleRect().x;
-		
+
+		Font lblFont = tgView.getFont().deriveFont(FontPreferences.getDefaultFontSize());
+		g2d.setFont(lblFont);
+
 		// get bounding rectangle of tier name
 		Rectangle2D tierNameBounds = g2d.getFontMetrics().getStringBounds(name, g2d);
 		
@@ -214,7 +217,9 @@ public class TextGridViewUI extends TimeComponentUI {
 			final Line2D endLine = new Line2D.Double(endX, bounds.getY(),
 					endX, bounds.getY() + bounds.getHeight());
 			g2d.draw(endLine);
-			
+
+			g2d.setFont(tgView.getFont());
+
 			final String labelText = interval.getText();
 			JLabel lbl = getLabel();
 			lbl.setText(labelText);
