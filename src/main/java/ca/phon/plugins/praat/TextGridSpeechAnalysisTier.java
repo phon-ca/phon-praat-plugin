@@ -931,8 +931,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		Font defaultFont = FontPreferences.getTierFont();
 		defaultFont = getFontSizeDelta() < 0
-				? defaultFont.deriveFont(Math.max(2, defaultFont.getSize() + getFontSizeDelta()))
-				: defaultFont.deriveFont(Math.min(34, defaultFont.getSize() + getFontSizeDelta()));
+				? defaultFont.deriveFont(Math.max(FontPreferences.MIN_FONT_SIZE, defaultFont.getSize() + getFontSizeDelta()))
+				: defaultFont.deriveFont(Math.min(FontPreferences.MAX_FONT_SIZE, defaultFont.getSize() + getFontSizeDelta()));
 
 		for(long i = 1; i <= tg.numberOfTiers(); i++) {
 			Function tier = tg.tier(i);
@@ -947,8 +947,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 					if(!"default".equals(tvi.get().getTierFont())) {
 						tierFont = Font.decode(tvi.get().getTierFont());
 						tierFont = getFontSizeDelta() < 0
-								? tierFont.deriveFont(Math.max(2, tierFont.getSize() + getFontSizeDelta()))
-								: tierFont.deriveFont(Math.min(34, tierFont.getSize() + getFontSizeDelta()));
+								? tierFont.deriveFont(Math.max(FontPreferences.MIN_FONT_SIZE, tierFont.getSize() + getFontSizeDelta()))
+								: tierFont.deriveFont(Math.min(FontPreferences.MAX_FONT_SIZE, tierFont.getSize() + getFontSizeDelta()));
 					}
 				}
 
