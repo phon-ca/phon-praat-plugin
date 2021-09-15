@@ -1269,6 +1269,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		@Override
 		protected void done() {
 			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+			if(lockInfo == null) return;
+
 			try {
 				TextGrid tg = get();
 
@@ -1279,6 +1281,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				unlock();
 				update();
 
+				getParentView().getEditor().requestFocus();
 				if(Desktop.isDesktopSupported()) {
 					try {
 						Desktop.getDesktop().requestForeground(true);
@@ -1286,7 +1289,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 						LogUtil.warning(e);
 					}
 				}
-				getParentView().getEditor().requestFocus();
 			} catch (InterruptedException e) {
 				LogUtil.severe(e);
 				ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
