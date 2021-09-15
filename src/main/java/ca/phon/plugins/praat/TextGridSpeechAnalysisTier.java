@@ -20,6 +20,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 import java.util.regex.*;
@@ -1218,27 +1219,85 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			File praatDataFile = new File(PraatDir.getPath(), "praat_backToCaller.Data");
 			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
 			if(praatDataFile.equals(file) && lockInfo != null) {
-				// we have our return message
-				try {
-					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(praatDataFile.getAbsolutePath()));
-					TextGridManager.saveTextGrid(tg, lockInfo.getObj1());
-
-					if(currentTextGridFile.equals(lockInfo.getObj1())) {
-						setTextGrid(tg);
-					}
-				} catch (PraatException | IOException e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-					ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
-				}
-				unlock();
-				update();
-				
-				if(Desktop.isDesktopSupported())
-					Desktop.getDesktop().requestForeground(true);
-				getParentView().getEditor().requestFocus();
+				ReloadTextGridTask task = new ReloadTextGridTask(praatDataFile);
+				task.execute();
 			}
 		}
 		
+	}
+
+	private class ReloadTextGridTask extends SwingWorker<TextGrid, TextGrid> {
+
+		private final File textGridFile;
+
+		public ReloadTextGridTask(File file) {
+			this.textGridFile = file;
+		}
+
+		private void waitForEndOfChanges() throws InterruptedException {
+			long currentFileSize = FileUtils.sizeOf(textGridFile);
+			long prevFileSize = currentFileSize;
+			int sameSizeCnt = 0;
+			while(sameSizeCnt < 10) {
+				Thread.sleep(50);
+				currentFileSize = FileUtils.sizeOf(textGridFile);
+				if(currentFileSize == prevFileSize)
+					++sameSizeCnt;
+				else {
+					sameSizeCnt = 0;
+					prevFileSize = currentFileSize;
+				}
+			}
+		}
+
+		@Override
+		protected TextGrid doInBackground() throws Exception {
+			// wait until currentFileSize is the same 10 times in a row
+			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+			try {
+				waitForEndOfChanges();
+				TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(textGridFile.getAbsolutePath()));
+				TextGridManager.saveTextGrid(tg, lockInfo.getObj1());
+
+				return tg;
+			} catch (PraatException | IOException e) {
+				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				throw e;
+			}
+		}
+
+		@Override
+		protected void done() {
+			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
+			try {
+				TextGrid tg = get();
+
+				if(currentTextGridFile.equals(lockInfo.getObj1())) {
+					setTextGrid(tg);
+				}
+
+				unlock();
+				update();
+
+				if(Desktop.isDesktopSupported()) {
+					try {
+						Desktop.getDesktop().requestForeground(true);
+					} catch (UnsupportedOperationException e) {
+						LogUtil.warning(e);
+					}
+				}
+				getParentView().getEditor().requestFocus();
+			} catch (InterruptedException e) {
+				LogUtil.severe(e);
+				ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
+			} catch (ExecutionException e) {
+				LogUtil.severe(e);
+				ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
+			}
+
+			super.done();
+		}
+
 	}
 
 }
