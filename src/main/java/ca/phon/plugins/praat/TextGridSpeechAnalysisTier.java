@@ -31,6 +31,7 @@ import javax.swing.tree.*;
 
 import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
 import ca.phon.media.MediaLocator;
+import ca.phon.util.OSInfo;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
 
@@ -1282,7 +1283,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				update();
 
 				getParentView().getEditor().requestFocus();
-				if(Desktop.isDesktopSupported()) {
+				if(OSInfo.isMacOs() && Desktop.isDesktopSupported()) {
 					try {
 						Desktop.getDesktop().requestForeground(true);
 					} catch (UnsupportedOperationException e) {
