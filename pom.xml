@@ -1,67 +1,67 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>ca.phon</groupId>
-  <artifactId>phon-praat-plugin</artifactId>
-  <version>56</version>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>ca.phon</groupId>
+	<artifactId>phon-praat-plugin</artifactId>
+	<version>56</version>
 
-  <distributionManagement>
-	<repository>
-		<id>github</id>
-                <name>GitHub phon-ca Apache Maven Packages</name>
-                <url>https://maven.pkg.github.com/phon-ca/phon-praat-plugin</url>
-        </repository>
-  </distributionManagement>
-  
-  <properties>
-    <!-- Project settings -->
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.sourceVersion>15</project.build.sourceVersion>
-    <project.build.targetVersion>15</project.build.targetVersion>
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub phon-ca Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/phon-ca/phon-praat-plugin</url>
+		</repository>
+	</distributionManagement>
 
-    <!-- Dependency versions -->
-    <ca.hedlund.jpraat.version>1.0.1</ca.hedlund.jpraat.version>
-    <ca.phon.phon-app.version>3.3.7-SNAPSHOT</ca.phon.phon-app.version>
-    <org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
-    
-    <!-- Plugin versions -->
-    <org.apache.maven.plugins.maven-compiler-plugin.version>3.8.0</org.apache.maven.plugins.maven-compiler-plugin.version>
-    <org.apache.maven.plugins.maven-shade-plugin.version>2.2</org.apache.maven.plugins.maven-shade-plugin.version>
-  </properties>
+	<properties>
+		<!-- Project settings -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.build.sourceVersion>15</project.build.sourceVersion>
+		<project.build.targetVersion>15</project.build.targetVersion>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.velocity</groupId>
-      <artifactId>velocity</artifactId>
-      <version>${org.apache.velocity.velocity.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>ca.phon</groupId>
-      <artifactId>phon-app</artifactId>
-      <version>${ca.phon.phon-app.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>ca.hedlund</groupId>
-      <artifactId>jpraat</artifactId>
-      <version>${ca.hedlund.jpraat.version}</version>
-    </dependency>
-  </dependencies>
+		<!-- Dependency versions -->
+		<ca.hedlund.jpraat.version>1.0.1</ca.hedlund.jpraat.version>
+		<ca.phon.phon-app.version>3.3.7-SNAPSHOT</ca.phon.phon-app.version>
+		<org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
 
-  <build>
-    <plugins>
-      <!-- Setup target/source settings for Java compilation -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${org.apache.maven.plugins.maven-compiler-plugin.version}</version>
-        <configuration>
-          <source>${project.build.sourceVersion}</source>
-          <target>${project.build.targetVersion}</target>
-          <release>${project.build.targetVersion}</release>
-        </configuration>
-      </plugin>
+		<!-- Plugin versions -->
+		<org.apache.maven.plugins.maven-compiler-plugin.version>3.8.0</org.apache.maven.plugins.maven-compiler-plugin.version>
+		<org.apache.maven.plugins.maven-shade-plugin.version>2.2</org.apache.maven.plugins.maven-shade-plugin.version>
+	</properties>
 
-    </plugins>
-  </build>
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.velocity</groupId>
+			<artifactId>velocity</artifactId>
+			<version>${org.apache.velocity.velocity.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.phon</groupId>
+			<artifactId>phon-app</artifactId>
+			<version>${ca.phon.phon-app.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.hedlund</groupId>
+			<artifactId>jpraat</artifactId>
+			<version>${ca.hedlund.jpraat.version}</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- Setup target/source settings for Java compilation -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${org.apache.maven.plugins.maven-compiler-plugin.version}</version>
+				<configuration>
+					<source>${project.build.sourceVersion}</source>
+					<target>${project.build.targetVersion}</target>
+					<release>${project.build.targetVersion}</release>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
 </project>
