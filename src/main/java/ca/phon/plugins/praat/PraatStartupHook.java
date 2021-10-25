@@ -49,7 +49,7 @@ public class PraatStartupHook implements PhonStartupHook, IPluginExtensionPoint<
 				NativeLibrary.addSearchPath("praat", praatSearchFolder);
 			}
 			
-			Praat.INSTANCE.praat_lib_init();
+			Praat.initLibrary();
 			
 			final PraatVersion praatVersion = PraatVersion.getVersion();
 			// print version information to log

@@ -92,7 +92,7 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 				double timeStep = len / 10.0;
 				for(int i = 1; i <= 9; i++) {
 					double v =
-							intensity.getValueAtX(textInterval.getXmin() + (i * timeStep), 1, 1);
+							intensity.getValueAtX(textInterval.getXmin() + (i * timeStep), 1, kVector_valueInterpolation.LINEAR);
 					v = intensity.convertSpecialToStandardUnit(v, 1, Intensity.UNITS_DB);
 					rowData[colIdx++] = v;
 				}
