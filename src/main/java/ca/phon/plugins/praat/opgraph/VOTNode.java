@@ -76,6 +76,7 @@ public class VOTNode extends PraatNode implements NodeSettings {
 		final Optional<TextPoint> votPoint = findVoTPoint(votTier.get(), textInterval);
 		if(!votPoint.isPresent()) {
 			addToWarningsTable(sessionPath, result, "VoT point not found in VoT tier");
+			return;
 		}
 		
 		final double vot = votPoint.get().getNumber() - textInterval.getXmax();
