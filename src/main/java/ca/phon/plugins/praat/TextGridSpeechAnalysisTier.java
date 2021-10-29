@@ -32,6 +32,7 @@ import javax.swing.tree.*;
 import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
 import ca.phon.media.MediaLocator;
 import ca.phon.util.OSInfo;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
 
@@ -1257,12 +1258,35 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
 			try {
 				waitForEndOfChanges();
+
+				byte[] origmd5;
+				try (InputStream is = new FileInputStream(textGridFile)) {
+					origmd5 = DigestUtils.md5(is);
+				}
+
 				TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(textGridFile.getAbsolutePath()));
-				TextGridManager.saveTextGrid(tg, lockInfo.getObj1());
+				File testFile = new File(lockInfo.getObj1().getParentFile(),
+						FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-temp.TextGrid");
+				TextGridManager.saveTextGrid(tg, testFile);
+
+				byte[] newMD5;
+				try (InputStream is = new FileInputStream(testFile)) {
+					newMD5 = DigestUtils.md5(is);
+				}
+
+				if(Arrays.equals(origmd5, newMD5)) {
+					File backupFile = new File(lockInfo.getObj1().getParentFile(),
+							FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-backup.TextGrid");
+					FileUtils.moveFile(lockInfo.getObj1(), backupFile);
+					FileUtils.moveFile(testFile, lockInfo.getObj1());
+				} else {
+					testFile.delete();
+					throw new IOException("Could not copy TextGrid data from Praat");
+				}
 
 				return tg;
 			} catch (PraatException | IOException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
 				throw e;
 			}
 		}
@@ -1290,12 +1314,9 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 						LogUtil.warning(e);
 					}
 				}
-			} catch (InterruptedException e) {
+			} catch (InterruptedException | ExecutionException e) {
 				LogUtil.severe(e);
-				ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
-			} catch (ExecutionException e) {
-				LogUtil.severe(e);
-				ToastFactory.makeToast("Unable to update TextGrid!").start(TextGridSpeechAnalysisTier.this);
+				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
 			}
 
 			super.done();
