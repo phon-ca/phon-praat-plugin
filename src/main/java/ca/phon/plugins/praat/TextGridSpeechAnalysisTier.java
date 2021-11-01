@@ -18,6 +18,8 @@ package ca.phon.plugins.praat;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -31,7 +33,12 @@ import javax.swing.tree.*;
 
 import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
 import ca.phon.media.MediaLocator;
+import ca.phon.project.Project;
 import ca.phon.util.OSInfo;
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
@@ -570,8 +577,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		// show warning message about saving in utf8
 		if(PrefHelper.getBoolean(SHOW_UTF8_MESSAGE_PRAAT, DEFAULT_SHOW_UTF8_MESSAGE_PRAAT)) {
 			int selection = getParentView().getEditor().showMessageDialog("Edit TextGrid in Praat",
-					"When using this feature, goto settings under 'Praat -> Preferences -> Text writing preferences' and" +
-							"set the value to utf8. Once TextGrid editing in Praat has been completed, choose 'File -> Send back to calling" +
+					"To avoid issues when using the feature goto settings under 'Praat -> Preferences -> Text writing preferences' and" +
+							" set the value to utf16. Once TextGrid editing in Praat has been completed, choose 'File -> Send back to calling" +
 							" program' to update the TextGrid in Phon.", new String[]{"Ok", "Don't show again"});
 			if(selection == 1) {
 				PrefHelper.getUserPreferences().putBoolean(SHOW_UTF8_MESSAGE_PRAAT, Boolean.FALSE);
@@ -1225,6 +1232,62 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
 		}
 	}
+
+	/**
+	 * Backup textgrid
+	 *
+	 * @param textGridFile
+	 * @throws IOException
+	 * @throws ZipException
+	 */
+	private void backupTextGrid(File textGridFile) throws IOException, ZipException {
+		final Project project = getParentView().getEditor().getProject();
+		final Session session = getParentView().getEditor().getSession();
+
+		// save current session to backup zip
+		final String zipFilePath = project.getLocation() + File.separator + "backups.zip";
+		// create backup zip if necessary
+		final ZipFile zipFile = new ZipFile(zipFilePath);
+
+		final LocalDateTime dateTime = LocalDateTime.now();
+		final DateTimeFormatterBuilder formatterBuilder = new DateTimeFormatterBuilder();
+		final String dateSuffix = formatterBuilder.appendPattern("yyyy").appendLiteral("-").appendPattern("MM").appendLiteral("-")
+				.appendPattern("dd").appendLiteral("_").appendPattern("HH").appendLiteral("-")
+				.appendPattern("mm").appendLiteral("-").appendPattern("ss").toFormatter().format(dateTime);
+
+		final String zipName =
+				FilenameUtils.removeExtension(textGridFile.getName()) + "_" + dateSuffix + ".TextGrid";
+
+		if(textGridFile.exists()) {
+			if(!zipFile.getFile().exists()) {
+				ZipParameters parameters = new ZipParameters();
+
+				parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+				parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+
+				zipFile.createZipFile(new File(project.getLocation() + File.separator + "project.properties"), parameters);
+			}
+			// add to zip file
+			ZipParameters parameters = new ZipParameters();
+			parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+			parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+
+			parameters.setFileNameInZip("__res" + File.separator + "textgrids" + File.separator
+					+ session.getCorpus() + File.separator + session.getName() + File.separator + zipName);
+			parameters.setSourceExternalStream(true);
+
+			FileInputStream fin = null;
+			try {
+				fin = new FileInputStream(textGridFile);
+				zipFile.addStream(fin, parameters);
+			} catch (IOException e) {
+				LogUtil.severe(e);
+			} finally {
+				if(fin != null) fin.close();
+			}
+		}
+	}
+
 	
 	private class PraatTextGridResponseListener extends FileAlterationListenerAdaptor {
 
@@ -1289,6 +1352,16 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				if(Arrays.equals(origmd5, newMD5)) {
 					File backupFile = new File(lockInfo.getObj1().getParentFile(),
 							FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-backup.TextGrid");
+
+					if(backupFile.exists()) {
+						FileUtils.deleteQuietly(backupFile);
+					}
+
+					if(lockInfo.getObj1().exists() && PrefHelper.getBoolean(SessionEditor.BACKUP_WHEN_SAVING, true)) {
+						// add TextGrid to backup .zip
+						backupTextGrid(lockInfo.getObj1());
+					}
+
 					FileUtils.moveFile(lockInfo.getObj1(), backupFile);
 					FileUtils.moveFile(testFile, lockInfo.getObj1());
 				} else {
