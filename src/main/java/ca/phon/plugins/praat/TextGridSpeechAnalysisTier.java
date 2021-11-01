@@ -577,9 +577,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		// show warning message about saving in utf8
 		if(PrefHelper.getBoolean(SHOW_UTF8_MESSAGE_PRAAT, DEFAULT_SHOW_UTF8_MESSAGE_PRAAT)) {
 			int selection = getParentView().getEditor().showMessageDialog("Edit TextGrid in Praat",
-					"To avoid issues when using the feature goto settings under 'Praat -> Preferences -> Text writing preferences' and" +
-							" set the value to utf16. Once TextGrid editing in Praat has been completed, choose 'File -> Send back to calling" +
-							" program' to update the TextGrid in Phon.", new String[]{"Ok", "Don't show again"});
+					"For compatibility please set your Praat 'Text writing preferences' to 'utf16'",
+					new String[]{"Ok", "Don't show again"});
 			if(selection == 1) {
 				PrefHelper.getUserPreferences().putBoolean(SHOW_UTF8_MESSAGE_PRAAT, Boolean.FALSE);
 			}
