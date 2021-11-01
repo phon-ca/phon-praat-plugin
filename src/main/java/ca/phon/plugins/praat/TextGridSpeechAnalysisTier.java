@@ -1358,7 +1358,11 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 					if(lockInfo.getObj1().exists() && PrefHelper.getBoolean(SessionEditor.BACKUP_WHEN_SAVING, true)) {
 						// add TextGrid to backup .zip
-						backupTextGrid(lockInfo.getObj1());
+						try {
+							backupTextGrid(lockInfo.getObj1());
+						} catch (IOException | ZipException e) {
+							LogUtil.severe("Could not backup TextGrid: " + e.getLocalizedMessage());
+						}
 					}
 
 					FileUtils.moveFile(lockInfo.getObj1(), backupFile);
