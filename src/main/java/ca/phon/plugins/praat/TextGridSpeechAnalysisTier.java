@@ -132,6 +132,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	 */
 	private static final AtomicReference<Tuple<File, FileAlterationMonitor>> lockedTextGridRef = new AtomicReference<>();
 
+	private final AtomicReference<ReloadTextGridTask> reloadTextGridTaskRef = new AtomicReference<>();
+
 	public TextGridSpeechAnalysisTier(SpeechAnalysisEditorView parent) {
 		super(parent);
 		
@@ -622,9 +624,15 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		} catch (Exception e) {
 			unlock();
 			Toolkit.getDefaultToolkit().beep();
-			
+
+			try {
+				monitor.stop();
+			} catch (Exception ex) {
+				LogUtil.severe(ex);
+			}
+
 			getParentView().getEditor().showMessageDialog("Unable to open TextGrid", e.getLocalizedMessage(), MessageDialogProperties.okOptions);
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.severe(e);
 		}
 	}
 
@@ -672,6 +680,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			}
 			lockedTextGridRef.set(null);
 		}
+
+		reloadTextGridTaskRef.set(null);
 
 		revalidate();
 		textGridView.repaint();
@@ -1294,8 +1304,9 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		public void onFileChange(File file) {
 			File praatDataFile = new File(PraatDir.getPath(), "praat_backToCaller.Data");
 			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
-			if(praatDataFile.equals(file) && lockInfo != null) {
+			if(praatDataFile.equals(file) && lockInfo != null && reloadTextGridTaskRef.get() == null) {
 				ReloadTextGridTask task = new ReloadTextGridTask(praatDataFile);
+				reloadTextGridTaskRef.set(task);
 				task.execute();
 			}
 		}
@@ -1390,7 +1401,10 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				if(currentTextGridFile.equals(lockInfo.getObj1())) {
 					setTextGrid(tg);
 				}
-
+			} catch (InterruptedException | ExecutionException e) {
+				LogUtil.severe(e);
+				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
+			} finally {
 				unlock();
 				update();
 
@@ -1402,9 +1416,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 						LogUtil.warning(e);
 					}
 				}
-			} catch (InterruptedException | ExecutionException e) {
-				LogUtil.severe(e);
-				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
 			}
 
 			super.done();
