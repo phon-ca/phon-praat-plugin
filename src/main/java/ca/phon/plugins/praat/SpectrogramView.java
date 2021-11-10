@@ -207,8 +207,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 	private void setupEditorEvents() {
 		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(SpeechAnalysisEditorView.TIME_MODEL_UPDATED, recordChangedAct);
 		
 		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
 		getParentView().getEditor().getEventManager().registerActionForEvent(SessionMediaModel.SESSION_AUDIO_AVAILABLE, mediaChangedAct);
