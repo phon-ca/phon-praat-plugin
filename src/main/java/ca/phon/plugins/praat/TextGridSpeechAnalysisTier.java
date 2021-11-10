@@ -557,9 +557,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		}
 	}
 
-	private final static String SHOW_UTF8_MESSAGE_PRAAT = TextGridSpeechAnalysisTier.class.getSimpleName() +
-			".showUtf8PraatMessage";
-	private final static Boolean DEFAULT_SHOW_UTF8_MESSAGE_PRAAT = Boolean.TRUE;
 	/**
 	 * Send TextGrid to Praat.
 	 */
@@ -575,16 +572,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
 
 		if(segmentTier.numberOfGroups() == 0) return;
-
-		// show warning message about saving in utf8
-		if(PrefHelper.getBoolean(SHOW_UTF8_MESSAGE_PRAAT, DEFAULT_SHOW_UTF8_MESSAGE_PRAAT)) {
-			int selection = getParentView().getEditor().showMessageDialog("Edit TextGrid in Praat",
-					"For compatibility please set your Praat 'Text writing preferences' to 'utf16'",
-					new String[]{"Ok", "Don't show again"});
-			if(selection == 1) {
-				PrefHelper.getUserPreferences().putBoolean(SHOW_UTF8_MESSAGE_PRAAT, Boolean.FALSE);
-			}
-		}
 
 		final MediaSegment media = segmentTier.getGroup(0);
 
