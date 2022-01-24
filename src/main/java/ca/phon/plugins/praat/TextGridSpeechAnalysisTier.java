@@ -31,6 +31,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
 
+import ca.hedlund.jpraat.binding.Praat;
+import ca.hedlund.jpraat.binding.jna.Str32;
 import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
 import ca.phon.media.MediaLocator;
 import ca.phon.project.Project;
@@ -65,6 +67,7 @@ import ca.phon.ui.toast.*;
 import ca.phon.util.*;
 import ca.phon.util.icons.*;
 import ca.phon.worker.*;
+import org.apache.commons.logging.Log;
 import org.jdesktop.swingx.HorizontalLayout;
 
 /**
@@ -566,7 +569,16 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		if(mediaFile == null) return;
 
 		// don't open if contentpane is current disabled (locked)
-		if(!textGridView.isEnabled() || lockedTextGridRef.get() != null) return;
+		if(lockedTextGridRef.get() != null) {
+			int retVal = getParentView().getEditor().showMessageDialog("TextGrid Locked", "TextGrid is locked: Select menu 'File' > 'Send back to calling program' (in Praat), or click 'unlock'",
+					new String[]{"Cancel", "Unlock and continue"});
+			if(retVal == 1) {
+				unlock();
+			} else {
+				return;
+			}
+		}
+		if(!textGridView.isEnabled() ) return;
 
 		final SessionEditor model = parent.getEditor();
 		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
