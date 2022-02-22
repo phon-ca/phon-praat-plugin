@@ -1316,16 +1316,20 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		private final File textGridFile;
 
+		private final static int MAX_RETRY_COUNT = 3;
+
+		private int retryCount = 0;
+
 		public ReloadTextGridTask(File file) {
 			this.textGridFile = file;
 		}
 
-		private void waitForEndOfChanges() throws InterruptedException {
+		private void waitForEndOfChanges(long ms) throws InterruptedException {
 			long currentFileSize = FileUtils.sizeOf(textGridFile);
 			long prevFileSize = currentFileSize;
 			int sameSizeCnt = 0;
 			while(sameSizeCnt < 10) {
-				Thread.sleep(50);
+				Thread.sleep(ms);
 				currentFileSize = FileUtils.sizeOf(textGridFile);
 				if(currentFileSize == prevFileSize)
 					++sameSizeCnt;
@@ -1340,53 +1344,68 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		protected TextGrid doInBackground() throws Exception {
 			// wait until currentFileSize is the same 10 times in a row
 			Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
-			try {
-				waitForEndOfChanges();
+			Exception lastErr = null;
+			while(retryCount < MAX_RETRY_COUNT) {
+				try {
+					waitForEndOfChanges(5 * (10 * (retryCount + 1)));
 
-				byte[] origmd5;
-				try (InputStream is = new FileInputStream(textGridFile)) {
-					origmd5 = DigestUtils.md5(is);
-				}
-
-				TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(textGridFile.getAbsolutePath()));
-				File testFile = new File(lockInfo.getObj1().getParentFile(),
-						FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-temp.TextGrid");
-				TextGridManager.saveTextGrid(tg, testFile);
-
-				byte[] newMD5;
-				try (InputStream is = new FileInputStream(testFile)) {
-					newMD5 = DigestUtils.md5(is);
-				}
-
-				if(Arrays.equals(origmd5, newMD5)) {
-					File backupFile = new File(lockInfo.getObj1().getParentFile(),
-							FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-backup.TextGrid");
-
-					if(backupFile.exists()) {
-						FileUtils.deleteQuietly(backupFile);
+					byte[] origmd5;
+					try (InputStream is = new FileInputStream(textGridFile)) {
+						origmd5 = DigestUtils.md5(is);
 					}
 
-					if(lockInfo.getObj1().exists() && PrefHelper.getBoolean(SessionEditor.BACKUP_WHEN_SAVING, true)) {
-						// add TextGrid to backup .zip
-						try {
-							backupTextGrid(lockInfo.getObj1());
-						} catch (IOException | ZipException e) {
-							LogUtil.severe("Could not backup TextGrid: " + e.getLocalizedMessage());
+					TextGrid tg = Daata.readFromFile(TextGrid.class, MelderFile.fromPath(textGridFile.getAbsolutePath()));
+					File testFile = new File(lockInfo.getObj1().getParentFile(),
+							FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-temp.TextGrid");
+					TextGridManager.saveTextGrid(tg, testFile);
+
+					byte[] newMD5;
+					try (InputStream is = new FileInputStream(testFile)) {
+						newMD5 = DigestUtils.md5(is);
+					}
+
+					if (Arrays.equals(origmd5, newMD5)) {
+						File backupFile = new File(lockInfo.getObj1().getParentFile(),
+								FilenameUtils.removeExtension(lockInfo.getObj1().getName()) + "-backup.TextGrid");
+
+						if (backupFile.exists()) {
+							FileUtils.deleteQuietly(backupFile);
 						}
+
+						if (lockInfo.getObj1().exists() && PrefHelper.getBoolean(SessionEditor.BACKUP_WHEN_SAVING, true)) {
+							// add TextGrid to backup .zip
+							try {
+								backupTextGrid(lockInfo.getObj1());
+							} catch (IOException | ZipException e) {
+								LogUtil.severe("Could not backup TextGrid: " + e.getLocalizedMessage());
+							}
+						}
+
+						FileUtils.moveFile(lockInfo.getObj1(), backupFile);
+						FileUtils.moveFile(testFile, lockInfo.getObj1());
+
+						return tg;
+					} else {
+						String logMsg = String.format("md5(%s) = %s, md5(%s) = %s (no match)",
+								textGridFile.getAbsolutePath(), origmd5.toString(),
+								testFile.getAbsolutePath(), newMD5.toString());
+						LogUtil.warning(logMsg);
+						//testFile.delete();
+						lastErr = new IOException("Could not copy TextGrid data from Praat: " + logMsg);
 					}
-
-					FileUtils.moveFile(lockInfo.getObj1(), backupFile);
-					FileUtils.moveFile(testFile, lockInfo.getObj1());
-				} else {
-					testFile.delete();
-					throw new IOException("Could not copy TextGrid data from Praat");
+				} catch (PraatException | IOException e) {
+					getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
+					lastErr = e;
 				}
-
-				return tg;
-			} catch (PraatException | IOException e) {
-				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
-				throw e;
+				if(lastErr != null)
+					LogUtil.warning(lastErr);
+				++retryCount;
+				if(retryCount < MAX_RETRY_COUNT)
+					LogUtil.warning("Copy TextGrid failed, retry count " + retryCount);
 			}
+			if(lastErr != null)
+				throw lastErr;
+			return null;
 		}
 
 		@Override
@@ -1397,7 +1416,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			try {
 				TextGrid tg = get();
 
-				if(currentTextGridFile.equals(lockInfo.getObj1())) {
+				if(tg != null && currentTextGridFile.equals(lockInfo.getObj1())) {
 					setTextGrid(tg);
 				}
 			} catch (InterruptedException | ExecutionException e) {
