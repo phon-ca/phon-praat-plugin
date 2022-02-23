@@ -1409,7 +1409,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 					// create backup and move over praat data
 					FileUtils.moveFile(lockInfo.getObj1(), backupFile);
-					FileUtils.moveFile(textGridFile, lockInfo.getObj1());
+					FileUtils.copyFile(textGridFile, lockInfo.getObj1());
 
 					return tg;
 				} catch (PraatException | IOException e) {
