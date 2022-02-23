@@ -1385,8 +1385,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 										throw new IOException(String.format("Round-trip test failure - tier name mismatch for tier %d, %s != %s",
 												i, t1.getName(), t2.getName()));
 									}
-								} catch (PraatException pe) {
-									throw pe;
+								} catch (PraatException innerPe) {
+									throw innerPe;
 								}
 							}
 						}
