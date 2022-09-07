@@ -31,17 +31,14 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
 
-import ca.hedlund.jpraat.binding.Praat;
-import ca.hedlund.jpraat.binding.jna.Str32;
-import ca.phon.app.session.editor.view.record_data.RecordDataEditorView;
+
 import ca.phon.media.MediaLocator;
 import ca.phon.project.Project;
 import ca.phon.util.OSInfo;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
-import org.apache.commons.codec.digest.DigestUtils;
+import net.lingala.zip4j.model.enums.*;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
 
@@ -67,7 +64,6 @@ import ca.phon.ui.toast.*;
 import ca.phon.util.*;
 import ca.phon.util.icons.*;
 import ca.phon.worker.*;
-import org.apache.commons.logging.Log;
 import org.jdesktop.swingx.HorizontalLayout;
 
 /**
@@ -1267,22 +1263,13 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				FilenameUtils.removeExtension(textGridFile.getName()) + "_" + dateSuffix + ".TextGrid";
 
 		if(textGridFile.exists()) {
-			if(!zipFile.getFile().exists()) {
-				ZipParameters parameters = new ZipParameters();
-
-				parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-				parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
-
-				zipFile.createZipFile(new File(project.getLocation() + File.separator + "project.properties"), parameters);
-			}
 			// add to zip file
 			ZipParameters parameters = new ZipParameters();
-			parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-			parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+			parameters.setCompressionMethod(CompressionMethod.DEFLATE);
+			parameters.setCompressionLevel(CompressionLevel.NORMAL);
 
 			parameters.setFileNameInZip("__res" + File.separator + "textgrids" + File.separator
 					+ session.getCorpus() + File.separator + session.getName() + File.separator + zipName);
-			parameters.setSourceExternalStream(true);
 
 			FileInputStream fin = null;
 			try {
@@ -1402,7 +1389,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 						// add TextGrid to backup .zip
 						try {
 							backupTextGrid(lockInfo.getObj1());
-						} catch (IOException | ZipException e) {
+						} catch (IOException e) {
 							LogUtil.severe("Could not backup TextGrid: " + e.getLocalizedMessage());
 						}
 					}
