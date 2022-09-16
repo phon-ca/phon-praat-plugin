@@ -75,35 +75,35 @@ public class TextGridTierViewPanel extends JPanel {
 
 		final ImageIcon renameIcn =
 				IconManager.getInstance().getIcon("actions/edit-rename", IconSize.SMALL);
-		final PhonUIAction renameAct = new PhonUIAction(this, "onRename");
+		final PhonUIAction<Void> renameAct = PhonUIAction.runnable(this::onRename);
 		renameAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Rename selected TextGrid tier");
 		renameAct.putValue(PhonUIAction.SMALL_ICON, renameIcn);
 		renameButton = new JButton(renameAct);
 
 		final ImageIcon upIcn =
 				IconManager.getInstance().getIcon("actions/draw-arrow-up", IconSize.SMALL);
-		final PhonUIAction moveUpAct = new PhonUIAction(this, "onMoveUp");
+		final PhonUIAction<Void> moveUpAct = PhonUIAction.runnable(this::onMoveUp);
 		moveUpAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Move selected TextGrid tier up");
 		moveUpAct.putValue(PhonUIAction.SMALL_ICON, upIcn);
 		moveUpButton = new JButton(moveUpAct);
 
 		final ImageIcon downIcn =
 				IconManager.getInstance().getIcon("actions/draw-arrow-down", IconSize.SMALL);
-		final PhonUIAction moveDownAct = new PhonUIAction(this, "onMoveDown");
+		final PhonUIAction<Void> moveDownAct = PhonUIAction.runnable(this::onMoveDown);
 		moveDownAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Move selected TextGrid tier down");
 		moveDownAct.putValue(PhonUIAction.SMALL_ICON, downIcn);
 		moveDownButton = new JButton(moveDownAct);
 
 		final ImageIcon removeIcn =
 				IconManager.getInstance().getIcon("actions/list-remove", IconSize.SMALL);
-		final PhonUIAction deleteTierAct = new PhonUIAction(this, "onDelete");
+		final PhonUIAction<Void> deleteTierAct = PhonUIAction.runnable(this::onDelete);
 		deleteTierAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Delete selected TextGrid tier");
 		deleteTierAct.putValue(PhonUIAction.SMALL_ICON, removeIcn);
 		deleteTierButton = new JButton(deleteTierAct);
 
 		final ImageIcon mapIcn =
 				IconManager.getInstance().getIcon("actions/two-way-arrow", IconSize.SMALL);
-		final PhonUIAction mapTierAct = new PhonUIAction(this, "onMapTier");
+		final PhonUIAction<Void> mapTierAct = PhonUIAction.runnable(this::onMapTier);
 		mapTierAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Map selected TextGrid tier to Phon tier");
 		mapTierAct.putValue(PhonUIAction.SMALL_ICON, mapIcn);
 		mapTierButton = new JButton(mapTierAct);
@@ -166,11 +166,11 @@ public class TextGridTierViewPanel extends JPanel {
 
 		});
 
-		final PhonUIAction cancelAct = new PhonUIAction(this, "destroyPopup", popup);
+		final PhonUIAction<JFrame> cancelAct = PhonUIAction.consumer(this::destroyPopup, popup);
 		cancelAct.putValue(PhonUIAction.NAME, "Cancel");
 		final JButton cancelBtn = new JButton(cancelAct);
 
-		final PhonUIAction okAct = new PhonUIAction(this, "mapTier", tree);
+		final PhonUIAction<JTree> okAct = PhonUIAction.consumer(this::mapTier, tree);
 		okAct.putValue(PhonUIAction.NAME, "Map to Selected Phon Tier and Dimension");
 		final JButton okBtn = new JButton(okAct);
 		okBtn.addActionListener( (e) -> {

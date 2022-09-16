@@ -182,7 +182,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		spectrogramPanel.setDefaultCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 
-		final PhonUIAction forceUpdateAct = new PhonUIAction(this, "onForceLoadSpectrogram");
+		final PhonUIAction<Void> forceUpdateAct = PhonUIAction.runnable(this::onForceLoadSpectrogram);
 		forceUpdateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Force load spectrogram");
 
 		maxAnalysisMessage.setTopLabelText("<html><b>Spectrogram Not Loaded</b></htmlL>");
@@ -218,7 +218,6 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		
 		final EditorAction closeAct = new DelegateEditorAction(this, "onEditorClosing");
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.EDITOR_CLOSING, closeAct);
-
 	}
 
 	private void setupToolbar() {
@@ -252,49 +251,49 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final ActionMap actionMap = p.getActionMap();
 
 		final String toggleSpectrogramId = "onToggleSpectrogram";
-		final PhonUIAction toggleSpectrogramAct = new PhonUIAction(this, toggleSpectrogramId);
+		final PhonUIAction<Void> toggleSpectrogramAct = PhonUIAction.runnable(this::onToggleSpectrogram);
 		actionMap.put(toggleSpectrogramId, toggleSpectrogramAct);
 		final KeyStroke toggleSpectrogramKs = KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.SHIFT_MASK);
 		inputMap.put(toggleSpectrogramKs, toggleSpectrogramId);
 
 		final String toggleFormantsId = "onToggleFormants";
-		final PhonUIAction toggleFormantsAct = new PhonUIAction(this, toggleFormantsId);
+		final PhonUIAction<Void> toggleFormantsAct = PhonUIAction.runnable(this::onToggleFormants);
 		actionMap.put(toggleFormantsId, toggleFormantsAct);
 		final KeyStroke toggleFormantsKs = KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_MASK);
 		inputMap.put(toggleFormantsKs, toggleFormantsId);
 
 		final String listDurationId = "listDuration";
-		final PhonUIAction listDurationAct = new PhonUIAction(this, listDurationId);
+		final PhonUIAction<Void> listDurationAct = PhonUIAction.runnable(this::listDuration);
 		actionMap.put(listDurationId, listDurationAct);
 		final KeyStroke listDurationKs = KeyStroke.getKeyStroke(KeyEvent.VK_D, 0);
 		inputMap.put(listDurationKs, listDurationId);
 
 		final String listFormantsId = "listFormants";
-		final PhonUIAction listFormantsAct = new PhonUIAction(this, listFormantsId);
+		final PhonUIAction<Void> listFormantsAct = PhonUIAction.runnable(this::listFormants);
 		actionMap.put(listFormantsId, listFormantsAct);
 		final KeyStroke listFormantsKs = KeyStroke.getKeyStroke(KeyEvent.VK_F, 0);
 		inputMap.put(listFormantsKs, listFormantsId);
 
 		final String togglePitchId = "onTogglePitch";
-		final PhonUIAction togglePitcAct = new PhonUIAction(this, togglePitchId);
+		final PhonUIAction<Void> togglePitcAct = PhonUIAction.runnable(this::onTogglePitch);
 		actionMap.put(togglePitchId, togglePitcAct);
 		final KeyStroke togglePitchKs = KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.SHIFT_MASK);
 		inputMap.put(togglePitchKs, togglePitchId);
 
 		final String listPitchId = "listPitch";
-		final PhonUIAction listPitchAct = new PhonUIAction(this, listPitchId);
+		final PhonUIAction<Void> listPitchAct = PhonUIAction.runnable(this::listPitch);
 		actionMap.put(listPitchId, listPitchAct);
 		final KeyStroke listPitchKs = KeyStroke.getKeyStroke(KeyEvent.VK_P, 0);
 		inputMap.put(listPitchKs, listPitchId);
 
 		final String toggleIntensityId = "onToggleIntensity";
-		final PhonUIAction toggleIntensityAct = new PhonUIAction(this, toggleIntensityId);
+		final PhonUIAction<Void> toggleIntensityAct = PhonUIAction.runnable(this::onToggleIntensity);
 		actionMap.put(toggleIntensityId, toggleIntensityAct);
 		final KeyStroke toggleIntensityKs = KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.SHIFT_MASK);
 		inputMap.put(toggleIntensityKs, toggleIntensityId);
 
 		final String listIntensityId = "listIntensity";
-		final PhonUIAction listIntensityAct = new PhonUIAction(this, listIntensityId);
+		final PhonUIAction<Void> listIntensityAct = PhonUIAction.runnable(this::listIntensity);
 		actionMap.put(listIntensityId, listIntensityAct);
 		final KeyStroke listIntensityKs = KeyStroke.getKeyStroke(KeyEvent.VK_I, 0);
 		inputMap.put(listIntensityKs, listIntensityId);
@@ -1811,7 +1810,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 	
 	private void addMenuItems(MenuBuilder builder, boolean isContextMenu) {
-		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleSpectrogram");
+		final PhonUIAction<Void> toggleAct = PhonUIAction.runnable(this::onToggleSpectrogram);
 		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show Spectrogram");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, shouldShow());
@@ -1819,14 +1818,14 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			toggleAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.SHIFT_DOWN_MASK));
 		builder.addItem(".", new JCheckBoxMenuItem(toggleAct));
 
-		final PhonUIAction settingsAct = new PhonUIAction(this, "onEditSettings");
+		final PhonUIAction<Void> settingsAct = PhonUIAction.runnable(this::onEditSettings);
 		settingsAct.putValue(PhonUIAction.NAME, "Spectrogram settings...");
 		settingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit spectrogram settings...");
 		builder.addItem(".", settingsAct);
 
 		builder.addSeparator(".", "s1");
 
-		final PhonUIAction durationAct = new PhonUIAction(this, "listDuration");
+		final PhonUIAction<Void> durationAct = PhonUIAction.runnable(this::listDuration);
 		durationAct.putValue(PhonUIAction.NAME, "Get duration...");
 		durationAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Get duration for segment/selection");
 		if(isContextMenu)
@@ -1836,19 +1835,19 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		builder.addSeparator(".", "s2");
 
 		// formants
-		final PhonUIAction toggleFormants = new PhonUIAction(this, "onToggleFormants");
+		final PhonUIAction<Void> toggleFormants = PhonUIAction.runnable(this::onToggleFormants);
 		toggleFormants.putValue(PhonUIAction.NAME, "Show Formants");
 		toggleFormants.putValue(PhonUIAction.SELECTED_KEY, showFormants);
 		if(isContextMenu)
 			toggleFormants.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_DOWN_MASK));
 		builder.addItem(".", new JCheckBoxMenuItem(toggleFormants));
 
-		final PhonUIAction formantSettingsAct = new PhonUIAction(this, "onEditFormantSettings");
+		final PhonUIAction<Void> formantSettingsAct = PhonUIAction.runnable(this::onEditFormantSettings);
 		formantSettingsAct.putValue(PhonUIAction.NAME, "Formant settings...");
 		formantSettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit formant settings...");
 		builder.addItem(".", formantSettingsAct);
 
-		final PhonUIAction listFormantsAct = new PhonUIAction(this, "listFormants");
+		final PhonUIAction<Void> listFormantsAct = PhonUIAction.runnable(this::listFormants);
 		listFormantsAct.putValue(PhonUIAction.NAME, "Formant listing");
 		listFormantsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List formants for segment/selection");
 		if(isContextMenu)
@@ -1857,32 +1856,32 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		builder.addSeparator(".", "s3");
 
-		final PhonUIAction togglePitchAct = new PhonUIAction(this, "onTogglePitch");
+		final PhonUIAction<Void> togglePitchAct = PhonUIAction.runnable(this::onTogglePitch);
 		togglePitchAct.putValue(PhonUIAction.NAME, "Show Pitch");
 		togglePitchAct.putValue(PhonUIAction.SELECTED_KEY, showPitch);
 		if(isContextMenu)
 			togglePitchAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.SHIFT_DOWN_MASK));
 		builder.addItem(".", new JCheckBoxMenuItem(togglePitchAct));
 
-		final PhonUIAction pitchSettingsAct = new PhonUIAction(this, "onEditPitchSettings");
+		final PhonUIAction<Void> pitchSettingsAct = PhonUIAction.runnable(this::onEditPitchSettings);
 		pitchSettingsAct.putValue(PhonUIAction.NAME, "Pitch settings...");
 		pitchSettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit pitch settings...");
 		builder.addItem(".", pitchSettingsAct);
 
-		final PhonUIAction listPitchAct = new PhonUIAction(this, "listPitch");
+		final PhonUIAction<Void> listPitchAct = PhonUIAction.runnable(this::listPitch);
 		listPitchAct.putValue(PhonUIAction.NAME, "Pitch listing");
 		listPitchAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List pitch for segment/selection");
 		if(isContextMenu)
 			listPitchAct.putValue(PhonUIAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
 		builder.addItem(".", listPitchAct);
 		
-		final PhonUIAction listPulsesAct = new PhonUIAction(this, "listPulses");
+		final PhonUIAction<Void> listPulsesAct = PhonUIAction.runnable(this::listPulses);
 		listPulsesAct.putValue(PhonUIAction.NAME, "Pulse listing");
 		builder.addItem(".", listPulsesAct);
 
 		builder.addSeparator(".", "s4");
 
-		final PhonUIAction toggleIntensityAct = new PhonUIAction(this, "onToggleIntensity");
+		final PhonUIAction<Void> toggleIntensityAct = PhonUIAction.runnable(this::onToggleIntensity);
 		toggleIntensityAct.putValue(PhonUIAction.NAME, "Show Intensity");
 		toggleIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show intensity");
 		if(isContextMenu)
@@ -1891,12 +1890,12 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		toggleIntensityItem.setSelected(showIntensity);
 		builder.addItem(".", toggleIntensityItem);
 
-		final PhonUIAction intensitySettingsAct = new PhonUIAction(this, "onEditIntensitySettings");
+		final PhonUIAction<Void> intensitySettingsAct = PhonUIAction.runnable(this::onEditIntensitySettings);
 		intensitySettingsAct.putValue(PhonUIAction.NAME, "Intensity settings...");
 		intensitySettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit intensity settings...");
 		builder.addItem(".", intensitySettingsAct);
 
-		final PhonUIAction listIntensityAct = new PhonUIAction(this, "listIntensity");
+		final PhonUIAction<Void> listIntensityAct = PhonUIAction.runnable(this::listIntensity);
 		listIntensityAct.putValue(PhonUIAction.NAME, "Intensity listing");
 		listIntensityAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List intensity for segment/selection");
 		if(isContextMenu)
@@ -1905,12 +1904,12 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		builder.addSeparator(".", "s5");
 
-		final PhonUIAction spectralMomentsSettingsAct = new PhonUIAction(this, "onEditSpectralMomentsSettings");
+		final PhonUIAction<Void> spectralMomentsSettingsAct = PhonUIAction.runnable(this::onEditSpectralMomentsSettings);
 		spectralMomentsSettingsAct.putValue(PhonUIAction.NAME, "Spectral Moments settings...");
 		spectralMomentsSettingsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Edit spectral moments settings...");
 		builder.addItem(".", spectralMomentsSettingsAct);
 
-		final PhonUIAction listSpectralMomentsAct = new PhonUIAction(this, "listSpectralMoments");
+		final PhonUIAction<Void> listSpectralMomentsAct = PhonUIAction.runnable(this::listSpectralMoments);
 		listSpectralMomentsAct.putValue(PhonUIAction.NAME, "Spectral Moments listing...");
 		listSpectralMomentsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List spectral moments for segment/selection");
 		builder.addItem(".", listSpectralMomentsAct);

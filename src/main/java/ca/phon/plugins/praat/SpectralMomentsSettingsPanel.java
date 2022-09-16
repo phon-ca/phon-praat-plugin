@@ -99,17 +99,17 @@ public class SpectralMomentsSettingsPanel extends JPanel {
 		
 		final JPanel btnPanel = new JPanel(new VerticalLayout());
 		
-		final PhonUIAction loadDefaultsAct = new PhonUIAction(this, "loadDefaults");
+		final PhonUIAction<Void> loadDefaultsAct = PhonUIAction.runnable(this::loadDefaults);
 		loadDefaultsAct.putValue(PhonUIAction.NAME, "Load defaults");
 		loadDefaultsButton = new JButton(loadDefaultsAct);
 		btnPanel.add(loadDefaultsButton);
 		
-		final PhonUIAction loadStandardsAct = new PhonUIAction(this, "loadStandards");
+		final PhonUIAction<Void> loadStandardsAct = PhonUIAction.runnable(this::loadStandards);
 		loadStandardsAct.putValue(PhonUIAction.NAME, "Load standards");
 		loadStandardsButton = new JButton(loadStandardsAct);
 		btnPanel.add(loadStandardsButton);
 		
-		final PhonUIAction saveDefaultsAct = new PhonUIAction(this, "saveSettingsAsDefaults");
+		final PhonUIAction<Void> saveDefaultsAct = PhonUIAction.runnable(this::saveSettingsAsDefaults);
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);

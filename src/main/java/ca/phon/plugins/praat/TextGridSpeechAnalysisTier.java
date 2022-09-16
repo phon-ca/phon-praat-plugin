@@ -256,56 +256,21 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			textGridMessage.clearActions();
 
 			textGridMessage.setTopLabelText("<html><b>No TextGrid found</b></html>");
-			boolean hasRecordTextGrids = hasOldTextGridFiles();
-			if(hasRecordTextGrids) {
-				// Deal with older TextGrid setups.  Check to see if there are TextGrids available for the
-				// individual records of a session.  If so, show a message prompting the user to 'merge'
-				// the old TextGrid files.
 
-				final PhonUIAction mergeAct = new PhonUIAction(this, "mergeOldTextGrids");
-				mergeAct.putValue(PhonUIAction.NAME, "Merge TextGrids");
-				mergeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Merge older TextGrid files.");
-				mergeAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
-				mergeAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
+			// show a message to open the Generate TextGrid wizard
+			final PhonUIAction<Void> generateAct = PhonUIAction.runnable(this::onGenerateTextGrid);
+			generateAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
+			generateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid tiers from Phon tiers");
+			generateAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
 
-				textGridMessage.setDefaultAction(mergeAct);
-				textGridMessage.addAction(mergeAct);
+			textGridMessage.setDefaultAction(generateAct);
+			textGridMessage.addAction(generateAct);
 
-				textGridMessage.setBottomLabelText("<html>TextGrid files in an older format were found for this Session.  "
-						+ " Click here to merge these files as the default TextGrid.");
-			} else {
-				// show a message to open the Generate TextGrid wizard
-				final PhonUIAction generateAct = new PhonUIAction(this, "onGenerateTextGrid");
-				generateAct.putValue(PhonUIAction.NAME, "Generate TextGrid");
-				generateAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid tiers from Phon tiers");
-				generateAct.putValue(PhonUIAction.LARGE_ICON_KEY, IconManager.getInstance().getIcon("actions/folder_import", IconSize.SMALL));
+			textGridMessage.setBottomLabelText("<html>Click here to generate TextGrid tiers from Phon tiers.</html>");
 
-				textGridMessage.setDefaultAction(generateAct);
-				textGridMessage.addAction(generateAct);
-
-				textGridMessage.setBottomLabelText("<html>Click here to generate TextGrid tiers from Phon tiers.</html>");
-			}
 			parent.getErrorPane().add(textGridMessage);
 			textGridMessage.setVisible(true);
 		}
-	}
-
-	@Deprecated
-	private boolean hasOldTextGridFiles() {
-		// deprecated as scanning for old TextGrids is expensive (i.e., it loads all record data during
-		// editor startup)
-		return false;
-
-		/*boolean hasRecordTextGrids = false;
-		for(Record r:parent.getEditor().getSession().getRecords()) {
-			final String recordTgPath = tgManager.textGridPath(r.getUuid().toString());
-			final File recordTgFile = new File(recordTgPath);
-			if(recordTgFile.exists()) {
-				hasRecordTextGrids = true;
-				break;
-			}
-		}
-		return hasRecordTextGrids;*/
 	}
 
 	private void setupEditorActions() {
@@ -335,7 +300,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		final ActionMap actionMap = p.getActionMap();
 
 		final String toggleTextGridId = "onToggleTextGrid";
-		final PhonUIAction toggleTextGridAct = new PhonUIAction(this, toggleTextGridId);
+		final PhonUIAction toggleTextGridAct = PhonUIAction.runnable(this::onToggleTextGrid);
 		actionMap.put(toggleTextGridId, toggleTextGridAct);
 		final KeyStroke toggleTextGridKs = KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_DOWN_MASK);
 		inputMap.put(toggleTextGridKs, toggleTextGridId);
@@ -452,7 +417,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 				fontSizeMenu.addSeparator();
 
-				final PhonUIAction useDefaultFontSizeAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "setFontSizeDelta", 0.0f);
+				final PhonUIAction<Float> useDefaultFontSizeAct = PhonUIAction.consumer(TextGridSpeechAnalysisTier.this::setFontSizeDelta, 0.0f);
 				useDefaultFontSizeAct.putValue(PhonUIAction.NAME, "Use default font size");
 				useDefaultFontSizeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Reset font size");
 				fontSizeMenu.add(useDefaultFontSizeAct);
@@ -469,7 +434,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			}
 		});
 
-		final PhonUIAction fontSizeAct = new PhonUIAction(this, null);
+		final PhonUIAction<Void> fontSizeAct = PhonUIAction.runnable(() -> {});
 		fontSizeAct.putValue(PhonUIAction.NAME, "Font size");
 		fontSizeAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show font size menu");
 		fontSizeAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("apps/preferences-desktop-font", IconSize.SMALL));
@@ -634,7 +599,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	private void lock(File textGridFile) {
 		textGridView.setEnabled(false);
 		
-		final PhonUIAction forceUnlockAct = new PhonUIAction(this, "onForceUnlock", textGridFile);
+		final PhonUIAction<File> forceUnlockAct = PhonUIAction.eventConsumer(this::onForceUnlock, textGridFile);
 		forceUnlockAct.putValue(PhonUIAction.NAME, "TextGrid locked");
 		forceUnlockAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "TextGrid open in Praat: Select menu 'File' > 'Send back to calling program' (in Praat), or click this message to unlock");
 		forceUnlockAct.putValue(PhonUIAction.SMALL_ICON, IconManager.getInstance().getIcon("actions/unlock", IconSize.SMALL));
@@ -647,7 +612,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		update();
 	}
 
-	public void onForceUnlock(PhonActionEvent pae) {
+	public void onForceUnlock(PhonActionEvent<File> pae) {
 		Tuple<File, FileAlterationMonitor> lockInfo = lockedTextGridRef.get();
 		if(lockInfo != null) {
 			final File textGridFile = (File)pae.getData();
@@ -851,26 +816,14 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	public void showTierMenu(String tierName, MouseEvent me) {
 		final JPopupMenu popupMenu = new JPopupMenu();
 		
-		// add 'Map to tier' options
-//		final PhonUIAction mapAct = new PhonUIAction(TextGridView.this, "onMapTier", this);
-//		mapAct.putValue(PhonUIAction.NAME, "Map to Phon tier...");
-//		mapAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Map interval values to groups/words in a Phon tier.");
-//		popupMenu.add(new JMenuItem(mapAct));
-//		popupMenu.addSeparator();
-
-//		final PhonUIAction renameAct = new PhonUIAction(tierNameEditSupport, "setEditing", Boolean.TRUE);
-//		renameAct.putValue(PhonUIAction.NAME, "Rename tier");
-//		renameAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Rename tier");
-//		popupMenu.add(new JMenuItem(renameAct));
-		
-		final PhonUIAction hideTierAct = new PhonUIAction(this, "onToggleTier", tierName);
+		final PhonUIAction<String> hideTierAct = PhonUIAction.consumer(this::onToggleTier, tierName);
 		hideTierAct.putValue(PhonUIAction.NAME, "Hide tier");
 		hideTierAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Hide tier, to view again use the 'TextGrid Tier Management' dialog found in the TextGrid menu.");
 		popupMenu.add(new JMenuItem(hideTierAct));
 		
 		popupMenu.addSeparator();
 		
-		final PhonUIAction tierManagementAct = new PhonUIAction(this, "onTierManagement");
+		final PhonUIAction<Void> tierManagementAct = PhonUIAction.runnable(this::onTierManagement);
 		tierManagementAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
 		popupMenu.add(new JMenuItem(tierManagementAct));
 		
@@ -1028,7 +981,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		final Session session = parent.getEditor().getSession();
 		final TextGridManager manager = new TextGridManager(parent.getEditor().getProject());
 
-		final PhonUIAction toggleAct = new PhonUIAction(this, "onToggleTextGrid");
+		final PhonUIAction<Void> toggleAct = PhonUIAction.runnable(this::onToggleTextGrid);
 		toggleAct.putValue(PhonUIAction.NAME, "Show TextGrid");
 		toggleAct.putValue(PhonUIAction.SELECTED_KEY, TextGridSpeechAnalysisTier.this.isVisible());
 		if(isContextMenu)
@@ -1062,8 +1015,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 					if(mediaFile != null) {
 						final String mediaFolder = mediaFile.getParent();
 						if(textGridFile.getParentFile().equals(new File(mediaFolder))) {
-							final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
-									new File(mediaFolder));
+							final PhonUIAction<File> showMediaFolderAct = PhonUIAction.consumer(Desktop.getDesktop()::browseFileDirectory, new File(mediaFolder));
 							showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Media Folder --");
 							showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, mediaFolder);
 							final JMenuItem showMediaFolderItem = new JMenuItem(showMediaFolderAct);
@@ -1074,7 +1026,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 					final String projectFolder = tgManager.textGridFolder(session.getCorpus(), session.getName());
 					if(textGridFile.getParentFile().equals(new File(projectFolder)) && !projectHeaderAdded) {
-						final PhonUIAction showMediaFolderAct = new PhonUIAction(Desktop.getDesktop(), "browseFileDirectory",
+						final PhonUIAction<File> showMediaFolderAct = PhonUIAction.consumer(Desktop.getDesktop()::browseFileDirectory,
 								new File(projectFolder));
 						showMediaFolderAct.putValue(PhonUIAction.NAME, "-- Project Folder --");
 						showMediaFolderAct.putValue(PhonUIAction.SHORT_DESCRIPTION, projectFolder);
@@ -1084,7 +1036,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 						projectHeaderAdded = true;
 					}
 
-					final PhonUIAction showTgAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "showTextGrid", textGridFile);
+					final PhonUIAction<File> showTgAct = PhonUIAction.consumer(TextGridSpeechAnalysisTier.this::showTextGrid, textGridFile);
 					showTgAct.putValue(PhonUIAction.NAME, menuTxt);
 					showTgAct.putValue(PhonUIAction.SHORT_DESCRIPTION, textGridFile.getAbsolutePath());
 					showTgAct.putValue(PhonUIAction.SELECTED_KEY, isCurrent);
@@ -1095,7 +1047,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				}
 				textGridMenu.addSeparator();
 
-				final PhonUIAction addExistingTextGridAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "onAddExistingTextGrid");
+				final PhonUIAction<Void> addExistingTextGridAct = PhonUIAction.runnable(TextGridSpeechAnalysisTier.this::onAddExistingTextGrid);
 				addExistingTextGridAct.putValue(PhonUIAction.NAME, "Add existing TextGrid...");
 				addExistingTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Copy existing TextGrid to TextGrid folder");
 				textGridMenu.add(addExistingTextGridAct);
@@ -1112,35 +1064,35 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		});
 		builder.addItem(".", textGridMenu);
 
-		final PhonUIAction toggleLabelsAct = new PhonUIAction(this, "onToggleTextGridLabels");
+		final PhonUIAction<Void> toggleLabelsAct = PhonUIAction.runnable(this::onToggleTextGridLabels);
 		toggleLabelsAct.putValue(PhonUIAction.NAME, "Show Tier Labels");
 		toggleLabelsAct.putValue(PhonUIAction.SELECTED_KEY, TextGridSpeechAnalysisTier.this.showTierLabels);
 		final JCheckBoxMenuItem toggleLabelsItem = new JCheckBoxMenuItem(toggleLabelsAct);
 		builder.addItem(".", toggleLabelsItem);
 
-		final PhonUIAction tierMgtAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "onTierManagement");
+		final PhonUIAction<Void> tierMgtAct = PhonUIAction.runnable(TextGridSpeechAnalysisTier.this::onTierManagement);
 		tierMgtAct.putValue(PhonUIAction.NAME, "TextGrid Tier Management...");
 		builder.addItem(".", new JMenuItem(tierMgtAct));
 
 		builder.addSeparator(".", "s1");
-		final PhonUIAction genTextGridAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "onGenerateTextGrid");
+		final PhonUIAction<Void> genTextGridAct = PhonUIAction.runnable(TextGridSpeechAnalysisTier.this::onGenerateTextGrid);
 		genTextGridAct.putValue(PhonUIAction.NAME, "Generate TextGrid...");
 		genTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Generate TextGrid for session...");
 		builder.addItem(".", genTextGridAct);
 
-		PhonUIAction createRecordsAct = new PhonUIAction(TextGridSpeechAnalysisTier.this, "onCreateRecordsFromTextGrid");
+		PhonUIAction<Void> createRecordsAct = PhonUIAction.runnable(TextGridSpeechAnalysisTier.this::onCreateRecordsFromTextGrid);
 		createRecordsAct.putValue(PhonUIAction.NAME, "Create records from TextGrid...");
 		createRecordsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Create records from an existing TextGrid");
 		builder.addItem(".", createRecordsAct);
 
 		// sendpraat menu items
 		builder.addSeparator(".", "s2");
-		PhonUIAction openTextGridAct = new PhonUIAction(this, "openTextGrid", Boolean.TRUE);
+		PhonUIAction<Boolean> openTextGridAct = PhonUIAction.consumer(this::openTextGrid, Boolean.TRUE);
 		openTextGridAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with full audio. High memory usage.");
 		openTextGridAct.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - full audio");
 		builder.addItem(".", openTextGridAct);
 
-		PhonUIAction openTextGridAct2 = new PhonUIAction(this, "openTextGrid", Boolean.FALSE);
+		PhonUIAction<Boolean> openTextGridAct2 = PhonUIAction.consumer(this::openTextGrid, Boolean.FALSE);
 		openTextGridAct2.putValue(PhonUIAction.SHORT_DESCRIPTION, "Display TextGrid in an open instance of Praat with segment only. Low memory usage.");
 		openTextGridAct2.putValue(PhonUIAction.NAME, "Open TextGrid in Praat - segment only");
 		builder.addItem(".", openTextGridAct2);
