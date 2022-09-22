@@ -58,11 +58,6 @@ import ca.phon.worker.PhonTask.*;
  */
 public class SpectrogramView extends SpeechAnalysisTier {
 
-	private static final Logger LOGGER = Logger
-			.getLogger(SpectrogramView.class.getName());
-
-	private static final long serialVersionUID = -6963658315933818319L;
-
 	private SpectrogramPanel spectrogramPanel;
 
 	/**
@@ -206,18 +201,14 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	private void setupEditorEvents() {
-		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		getParentView().getEditor().getEventManager().registerActionForEvent(SpeechAnalysisEditorView.TIME_MODEL_UPDATED, recordChangedAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(SpeechAnalysisEditorView.TimeModelUpdated, this::onTimeModelChanged);
 		
-		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
-		getParentView().getEditor().getEventManager().registerActionForEvent(SessionMediaModel.SESSION_AUDIO_AVAILABLE, mediaChangedAct);
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(SessionMediaModel.SessionAudioAvailable, this::onSessionAudioAvailable);
+		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.SessionMediaChanged, this::onMediaChanged);
 
-		final EditorAction segmentChangedAct = new DelegateEditorAction(this, "onSegmentChanged");
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segmentChangedAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChanged, this::onSegmentChanged);
 		
-		final EditorAction closeAct = new DelegateEditorAction(this, "onEditorClosing");
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.EDITOR_CLOSING, closeAct);
+		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.EditorClosing, this::onEditorClosing, EditorEventManager.RunOn.AWTEventDispatchThread);
 	}
 
 	private void setupToolbar() {
@@ -748,7 +739,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			out.close();
 			
 		} catch(IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 		// delete pitch if necessary
 		if(pitch != pitchRef.get()) {
@@ -807,7 +798,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			out.flush();
 			out.close();
 		} catch (UnsupportedEncodingException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 	}
 
@@ -883,7 +874,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				formants.close();
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 			return;
 		}
 	}
@@ -950,7 +941,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			out.flush();
 			out.close();
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 		
 		// delete intensity if necessary
@@ -1016,7 +1007,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			out.flush();
 			out.close();
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 	}
 	
@@ -1073,7 +1064,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			out.close();
 			
 		} catch(IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 		try {
 			pulses.close();
@@ -1120,7 +1111,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 					spectrogramSettings.getWindowShape(), 8.0, 8.0);
 			}
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 		return spectrogram;
 	}
@@ -1152,7 +1143,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				}
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 		}
 		return pitch;
 	}
@@ -1176,7 +1167,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 								formantSettings.getMaxFrequency(), formantSettings.getWindowLength(), formantSettings.getPreEmphasis());
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 		}
 		return formants;
 	}
@@ -1201,7 +1192,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 								intensitySettings.getSubtractMean());
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 		}
 		return intensity;
 	}
@@ -1233,7 +1224,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				}
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 		}
 
 		return spectrum;
@@ -1270,34 +1261,36 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				pitch.close();
 			}
 		} catch (Exception pe) {
-			LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+			LogUtil.warning(pe);
 		}
 		return pulses;
 	}
-	
-	public void onMediaChanged(EditorEvent ee) {
+
+	private void onSessionAudioAvailable(EditorEvent<SessionMediaModel> ee) {
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		update(true);
+	}
+
+	private void onMediaChanged(EditorEvent<EditorEventType.SessionMediaChangedData> ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update(true);
 	}
 	
-	public void onRecordChanged(EditorEvent ee) {
+	private void onTimeModelChanged(EditorEvent<TimeUIModel> ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		update();
 	}
 
-	public void onSegmentChanged(EditorEvent ee) {
+	private void onSegmentChanged(EditorEvent<EditorEventType.TierChangeData> ee) {
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
-		if(ee.getEventData() != null && ee.getEventData().toString().equals(SystemTierType.Segment.getName())) {
+		if(ee.data().tier().getName().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
 	}
 	
-	@RunOnEDT
-	public void onEditorClosing(EditorEvent ee) {
+	private void onEditorClosing(EditorEvent<Void> ee) {
 		// cleanup any loaded data
 		cleanup();
-		
-		// TODO de-register event handlers
 	}
 
 	/**
@@ -1337,7 +1330,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				final T data = supplier.get();
 				ref.set(data);
 			} catch (Exception e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				LogUtil.warning(e);
 				super.err = e;
 				super.setStatus(TaskStatus.ERROR);
 			}
@@ -1712,7 +1705,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 					try {
 						intensityVal = intensity.getAverage(startTime, endTime, intensitySettings.getAveraging());
 					} catch (PraatException pe) {
-						LOGGER.log(Level.WARNING, pe.getLocalizedMessage(), pe);
+						LogUtil.warning(pe);
 					}
 					if(!Double.isInfinite(intensityVal) && !Double.isNaN(intensityVal)) {
 						final double dbPerPixel =

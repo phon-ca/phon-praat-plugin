@@ -42,11 +42,6 @@ import ca.phon.worker.*;
 
 public class TextGridImportWizard extends WizardFrame {
 
-	private final static Logger LOGGER =
-			Logger.getLogger(TextGridImportWizard.class.getName());
-
-	private static final long serialVersionUID = -7074300145973546703L;
-
 	private final SessionEditor editor;
 
 	private final Project project;
@@ -76,8 +71,9 @@ public class TextGridImportWizard extends WizardFrame {
 
 	private void init() {
 		addWizardStep(step1);
-		step1.addPropertyChangeListener(EditorEventType.TIER_VIEW_CHANGED_EVT, e -> {
-			final EditorEvent ee = new EditorEvent(EditorEventType.TIER_VIEW_CHANGED_EVT, step1);
+		step1.addPropertyChangeListener(EditorEventName.TIER_VIEW_CHANGED_EVT.getEventName(), e -> {
+			final EditorEvent<EditorEventType.TierViewChangedData> ee =
+					new EditorEvent<>(EditorEventType.TierViewChanged, step1, new EditorEventType.TierViewChangedData(session.getTierView(), session.getTierView()));
 			editor.getEventManager().queueEvent(ee);
 		});
 
@@ -222,7 +218,7 @@ public class TextGridImportWizard extends WizardFrame {
 				}
 				setStatus(TaskStatus.FINISHED);
 			} catch (IOException | PraatException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				LogUtil.warning(e);
 
 				try {
 					console.getLogBuffer().getStdErrStream().write(e.getLocalizedMessage().getBytes());
@@ -236,8 +232,9 @@ public class TextGridImportWizard extends WizardFrame {
 					@Override
 					public void undo() throws CannotUndoException {
 						SwingUtilities.invokeLater(() -> {
-							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
-									editor.getSession().getRecord(0));
+							final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
+									new EditorEvent<>(EditorEventType.RecordAdded, editor,
+											new EditorEventType.RecordAddedData(0, editor.getSession().getRecord(0)));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
 					}
@@ -245,8 +242,10 @@ public class TextGridImportWizard extends WizardFrame {
 					@Override
 					public void redo() throws CannotRedoException {
 						SwingUtilities.invokeLater(() -> {
-							final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
-									editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
+							final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
+									new EditorEvent<>(EditorEventType.RecordAdded, editor,
+											new EditorEventType.RecordAddedData(editor.getSession().getRecordCount()-1,
+													editor.getSession().getRecord(editor.getSession().getRecordCount()-1)));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
 					}
@@ -255,8 +254,10 @@ public class TextGridImportWizard extends WizardFrame {
 				cmpEdit.end();
 				editor.getUndoSupport().postEdit(cmpEdit);
 
-				final EditorEvent sessionModifiedEvent = new EditorEvent(EditorEventType.RECORD_ADDED_EVT, this,
-						editor.getSession().getRecord(editor.getSession().getRecordCount()-1));
+				final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
+						new EditorEvent<>(EditorEventType.RecordAdded, editor,
+								new EditorEventType.RecordAddedData(editor.getSession().getRecordCount()-1,
+										editor.getSession().getRecord(editor.getSession().getRecordCount()-1)));
 				editor.getEventManager().queueEvent(sessionModifiedEvent);
 
 				btnCancel.setEnabled(true);
@@ -289,7 +290,7 @@ public class TextGridImportWizard extends WizardFrame {
 			try {
 				PluginEntryPointRunner.executePlugin("SessionEditor", epArgs);
 			} catch (PluginException e) {
-				LOGGER.log(Level.SEVERE, e.getMessage(), e);
+				LogUtil.warning(e);
 			}
 		}
 	}

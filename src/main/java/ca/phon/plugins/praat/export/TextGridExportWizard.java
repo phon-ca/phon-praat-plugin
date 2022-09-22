@@ -23,6 +23,7 @@ import java.util.logging.*;
 
 import javax.swing.*;
 
+import ca.phon.app.log.LogUtil;
 import org.apache.commons.io.*;
 import org.jdesktop.swingx.*;
 
@@ -46,11 +47,6 @@ import ca.phon.worker.*;
 import ca.phon.worker.PhonTask.*;
 
 public class TextGridExportWizard extends WizardFrame {
-
-	private static final Logger LOGGER = Logger
-			.getLogger(TextGridExportWizard.class.getName());
-
-	private static final long serialVersionUID = 4037035439180386352L;
 
 	private Session session;
 
@@ -250,8 +246,7 @@ public class TextGridExportWizard extends WizardFrame {
 				try {
 					retVal = getProject().openSession(loc.getCorpus(), loc.getSession());
 				} catch (IOException e) {
-					LOGGER
-							.log(Level.SEVERE, e.getLocalizedMessage(), e);
+					LogUtil.warning(e);
 				}
 			}
 		}
@@ -443,16 +438,13 @@ public class TextGridExportWizard extends WizardFrame {
 				exporter.generateTextGrid(getProject(), getSession(), getRecordFilter(), exportsTree.getSelectedExports(),
 						tgFile, appendTiers);
 				if(editor != null) {
-					final EditorEvent ee = new EditorEvent(TextGridSpeechAnalysisTier.TEXT_GRID_CHANGED_EVENT,
-							this, tgFile);
+					final EditorEvent<File> ee = new EditorEvent<>(TextGridSpeechAnalysisTier.TextGridChanged,
+							TextGridExportWizard.this, tgFile);
 					editor.getEventManager().queueEvent(ee);
 				}
 				super.setStatus(TaskStatus.FINISHED);
-			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
 			} catch (Exception e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				LogUtil.warning(e);
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(btnFinish);
 			}
 		}

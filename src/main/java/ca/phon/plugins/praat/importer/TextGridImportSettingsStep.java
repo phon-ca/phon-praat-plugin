@@ -227,7 +227,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 			tierView.add(tvi);
 			session.setTierView(tierView);
 
-			firePropertyChange(EditorEventType.TIER_VIEW_CHANGED_EVT, true, false);
+			firePropertyChange(EditorEventName.TIER_VIEW_CHANGED_EVT.getEventName(), true, false);
 
 			SwingUtilities.invokeLater( () ->
 				table.setValueAt(ted.getTierEditor().getTierName(), row, Col.PHON_TIER.ordinal()) );

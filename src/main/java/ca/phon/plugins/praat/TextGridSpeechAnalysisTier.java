@@ -64,6 +64,7 @@ import ca.phon.ui.toast.*;
 import ca.phon.util.*;
 import ca.phon.util.icons.*;
 import ca.phon.worker.*;
+import org.apache.commons.logging.Log;
 import org.jdesktop.swingx.HorizontalLayout;
 
 /**
@@ -75,13 +76,8 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	 * Editor event
 	 * data - String name of textGrid
 	 */
-	public static final String TEXT_GRID_CHANGED_EVENT =
-			TextGridSpeechAnalysisTier.class.getName() + ".textGridChangedEvent";
-
-	private static final Logger LOGGER = Logger
-			.getLogger(TextGridSpeechAnalysisTier.class.getName());
-
-	private static final long serialVersionUID = -4777676504641976886L;
+	public static final EditorEventType<File> TextGridChanged =
+			new EditorEventType<>(TextGridSpeechAnalysisTier.class.getName() + ".textGridChangedEvent", File.class);
 
 	private final static String OPEN_TEXTGRID_TEMPLATE = "ca/phon/plugins/praat/OpenTextGrid.vm";
 
@@ -245,7 +241,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				currentTextGridFile = defaultTextGridFile.get();
 				setTextGrid(tg);
 			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+				LogUtil.warning(e);
 				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
 			}
 			if(textGridMessage.isVisible()) {
@@ -275,24 +271,18 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 	private void setupEditorActions() {
 		// setup editor actions
-		final EditorAction recordChangedAct = new DelegateEditorAction(this, "onRecordChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_CHANGED_EVT, recordChangedAct);
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RECORD_REFRESH_EVT, recordChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RecordChanged, this::onRecordChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.RecordRefresh, this::onRecordChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
-		final EditorAction textGridChangedAct = new DelegateEditorAction(this, "onTextGridChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(TEXT_GRID_CHANGED_EVENT, textGridChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(TextGridChanged, this::onTextGridChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
-		final EditorAction segChangedAct = new DelegateEditorAction(this, "onTierChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_CHANGED_EVT, segChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChanged, this::onTierChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
-		final EditorAction tierViewChangedAct = new DelegateEditorAction(this, "onTierViewChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TIER_VIEW_CHANGED_EVT, tierViewChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TierViewChanged, this::onTierViewChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
-		final EditorAction mediaChangedAct = new DelegateEditorAction(this, "onMediaChanged");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SESSION_MEDIA_CHANGED, mediaChangedAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.SessionMediaChanged, this::onMediaChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 		
-		final EditorAction editorClosingAct = new DelegateEditorAction(this, "onEditorClosing");
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.EDITOR_CLOSING, editorClosingAct);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.EditorClosing, this::onEditorClosing, EditorEventManager.RunOn.AWTEventDispatchThread);
 	}
 
 	private void installKeyStrokes(SpeechAnalysisEditorView p) {
@@ -516,7 +506,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				}
 			}
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 			ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
 		}
 	}
@@ -655,49 +645,41 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		revalidate();
 	}
 
-	@RunOnEDT
-	public void onRecordChanged(EditorEvent ee) {
+	private void onRecordChanged(EditorEvent<EditorEventType.RecordChangedData> ee) {
 		update();
 	}
 
-	@RunOnEDT
-	public void onTextGridChanged(EditorEvent ee) {
-		if(ee.getEventData() != null && ee.getEventData() instanceof File) {
-			textGridMessage.setVisible(false);
-			final File file = (File)ee.getEventData();
+	private void onTextGridChanged(EditorEvent<File> ee) {
+		textGridMessage.setVisible(false);
+		final File file = ee.data();
 
-			// load TextGrid
-			try {
-				final TextGrid tg = TextGridManager.loadTextGrid(file);
-				currentTextGridFile = file;
-				setTextGrid(tg);
-			} catch (IOException e) {
-				ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
-				LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-			}
+		// load TextGrid
+		try {
+			final TextGrid tg = TextGridManager.loadTextGrid(file);
+			currentTextGridFile = file;
+			setTextGrid(tg);
+		} catch (IOException e) {
+			ToastFactory.makeToast(e.getLocalizedMessage()).start(this);
+			LogUtil.warning(e);
+		}
+		update();
+	}
+
+	private void onTierChanged(EditorEvent<EditorEventType.TierChangeData> ee) {
+		if(ee.data().tier().getName().equals(SystemTierType.Segment.getName())) {
 			update();
 		}
 	}
 
-	@RunOnEDT
-	public void onTierChanged(EditorEvent ee) {
-		if(ee.getEventData() != null && ee.getEventData().equals(SystemTierType.Segment.getName())) {
-			update();
-		}
-	}
-
-	@RunOnEDT
-	public void onTierViewChanged(EditorEvent ee) {
+	private void onTierViewChanged(EditorEvent<EditorEventType.TierViewChangedData> ee) {
 		update();
 	}
 
-	@RunOnEDT
-	public void onMediaChanged(EditorEvent ee) {
+	private void onMediaChanged(EditorEvent<EditorEventType.SessionMediaChangedData> ee) {
 		loadTextGrid();
 	}
 	
-	@RunOnEDT
-	public void onEditorClosing(EditorEvent ee) {
+	private void onEditorClosing(EditorEvent<Void> ee) {
 		cleanup();
 	}
 
@@ -743,9 +725,9 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 					FileUtil.copyFile(tgFile, newFile);
 					// select new TextGrid
 //					showTextGrid(tgName);
-					onTextGridChanged(new EditorEvent(TextGridSpeechAnalysisTier.TEXT_GRID_CHANGED_EVENT, this, newFile));
+					onTextGridChanged(new EditorEvent<>(TextGridSpeechAnalysisTier.TextGridChanged, this, newFile));
 				} catch (IOException ex) {
-					LOGGER.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
+					LogUtil.warning(ex);
 				}
 			}
 		});
@@ -830,7 +812,6 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		popupMenu.show(me.getComponent(), me.getX(), me.getY());
 	}
 
-	@RunOnEDT
 	public void onToggleTier(String tierName) {
 		final boolean isVisible = textGridView.isTierVisible(tierName);
 		textGridView.setTierVisible(tierName, !isVisible);
@@ -1185,7 +1166,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 			TextGridManager.saveTextGrid(getTextGrid(), getCurrentTextGridFile());
 		} catch (IOException e) {
 			Toolkit.getDefaultToolkit().beep();
-			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+			LogUtil.warning(e);
 		}
 	}
 
