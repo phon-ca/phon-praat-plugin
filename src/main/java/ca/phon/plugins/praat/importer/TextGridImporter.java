@@ -15,20 +15,20 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import java.text.*;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.extensions.UnvalidatedValue;
+import ca.phon.ipa.IPATranscript;
+import ca.phon.ipa.alignment.*;
+import ca.phon.orthography.Orthography;
+import ca.phon.project.Project;
+import ca.phon.session.Record;
+import ca.phon.session.*;
+import ca.phon.syllabifier.*;
+
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.extensions.*;
-import ca.phon.ipa.*;
-import ca.phon.ipa.alignment.*;
-import ca.phon.orthography.*;
-import ca.phon.project.*;
-import ca.phon.session.*;
-import ca.phon.session.Record;
-import ca.phon.syllabifier.*;
 
 public class TextGridImporter {
 

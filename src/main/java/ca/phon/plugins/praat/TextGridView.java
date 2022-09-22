@@ -1,18 +1,15 @@
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-
-import ca.phon.ui.fonts.FontPreferences;
-import com.sun.jna.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
 import ca.phon.media.*;
-import ca.phon.util.*;
+import ca.phon.util.Tuple;
+import com.sun.jna.Pointer;
+
+import javax.swing.event.EventListenerList;
+import javax.swing.plaf.ComponentUI;
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.util.*;
 
 public class TextGridView extends TimeComponent {
 	

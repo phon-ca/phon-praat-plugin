@@ -15,17 +15,14 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.text.*;
+import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
+import ca.phon.ui.action.PhonUIAction;
+import com.jgoodies.forms.layout.*;
+import org.jdesktop.swingx.VerticalLayout;
 
 import javax.swing.*;
-
-import org.jdesktop.swingx.*;
-
-import com.jgoodies.forms.layout.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.ui.action.*;
+import java.awt.*;
+import java.text.NumberFormat;
 
 public class SpectralMomentsSettingsPanel extends JPanel {
 	

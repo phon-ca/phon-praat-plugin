@@ -16,7 +16,7 @@
 package ca.phon.plugins.praat.script;
 
 import java.util.*;
-import java.util.logging.*;
+import java.util.logging.Logger;
 import java.util.regex.*;
 
 /**

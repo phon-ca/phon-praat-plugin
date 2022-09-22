@@ -15,11 +15,10 @@
  */
 package ca.phon.plugins.praat;
 
-import javax.swing.table.*;
+import ca.hedlund.jpraat.binding.fon.Function;
+import org.jdesktop.swingx.JXTable;
 
-import org.jdesktop.swingx.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
+import javax.swing.table.AbstractTableModel;
 
 /**
  * UI for allowing user to show/hide TextGrid tiers in the viewer.

@@ -15,43 +15,40 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.io.*;
-import java.text.*;
-import java.util.concurrent.atomic.*;
-import java.util.concurrent.locks.*;
-import java.util.function.*;
-import java.util.logging.*;
-
-import javax.swing.*;
-import javax.swing.event.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.binding.fon.Function;
 import ca.hedlund.jpraat.binding.fon.LongSound;
 import ca.hedlund.jpraat.binding.fon.Sound;
-import ca.hedlund.jpraat.binding.stat.*;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.stat.Table;
 import ca.hedlund.jpraat.binding.sys.*;
-import ca.hedlund.jpraat.exceptions.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.*;
 import ca.phon.app.session.editor.*;
 import ca.phon.app.session.editor.view.speech_analysis.*;
 import ca.phon.media.*;
 import ca.phon.media.TimeUIModel.*;
 import ca.phon.plugins.praat.painters.*;
-import ca.phon.session.*;
 import ca.phon.session.Record;
+import ca.phon.session.*;
 import ca.phon.ui.*;
-import ca.phon.ui.action.*;
-import ca.phon.ui.decorations.*;
-import ca.phon.ui.layout.*;
-import ca.phon.ui.menu.*;
-import ca.phon.util.*;
+import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.layout.ButtonBarBuilder;
+import ca.phon.ui.menu.MenuBuilder;
+import ca.phon.util.PrefHelper;
 import ca.phon.util.icons.*;
 import ca.phon.worker.*;
-import ca.phon.worker.PhonTask.*;
+import ca.phon.worker.PhonTask.TaskStatus;
+
+import javax.swing.*;
+import javax.swing.event.MouseInputAdapter;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
+import java.io.*;
+import java.text.NumberFormat;
+import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * Adds a spectrogram tier to the waveform editor view.

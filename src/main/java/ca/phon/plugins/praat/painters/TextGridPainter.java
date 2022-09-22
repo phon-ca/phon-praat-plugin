@@ -15,16 +15,16 @@
  */
 package ca.phon.plugins.praat.painters;
 
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.ui.fonts.FontPreferences;
+import ca.phon.ui.painter.BufferedPainter;
+
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.ui.fonts.*;
-import ca.phon.ui.painter.*;
 
 public class TextGridPainter extends BufferedPainter<TextGrid> {
 	

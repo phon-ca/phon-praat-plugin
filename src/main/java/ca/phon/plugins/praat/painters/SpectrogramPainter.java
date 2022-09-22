@@ -15,13 +15,13 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.text.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.fon.Spectrogram;
 import ca.phon.plugins.praat.*;
-import ca.phon.ui.painter.*;
+import ca.phon.ui.painter.BufferedPainter;
+
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.text.NumberFormat;
 
 /**
  * Spectrogram painter.

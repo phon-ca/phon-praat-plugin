@@ -15,9 +15,9 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.prefs.*;
+import ca.phon.util.PrefHelper;
 
-import ca.phon.util.*;
+import java.util.prefs.Preferences;
 
 public class FormantSettings {
 	

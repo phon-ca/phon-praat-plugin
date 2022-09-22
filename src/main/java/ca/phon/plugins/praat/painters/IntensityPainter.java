@@ -15,14 +15,14 @@
  */
 package ca.phon.plugins.praat.painters;
 
+import ca.hedlund.jpraat.binding.fon.Intensity;
+import ca.phon.plugins.praat.IntensitySettings;
+import ca.phon.ui.painter.BufferedPainter;
+
 import java.awt.*;
 import java.awt.geom.*;
-import java.text.*;
-import java.util.concurrent.atomic.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.plugins.praat.*;
-import ca.phon.ui.painter.*;
+import java.text.NumberFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class IntensityPainter extends BufferedPainter<Intensity> implements PraatPainter<Intensity> {
 	

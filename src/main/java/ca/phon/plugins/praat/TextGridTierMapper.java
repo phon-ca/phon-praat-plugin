@@ -15,13 +15,12 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.*;
+import ca.hedlund.jpraat.TextGridUtils;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.phon.session.*;
 
 import javax.swing.tree.*;
-
-import ca.hedlund.jpraat.*;
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.session.*;
+import java.util.List;
 
 /**
  * Utility methods for mapping {@link TextGrid} tiers to Phon {@link Tier}s.

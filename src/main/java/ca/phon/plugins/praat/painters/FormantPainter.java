@@ -15,13 +15,13 @@
  */
 package ca.phon.plugins.praat.painters;
 
+import ca.hedlund.jpraat.binding.fon.Formant;
+import ca.phon.plugins.praat.FormantSettings;
+import ca.phon.ui.painter.BufferedPainter;
+
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.concurrent.atomic.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.plugins.praat.*;
-import ca.phon.ui.painter.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FormantPainter extends BufferedPainter<Formant> implements PraatPainter<Formant> {
 	

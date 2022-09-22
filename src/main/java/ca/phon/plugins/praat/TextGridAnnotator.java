@@ -15,15 +15,15 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.logging.*;
-
 import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.*;
 import ca.phon.orthography.*;
-import ca.phon.session.*;
 import ca.phon.session.Record;
-import ca.phon.syllable.*;
+import ca.phon.session.*;
+import ca.phon.syllable.SyllableConstituentType;
+
+import java.util.logging.*;
 
 public class TextGridAnnotator {
 	

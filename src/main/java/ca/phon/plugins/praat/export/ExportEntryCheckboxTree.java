@@ -15,13 +15,12 @@
  */
 package ca.phon.plugins.praat.export;
 
-import java.util.*;
-
-import javax.swing.tree.*;
-
-import ca.phon.plugins.praat.*;
+import ca.phon.plugins.praat.Segmentation;
 import ca.phon.session.*;
 import ca.phon.ui.tristatecheckbox.*;
+
+import javax.swing.tree.*;
+import java.util.*;
 
 public class ExportEntryCheckboxTree extends TristateCheckBoxTree {
 

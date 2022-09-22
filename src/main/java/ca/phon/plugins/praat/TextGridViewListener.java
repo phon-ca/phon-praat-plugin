@@ -1,9 +1,10 @@
 package ca.phon.plugins.praat;
-import java.awt.event.*;
-import java.util.*;
 
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.util.*;
+import ca.hedlund.jpraat.binding.fon.TextGrid;
+import ca.phon.util.Tuple;
+
+import java.awt.event.MouseEvent;
+import java.util.EventListener;
 
 public interface TextGridViewListener extends EventListener {
 

@@ -15,57 +15,52 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatterBuilder;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.*;
-import java.util.logging.*;
-import java.util.regex.*;
-
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.tree.*;
-
-
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.sys.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
+import ca.phon.app.session.editor.*;
+import ca.phon.app.session.editor.view.speech_analysis.*;
 import ca.phon.media.MediaLocator;
+import ca.phon.plugins.praat.export.TextGridExportWizard;
+import ca.phon.plugins.praat.importer.TextGridImportWizard;
+import ca.phon.plugins.praat.script.*;
 import ca.phon.project.Project;
+import ca.phon.session.*;
+import ca.phon.ui.*;
+import ca.phon.ui.action.*;
+import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.fonts.FontPreferences;
+import ca.phon.ui.layout.ButtonBarBuilder;
+import ca.phon.ui.menu.MenuBuilder;
+import ca.phon.ui.nativedialogs.FileFilter;
+import ca.phon.ui.nativedialogs.*;
+import ca.phon.ui.toast.ToastFactory;
 import ca.phon.util.OSInfo;
+import ca.phon.util.*;
+import ca.phon.util.icons.*;
+import ca.phon.worker.PhonWorker;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.*;
 import org.apache.commons.io.*;
 import org.apache.commons.io.monitor.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.binding.sys.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.log.*;
-import ca.phon.app.session.editor.*;
-import ca.phon.app.session.editor.view.speech_analysis.*;
-import ca.phon.plugins.praat.export.*;
-import ca.phon.plugins.praat.importer.*;
-import ca.phon.plugins.praat.script.*;
-import ca.phon.session.*;
-import ca.phon.ui.*;
-import ca.phon.ui.action.*;
-import ca.phon.ui.decorations.*;
-import ca.phon.ui.fonts.*;
-import ca.phon.ui.layout.*;
-import ca.phon.ui.menu.*;
-import ca.phon.ui.nativedialogs.*;
-import ca.phon.ui.nativedialogs.FileFilter;
-import ca.phon.ui.toast.*;
-import ca.phon.util.*;
-import ca.phon.util.icons.*;
-import ca.phon.worker.*;
-import org.apache.commons.logging.Log;
 import org.jdesktop.swingx.HorizontalLayout;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.*;
 
 /**
  * Display a TextGrid as a vertical list of tiers.

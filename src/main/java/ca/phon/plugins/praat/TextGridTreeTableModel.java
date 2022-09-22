@@ -15,11 +15,10 @@
  */
 package ca.phon.plugins.praat;
 
-import org.jdesktop.swingx.treetable.*;
-
 import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.util.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.util.Tuple;
+import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
 /**
  *

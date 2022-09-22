@@ -15,10 +15,10 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.*;
-import java.awt.geom.*;
+import ca.phon.ui.painter.Painter;
 
-import ca.phon.ui.painter.*;
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
 
 public interface PraatPainter<T> extends Painter<T> {
 

@@ -15,15 +15,14 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.logging.*;
-
-import com.sun.jna.*;
-
-import ca.hedlund.jpraat.binding.*;
-import ca.hedlund.jpraat.binding.sys.*;
-import ca.phon.app.hooks.*;
+import ca.hedlund.jpraat.binding.Praat;
+import ca.hedlund.jpraat.binding.sys.PraatVersion;
+import ca.phon.app.hooks.PhonStartupHook;
 import ca.phon.plugin.*;
-import ca.phon.util.*;
+import ca.phon.util.PrefHelper;
+import com.sun.jna.NativeLibrary;
+
+import java.util.logging.*;
 
 /**
  * Init Praat library on startup.

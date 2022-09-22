@@ -15,22 +15,21 @@
  */
 package ca.phon.plugins.praat;
 
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.sys.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
+import ca.phon.media.MediaLocator;
+import ca.phon.project.Project;
+import ca.phon.session.Record;
+import ca.phon.session.*;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.*;
-import java.util.stream.*;
-
-import org.apache.commons.io.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.binding.sys.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.log.*;
-import ca.phon.media.*;
-import ca.phon.project.*;
-import ca.phon.session.*;
-import ca.phon.session.Record;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for reading/writing TextGrid files

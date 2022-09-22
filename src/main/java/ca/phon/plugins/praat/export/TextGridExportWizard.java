@@ -15,36 +15,33 @@
  */
 package ca.phon.plugins.praat.export;
 
-import java.awt.*;
-import java.io.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.*;
-
-import javax.swing.*;
-
 import ca.phon.app.log.LogUtil;
-import org.apache.commons.io.*;
-import org.jdesktop.swingx.*;
-
 import ca.phon.app.session.*;
 import ca.phon.app.session.editor.*;
-import ca.phon.media.*;
+import ca.phon.media.MediaLocator;
 import ca.phon.plugins.praat.*;
-import ca.phon.project.*;
+import ca.phon.project.Project;
 import ca.phon.session.*;
 import ca.phon.session.check.*;
-import ca.phon.session.filter.*;
+import ca.phon.session.filter.RecordFilter;
 import ca.phon.ui.*;
-import ca.phon.ui.decorations.*;
-import ca.phon.ui.nativedialogs.*;
+import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.nativedialogs.FileFilter;
-import ca.phon.ui.toast.*;
-import ca.phon.ui.tristatecheckbox.*;
-import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.*;
+import ca.phon.ui.nativedialogs.*;
+import ca.phon.ui.toast.ToastFactory;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel;
+import ca.phon.ui.tristatecheckbox.TristateCheckBoxTreeModel.CheckingMode;
 import ca.phon.ui.wizard.*;
 import ca.phon.worker.*;
-import ca.phon.worker.PhonTask.*;
+import ca.phon.worker.PhonTask.TaskStatus;
+import org.apache.commons.io.FilenameUtils;
+import org.jdesktop.swingx.*;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.util.List;
+import java.util.*;
 
 public class TextGridExportWizard extends WizardFrame {
 

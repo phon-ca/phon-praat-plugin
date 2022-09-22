@@ -15,40 +15,37 @@
  */
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.*;
-
-import javax.swing.*;
-
-import org.jdesktop.swingx.*;
-
-import ca.hedlund.jpraat.*;
+import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.binding.fon.LongSound;
-import ca.hedlund.jpraat.binding.sys.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.log.*;
-import ca.phon.app.opgraph.nodes.table.*;
-import ca.phon.extensions.*;
-import ca.phon.ipa.*;
-import ca.phon.media.*;
+import ca.hedlund.jpraat.binding.sys.MelderFile;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
+import ca.phon.app.opgraph.nodes.table.TableOpNode;
+import ca.phon.extensions.IExtendable;
+import ca.phon.ipa.IPATranscript;
+import ca.phon.media.MediaLocator;
 import ca.phon.opgraph.*;
-import ca.phon.opgraph.app.*;
-import ca.phon.opgraph.app.extensions.*;
+import ca.phon.opgraph.app.GraphDocument;
+import ca.phon.opgraph.app.extensions.NodeSettings;
 import ca.phon.opgraph.exceptions.*;
 import ca.phon.orthography.*;
 import ca.phon.plugins.praat.*;
-import ca.phon.project.*;
+import ca.phon.project.Project;
 import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.*;
-import ca.phon.session.*;
 import ca.phon.session.Record;
-import ca.phon.ui.text.*;
+import ca.phon.session.*;
+import ca.phon.ui.text.PromptedTextField;
+import org.jdesktop.swingx.JXTitledSeparator;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.text.ParseException;
+import java.util.List;
+import java.util.*;
+import java.util.logging.*;
 
 public abstract class PraatNode extends TableOpNode implements NodeSettings {
 

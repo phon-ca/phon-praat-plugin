@@ -15,12 +15,11 @@
  */
 package ca.phon.plugins.praat;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.*;
-
-//import ca.phon.jsendpraat.SendPraat;
 import ca.phon.plugin.*;
+
+import java.io.*;
+import java.util.Map;
+import java.util.logging.*;
 
 /**
  * Plugin entry point for sending scripts to Praat.

@@ -15,10 +15,10 @@
  */
 package ca.phon.plugins.praat;
 
-import java.util.prefs.*;
+import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
+import ca.phon.util.PrefHelper;
 
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.util.*;
+import java.util.prefs.Preferences;
 
 public class SpectralMomentsSettings {
 	

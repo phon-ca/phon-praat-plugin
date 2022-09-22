@@ -15,12 +15,12 @@
  */
 package ca.phon.plugins.praat.painters;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.util.concurrent.atomic.*;
+import ca.hedlund.jpraat.binding.fon.Spectrum;
+import ca.phon.ui.painter.BufferedPainter;
 
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.ui.painter.*;
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SpectrumPainter extends BufferedPainter<Spectrum> implements PraatPainter<Spectrum> {
 

@@ -15,31 +15,29 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.*;
-
-import javax.swing.*;
-import javax.swing.table.*;
-
-import org.apache.commons.io.*;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.session.editor.EditorEventName;
+import ca.phon.app.session.editor.view.tier_management.TierEditorDialog;
+import ca.phon.formatter.Formatter;
+import ca.phon.formatter.*;
+import ca.phon.plugins.praat.TextGridManager;
+import ca.phon.session.*;
+import ca.phon.ui.HidablePanel;
+import ca.phon.ui.decorations.DialogHeader;
+import ca.phon.ui.toast.*;
+import ca.phon.ui.wizard.WizardStep;
+import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.*;
 
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.session.editor.*;
-import ca.phon.app.session.editor.view.tier_management.*;
-import ca.phon.formatter.*;
-import ca.phon.formatter.Formatter;
-import ca.phon.plugins.praat.*;
-import ca.phon.session.*;
-import ca.phon.ui.*;
-import ca.phon.ui.decorations.*;
-import ca.phon.ui.toast.*;
-import ca.phon.ui.wizard.*;
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.io.*;
+import java.util.List;
+import java.util.*;
+import java.util.logging.*;
 
 public class TextGridImportSettingsStep extends WizardStep {
 

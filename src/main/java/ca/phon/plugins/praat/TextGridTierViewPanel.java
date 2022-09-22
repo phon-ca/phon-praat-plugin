@@ -15,26 +15,24 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.*;
-
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.tree.*;
-
-import org.jdesktop.swingx.*;
-
-import ca.hedlund.jpraat.*;
+import ca.hedlund.jpraat.TextGridUtils;
 import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.ui.*;
-import ca.phon.ui.action.*;
-import ca.phon.ui.layout.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.ui.CommonModuleFrame;
+import ca.phon.ui.action.PhonUIAction;
+import ca.phon.ui.layout.ButtonBarBuilder;
 import ca.phon.ui.nativedialogs.*;
 import ca.phon.util.icons.*;
+import org.jdesktop.swingx.JXTable;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
+import java.util.*;
+import java.util.logging.*;
 
 /**
  * Interface for modifying the visibility and

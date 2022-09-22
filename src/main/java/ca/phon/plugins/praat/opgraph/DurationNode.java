@@ -15,19 +15,18 @@
  */
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.*;
-import java.util.*;
-import java.util.List;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.phon.opgraph.OpNodeInfo;
+import ca.phon.opgraph.app.GraphDocument;
+import ca.phon.query.db.*;
+import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.session.Record;
+import ca.phon.session.*;
 
 import javax.swing.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.phon.opgraph.*;
-import ca.phon.opgraph.app.*;
-import ca.phon.query.db.*;
-import ca.phon.query.report.datasource.*;
-import ca.phon.session.*;
-import ca.phon.session.Record;
+import java.awt.*;
+import java.util.List;
+import java.util.*;
 
 @OpNodeInfo(
 		name="Duration",

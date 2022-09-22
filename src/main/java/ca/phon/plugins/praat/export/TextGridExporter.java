@@ -15,25 +15,25 @@
  */
 package ca.phon.plugins.praat.export;
 
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.audio.Sampled;
+import ca.phon.audio.*;
+import ca.phon.ipa.*;
+import ca.phon.media.MediaLocator;
+import ca.phon.plugins.praat.*;
+import ca.phon.plugins.praat.script.*;
+import ca.phon.project.Project;
+import ca.phon.session.Record;
+import ca.phon.session.*;
+import ca.phon.session.filter.RecordFilter;
+import ca.phon.syllable.SyllableConstituentType;
+
 import java.beans.*;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.audio.*;
-import ca.phon.audio.Sampled;
-import ca.phon.ipa.*;
-import ca.phon.media.*;
-import ca.phon.plugins.praat.*;
-import ca.phon.plugins.praat.script.*;
-import ca.phon.project.*;
-import ca.phon.session.*;
-import ca.phon.session.Record;
-import ca.phon.session.filter.*;
-import ca.phon.syllable.*;
 
 /**
  * Utility methods for exporting Phon tier data into

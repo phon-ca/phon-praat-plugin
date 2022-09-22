@@ -1,23 +1,21 @@
 package ca.phon.plugins.praat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.util.*;
-import java.util.List;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
+import ca.phon.media.TimeComponentUI;
+import ca.phon.ui.fonts.FontPreferences;
+import ca.phon.util.Tuple;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometries;
 
 import javax.swing.*;
-import javax.swing.event.*;
-
-import ca.phon.ui.fonts.FontPreferences;
-import com.github.davidmoten.rtree.*;
-import com.github.davidmoten.rtree.geometry.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.log.*;
-import ca.phon.media.*;
-import ca.phon.util.*;
+import javax.swing.event.MouseInputAdapter;
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.geom.*;
+import java.util.List;
+import java.util.*;
 
 public class TextGridViewUI extends TimeComponentUI {
 		

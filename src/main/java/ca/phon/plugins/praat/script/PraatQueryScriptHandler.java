@@ -15,13 +15,13 @@
  */
 package ca.phon.plugins.praat.script;
 
-import java.io.*;
-import java.net.*;
-
 import ca.phon.plugin.*;
-import ca.phon.query.db.*;
+import ca.phon.query.db.ScriptLibrary;
 import ca.phon.query.script.*;
-import ca.phon.util.resources.*;
+import ca.phon.util.resources.ClassLoaderHandler;
+
+import java.io.IOException;
+import java.net.URL;
 
 public class PraatQueryScriptHandler extends ClassLoaderHandler<QueryScript> implements QueryScriptHandler,
 	IPluginExtensionPoint<QueryScriptHandler> {

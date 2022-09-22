@@ -15,11 +15,10 @@
  */
 package ca.phon.plugins.praat;
 
-import java.awt.*;
+import ca.phon.ui.decorations.DialogHeader;
 
 import javax.swing.*;
-
-import ca.phon.ui.decorations.*;
+import java.awt.*;
 
 /**
  * Dialog for editing settings for Spectrumt tier of Phon's speech

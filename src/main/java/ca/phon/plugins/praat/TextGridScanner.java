@@ -15,13 +15,13 @@
  */
 package ca.phon.plugins.praat;
 
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.sys.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+
 import java.io.*;
 import java.util.*;
 import java.util.logging.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.binding.sys.*;
-import ca.hedlund.jpraat.exceptions.*;
 
 /**
  * Utilties methods for scanning a directory of .TextGrid files.

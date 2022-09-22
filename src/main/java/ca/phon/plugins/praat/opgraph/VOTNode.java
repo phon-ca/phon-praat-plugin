@@ -15,25 +15,23 @@
  */
 package ca.phon.plugins.praat.opgraph;
 
-import java.awt.*;
-import java.util.*;
-import java.util.List;
+import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
+import ca.phon.app.log.LogUtil;
+import ca.phon.opgraph.OpNodeInfo;
+import ca.phon.opgraph.app.GraphDocument;
+import ca.phon.opgraph.app.extensions.NodeSettings;
+import ca.phon.query.db.*;
+import ca.phon.query.report.datasource.DefaultTableDataSource;
+import ca.phon.session.Record;
+import ca.phon.session.*;
+import ca.phon.ui.text.PromptedTextField;
+import org.jdesktop.swingx.JXTitledSeparator;
 
 import javax.swing.*;
-
-import org.jdesktop.swingx.*;
-
-import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
-import ca.phon.app.log.*;
-import ca.phon.opgraph.*;
-import ca.phon.opgraph.app.*;
-import ca.phon.opgraph.app.extensions.*;
-import ca.phon.query.db.*;
-import ca.phon.query.report.datasource.*;
-import ca.phon.session.*;
-import ca.phon.session.Record;
-import ca.phon.ui.text.*;
+import java.awt.*;
+import java.util.List;
+import java.util.*;
 
 /**
  * Calculate voice onset time (VoT) for each sampled interval.  VoT is calculated

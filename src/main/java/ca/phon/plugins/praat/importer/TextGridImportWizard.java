@@ -15,30 +15,28 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import java.awt.*;
-import java.io.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.*;
-
-import javax.swing.*;
-import javax.swing.undo.*;
-
-import au.com.bytecode.opencsv.*;
+import au.com.bytecode.opencsv.CSVWriter;
 import ca.hedlund.jpraat.binding.fon.*;
-import ca.hedlund.jpraat.exceptions.*;
+import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.*;
-import ca.phon.app.modules.*;
+import ca.phon.app.modules.EntryPointArgs;
 import ca.phon.app.session.editor.*;
 import ca.phon.app.session.editor.undo.*;
 import ca.phon.plugin.*;
-import ca.phon.plugins.praat.*;
-import ca.phon.project.*;
-import ca.phon.session.*;
+import ca.phon.plugins.praat.TextGridManager;
+import ca.phon.project.Project;
 import ca.phon.session.Record;
-import ca.phon.ui.decorations.*;
+import ca.phon.session.*;
+import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.wizard.*;
 import ca.phon.worker.*;
+
+import javax.swing.*;
+import javax.swing.undo.*;
+import java.awt.*;
+import java.io.*;
+import java.util.List;
+import java.util.*;
 
 public class TextGridImportWizard extends WizardFrame {
 
