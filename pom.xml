@@ -22,7 +22,7 @@
 
 		<!-- Dependency versions -->
 		<ca.phon.phon-app.version>3.5.0-SNAPSHOT</ca.phon.phon-app.version>
-		<ca.hedlund.jpraat.version>1.2.0</ca.hedlund.jpraat.version>
+		<ca.hedlund.jpraat.version>1.2.1</ca.hedlund.jpraat.version>
 		<org.apache.velocity.velocity.version>1.7</org.apache.velocity.velocity.version>
 
 		<!-- Plugin versions -->
