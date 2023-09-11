@@ -351,8 +351,8 @@ public class TextGridExportWizard extends WizardFrame {
 			// look for window editing this session
 			SessionEditor editor = null;
 			for(CommonModuleFrame cmf:CommonModuleFrame.getOpenWindows()) {
-				if(cmf instanceof SessionEditor && ((SessionEditor)cmf).getSession() == session) {
-					editor = (SessionEditor)cmf;
+				if(cmf instanceof SessionEditorWindow sessionEditorWindow && sessionEditorWindow.getSession() == session) {
+					editor = sessionEditorWindow.getSessionEditor();
 					break;
 				}
 			}

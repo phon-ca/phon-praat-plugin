@@ -516,7 +516,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		// don't open if contentpane is current disabled (locked)
 		if(lockedTextGridRef.get() != null) {
-			int retVal = getParentView().getEditor().showMessageDialog("TextGrid Locked", "TextGrid is locked: Select menu 'File' > 'Send back to calling program' (in Praat), or click 'unlock'",
+			int retVal = CommonModuleFrame.getCurrentFrame().showMessageDialog("TextGrid Locked", "TextGrid is locked: Select menu 'File' > 'Send back to calling program' (in Praat), or click 'unlock'",
 					new String[]{"Cancel", "Unlock and continue"});
 			if(retVal == 1) {
 				unlock();
@@ -527,13 +527,9 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 		if(!textGridView.isEnabled() ) return;
 
 		final SessionEditor model = parent.getEditor();
-		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegment();
-
-		if(segmentTier.numberOfGroups() == 0) return;
-
-		final MediaSegment media = segmentTier.getGroup(0);
-
 		final Session session = parent.getEditor().getSession();
+		final Tier<MediaSegment> segmentTier = model.currentRecord().getSegmentTier();
+		final MediaSegment media = segmentTier.getValue();
 
 		final Optional<File> defaultTgFile = tgManager.defaultTextGridFile(session.getCorpus(), session.getName());
 		final File tgFile = (currentTextGridFile != null ? currentTextGridFile : defaultTgFile.get() );
@@ -576,7 +572,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				LogUtil.severe(ex);
 			}
 
-			getParentView().getEditor().showMessageDialog("Unable to open TextGrid", e.getLocalizedMessage(), MessageDialogProperties.okOptions);
+			CommonModuleFrame.getCurrentFrame().showMessageDialog("Unable to open TextGrid", e.getLocalizedMessage(), MessageDialogProperties.okOptions);
 			LogUtil.severe(e);
 		}
 	}
@@ -1328,7 +1324,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 					return tg;
 				} catch (PraatException | IOException e) {
-					getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
+					CommonModuleFrame.getCurrentFrame().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
 					lastErr = e;
 				}
 				if(lastErr != null)
@@ -1355,7 +1351,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 				}
 			} catch (InterruptedException | ExecutionException e) {
 				LogUtil.severe(e);
-				getParentView().getEditor().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
+				CommonModuleFrame.getCurrentFrame().showErrorMessage("Unable to update TextGrid: " + e.getLocalizedMessage());
 			} finally {
 				unlock();
 				update();

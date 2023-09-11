@@ -79,7 +79,6 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 					rowData[colIdx++] = textInterval.getText();
 				} else {
 					rowData[colIdx++] = rv.getTierName();
-					rowData[colIdx++] = rv.getGroupIndex()+1;
 					rowData[colIdx++] = value;
 				}
 				
@@ -119,7 +118,6 @@ public class IntensityNode extends PraatNode implements NodeSettings {
 			colNames.add("Text");
 		} else {
 			colNames.add("Tier");
-			colNames.add("Group #");
 			colNames.add(getColumn());
 		}
 		

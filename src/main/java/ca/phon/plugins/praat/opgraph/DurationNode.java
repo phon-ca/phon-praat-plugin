@@ -60,7 +60,6 @@ public class DurationNode extends PraatNode {
 			rowData[col++] = textInterval.getText();
 		} else {
 			rowData[col++] = rv.getTierName();
-			rowData[col++] = rv.getGroupIndex()+1;
 			rowData[col++] = value;
 		}
 
@@ -105,7 +104,6 @@ public class DurationNode extends PraatNode {
 			colNames.add("Text");
 		} else {
 			colNames.add("Tier");
-			colNames.add("Group #");
 			colNames.add(getColumn());
 		}
 

@@ -15,13 +15,13 @@
  */
 package ca.phon.plugins.praat.importer;
 
-import au.com.bytecode.opencsv.CSVWriter;
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.*;
 import ca.phon.app.modules.EntryPointArgs;
 import ca.phon.app.session.editor.*;
 import ca.phon.app.session.editor.undo.*;
+import ca.phon.csv.CSVWriter;
 import ca.phon.plugin.*;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.project.Project;
@@ -71,7 +71,7 @@ public class TextGridImportWizard extends WizardFrame {
 		addWizardStep(step1);
 		step1.addPropertyChangeListener(EditorEventName.TIER_VIEW_CHANGED_EVT.getEventName(), e -> {
 			final EditorEvent<EditorEventType.TierViewChangedData> ee =
-					new EditorEvent<>(EditorEventType.TierViewChanged, step1, new EditorEventType.TierViewChangedData(session.getTierView(), session.getTierView()));
+					new EditorEvent<>(EditorEventType.TierViewChanged, step1, new EditorEventType.TierViewChangedData(session.getTierView(), session.getTierView(), EditorEventType.TierViewChangeType.RELOAD, new ArrayList<>(), new ArrayList<>()));
 			editor.getEventManager().queueEvent(ee);
 		});
 
@@ -199,7 +199,7 @@ public class TextGridImportWizard extends WizardFrame {
 
 					List<String> rowData = new ArrayList<>();
 					rowData.add( (++rIdx) + "");
-					rowData.add(newRecord.getSegment().getGroup(0).toString());
+					rowData.add(newRecord.getMediaSegment().toString());
 
 					for(String tgTier:tierMap.keySet()) {
 						final TierDescription td = tierMap.get(tgTier);
@@ -232,7 +232,7 @@ public class TextGridImportWizard extends WizardFrame {
 						SwingUtilities.invokeLater(() -> {
 							final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
 									new EditorEvent<>(EditorEventType.RecordAdded, editor,
-											new EditorEventType.RecordAddedData(0, editor.getSession().getRecord(0)));
+											new EditorEventType.RecordAddedData(editor.getSession().getRecord(0), session.getRecordElementIndex(0), 0));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
 					}
@@ -242,8 +242,9 @@ public class TextGridImportWizard extends WizardFrame {
 						SwingUtilities.invokeLater(() -> {
 							final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
 									new EditorEvent<>(EditorEventType.RecordAdded, editor,
-											new EditorEventType.RecordAddedData(editor.getSession().getRecordCount()-1,
-													editor.getSession().getRecord(editor.getSession().getRecordCount()-1)));
+											new EditorEventType.RecordAddedData(editor.getSession().getRecord(editor.getSession().getRecordCount()-1),
+													editor.getSession().getRecordElementIndex(editor.getSession().getRecordCount()-1),
+													editor.getSession().getRecordCount() -1));
 							editor.getEventManager().queueEvent(sessionModifiedEvent);
 						});
 					}
@@ -254,8 +255,9 @@ public class TextGridImportWizard extends WizardFrame {
 
 				final EditorEvent<EditorEventType.RecordAddedData> sessionModifiedEvent =
 						new EditorEvent<>(EditorEventType.RecordAdded, editor,
-								new EditorEventType.RecordAddedData(editor.getSession().getRecordCount()-1,
-										editor.getSession().getRecord(editor.getSession().getRecordCount()-1)));
+								new EditorEventType.RecordAddedData(editor.getSession().getRecord(editor.getSession().getRecordCount()-1),
+								editor.getSession().getRecordElementIndex(editor.getSession().getRecordCount()-1),
+								editor.getSession().getRecordCount() -1));
 				editor.getEventManager().queueEvent(sessionModifiedEvent);
 
 				btnCancel.setEnabled(true);

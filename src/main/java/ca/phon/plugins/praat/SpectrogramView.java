@@ -1073,8 +1073,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	private MediaSegment getSegment() {
 		Record currentRecord = getParentView().getEditor().currentRecord();
 		if(currentRecord == null) return null;
-		final Tier<MediaSegment> segTier = getParentView().getEditor().currentRecord().getSegment();
-		return (segTier.numberOfGroups() == 1 ? segTier.getGroup(0) : null);
+		return getParentView().getEditor().currentRecord().getMediaSegment();
 	}
 
 	public File getAudioFile() {

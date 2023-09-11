@@ -23,6 +23,7 @@ import ca.phon.formatter.Formatter;
 import ca.phon.formatter.*;
 import ca.phon.plugins.praat.TextGridManager;
 import ca.phon.session.*;
+import ca.phon.session.tierdata.TierData;
 import ca.phon.ui.HidablePanel;
 import ca.phon.ui.decorations.DialogHeader;
 import ca.phon.ui.toast.*;
@@ -42,8 +43,6 @@ import java.util.logging.*;
 public class TextGridImportSettingsStep extends WizardStep {
 
 	private final static Logger LOGGER = Logger.getLogger(TextGridImportSettingsStep.class.getName());
-
-	private static final long serialVersionUID = 4032976189938565114L;
 
 	private final static String MSG1_PROP = TextGridImportSettingsStep.class.getName() + ".msg1";
 	private final static String INFO_MESSAGE =
@@ -214,7 +213,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 			final SessionFactory factory = SessionFactory.newFactory();
 			// add tier to session
 			final TierDescription tierDesc = factory.createTierDescription(
-					ted.getTierEditor().getTierName(), ted.getTierEditor().isGrouped(), TierString.class);
+					ted.getTierEditor().getTierName(), TierData.class, new HashMap<>(), false, false);
 			session.addUserTier(tierDesc);
 
 			final Formatter<Font> fontFormatter = FormatterFactory.createFormatter(Font.class);
@@ -291,8 +290,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 
 	public enum Col {
 		TG_TIER("TextGrid Tier"),
-		PHON_TIER("Phon Tier"),
-		GROUPED("Grouped");
+		PHON_TIER("Phon Tier");
 
 		private String name;
 
@@ -371,11 +369,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		@Override
 		public Class<?> getColumnClass(int columnIndex) {
 			Class<?> retVal = String.class;
-
-			if(columnIndex == Col.GROUPED.ordinal()) {
-				retVal = Boolean.class;
-			}
-
 			return retVal;
 		}
 
@@ -389,7 +382,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 					super.fireTableRowsUpdated(rowIndex, rowIndex);
 				} else if(SystemTierType.isSystemTier(selectedTier)) {
 					final SystemTierType systemTier = SystemTierType.tierFromString(selectedTier);
-					final TierDescription td = (SessionFactory.newFactory()).createTierDescription(systemTier.getName(), systemTier.isGrouped());
+					final TierDescription td = (SessionFactory.newFactory()).createTierDescription(systemTier);
 
 					// make sure no other tier is mapped to this system tier
 					for(String tierName:textGridTiers) {
@@ -422,13 +415,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 					tierMap.put(tgTier, td);
 					super.fireTableRowsUpdated(rowIndex, rowIndex);
 				}
-			} else if(columnIndex == Col.GROUPED.ordinal()) {
-				final String tierName = (String)getValueAt(rowIndex, Col.PHON_TIER.ordinal());
-				if(tierName != null && tierName.trim().length() > 0) {
-					final TierDescription td = (SessionFactory.newFactory()).createTierDescription(tierName, (Boolean)aValue);
-					tierMap.put((String)getValueAt(rowIndex, Col.TG_TIER.ordinal()), td);
-					super.fireTableCellUpdated(rowIndex, columnIndex);
-				}
 			}
 		}
 
@@ -436,14 +422,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 		public boolean isCellEditable(int row, int col) {
 			if(col == Col.PHON_TIER.ordinal()) {
 				return true;
-			} else if(col == Col.GROUPED.ordinal()) {
-				// check column 1
-				final String selectedTier = (String)getValueAt(row, Col.PHON_TIER.ordinal());
-				if(SystemTierType.isSystemTier(selectedTier)) {
-					return false;
-				} else {
-					return true;
-				}
 			}
 			return false;
 		}
@@ -464,9 +442,6 @@ public class TextGridImportSettingsStep extends WizardStep {
 			} else if(col == Col.PHON_TIER.ordinal()) {
 				final TierDescription td = tierMap.get(tgTier);
 				retVal = (td != null ? td.getName() : null);
-			} else if(col == Col.GROUPED.ordinal()) {
-				final TierDescription td = tierMap.get(tgTier);
-				retVal = (td != null ? td.isGrouped() : false);
 			}
 
 			return retVal;

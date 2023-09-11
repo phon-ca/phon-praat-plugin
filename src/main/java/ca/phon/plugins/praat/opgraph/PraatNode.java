@@ -35,6 +35,9 @@ import ca.phon.query.db.*;
 import ca.phon.query.report.datasource.*;
 import ca.phon.session.Record;
 import ca.phon.session.*;
+import ca.phon.session.tierdata.TierData;
+import ca.phon.session.tierdata.TierElement;
+import ca.phon.session.tierdata.TierString;
 import ca.phon.ui.text.PromptedTextField;
 import org.jdesktop.swingx.JXTitledSeparator;
 
@@ -140,21 +143,23 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 						}
 					}
 				}
-			} else if(obj instanceof TierString) {
-				final TierString tierString = (TierString)obj;
+			} else if(obj instanceof TierData tierData) {
+				for(TierElement tierElement:tierData) {
+					if(tierElement instanceof TierString tierString) {
+						TextInterval interval = tierString.getExtension(TextInterval.class);
+						if (interval == null && tierString.numberOfWords() > 0) {
+							TierString firstWord = tierString.getWord(0);
+							TierString lastWord = tierString.getWord(tierString.numberOfWords() - 1);
 
-				TextInterval interval = tierString.getExtension(TextInterval.class);
-				if(interval == null && tierString.numberOfWords() > 0) {
-					TierString firstWord = tierString.getWord(0);
-					TierString lastWord = tierString.getWord(tierString.numberOfWords()-1);
-
-					TextInterval firstInterval = firstWord.getExtension(TextInterval.class);
-					TextInterval lastInterval = lastWord.getExtension(TextInterval.class);
-					if(firstInterval != null && lastInterval != null) {
-						try {
-							retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
-						} catch (PraatException e) {
-							LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+							TextInterval firstInterval = firstWord.getExtension(TextInterval.class);
+							TextInterval lastInterval = lastWord.getExtension(TextInterval.class);
+							if (firstInterval != null && lastInterval != null) {
+								try {
+									retVal = TextInterval.create(firstInterval.getXmin(), lastInterval.getXmax(), "");
+								} catch (PraatException e) {
+									LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+								}
+							}
 						}
 					}
 				}
@@ -179,15 +184,13 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		warningsTable.setColumnTitle(col++, "Result");
 		warningsTable.setColumnTitle(col++, "Warning");
 		
-//		final String globalTgName = (String)context.get(TextGridNameGlobalOption.TEXTGRIDNAME_KEY);
-
 		final TextGridManager tgManager = new TextGridManager(project);
 		final TextGridAnnotator annotator = new TextGridAnnotator();
 
 		final int resultCol = table.getColumnIndex("Result");
 		final int sessionNameCol = table.getColumnIndex("Session");
 
-		SessionPath lastSessionName = new SessionPath();
+		SessionPath lastSessionName = null;
 		Session session = null;
 		TextGrid textGrid = null;
 		LongSound longSound = null;
@@ -198,7 +201,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 			if(super.isCanceled()) throw new BreakpointEncountered(null, this);
 
 			final SessionPath sessionName = (SessionPath)table.getValueAt(row, sessionNameCol);
-			if(session == null || !lastSessionName.equals(sessionName)) {
+			if(session == null || !sessionName.equals(lastSessionName)) {
 				// clean up old data
 				if(textGrid != null) {
 					try {
@@ -240,9 +243,8 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 				continue;
 			}
 			final Record record = session.getRecord(result.getRecordIndex());
-			final Tier<MediaSegment> segTier = record.getSegment();
-			if(segTier.numberOfGroups() == 0) continue;
-			final MediaSegment segment = segTier.getGroup(0);
+			final Tier<MediaSegment> segTier = record.getSegmentTier();
+			final MediaSegment segment = segTier.getValue();
 			double startTime = segment.getStartValue() / 1000.0;
 			double endTime = segment.getEndValue() / 1000.0;
 
@@ -307,16 +309,16 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 						switch(systemTier)
 						{
 						case Orthography:
-							tierVal = record.getOrthography().getGroup(rv.getGroupIndex());
+							tierVal = record.getOrthography();
 							break;
 						case IPATarget:
-							tierVal = record.getIPATarget().getGroup(rv.getGroupIndex());
+							tierVal = record.getIPATarget();
 							break;
 						case IPAActual:
-							tierVal = record.getIPAActual().getGroup(rv.getGroupIndex());
+							tierVal = record.getIPAActual();
 							break;
 						case Notes:
-							tierVal = record.getNotes().getGroup(0);
+							tierVal = record.getNotes();
 							break;
 							
 						default:
@@ -324,7 +326,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 						}
 					} else {
 						final Tier<?> tier = record.getTier(rv.getTierName());
-						tierVal = tier.getGroup(rv.getGroupIndex());
+						tierVal = tier.getValue();
 					}
 					if(tierVal == null) {
 						addToWarningsTable(sessionName, result, "Tier value for " + rv.getTierName() + " not found");
@@ -332,9 +334,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 					
 					Object resultValue = null;
-					if(tierVal instanceof Orthography) {
-						Orthography ortho = (Orthography)tierVal;
-						
+					if(tierVal instanceof Orthography ortho) {
 						if(rv.getRange().getFirst() == 0
 								&& rv.getRange().getRange() == ortho.toString().length()) {
 							resultValue = ortho;
@@ -345,7 +345,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 							// rv.getRange().getFirst() must start at the beginning of an element
 							int startIdx = 0;
 							for(int i = 0; i < ortho.length(); i++) {
-								final OrthoElement ele = ortho.elementAt(i);
+								final OrthographyElement ele = ortho.elementAt(i);
 								if(startIdx == rv.getRange().getFirst()) {
 									startEleIdx = i;
 									break;
@@ -360,7 +360,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 							if(startEleIdx >= 0) {
 								// rv.getRange.getLast() must be at the end of an element
 								for(int i = startEleIdx; i < ortho.length(); i++) {
-									final OrthoElement ele = ortho.elementAt(i);
+									final OrthographyElement ele = ortho.elementAt(i);
 									if(rv.getRange().getLast() == startIdx + ele.text().length()) {
 										endEleIdx = i;
 										break;
@@ -512,7 +512,6 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 		
 		rowData[col++] = sp;
 		rowData[col++] = r.getRecordIndex()+1;
-		rowData[col++] = r.getResultValue(0).getGroupIndex() + 1;
 		rowData[col++] = r;
 		rowData[col++] = warning;
 		warningsTable.addRow(rowData);

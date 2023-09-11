@@ -105,119 +105,120 @@ public class TextGridExporter {
 	 * @param textgrid
 	 * @param tgName
 	 */
+	// FIXME
 	public void addTierToTextGrid(Record record, String tier, Segmentation type,
 			TextGrid textgrid, String tgName) {
-		// create the new textgrid tier
-		IntervalTier tgTier = findIntervalTier(textgrid, tgName);
-		if(tgTier == null) return;
-
-		final MediaSegment mediaSeg = record.getSegment().getGroup(0);
-		if(mediaSeg == null || (mediaSeg.getEndValue() - mediaSeg.getStartValue()) <= 0) return;
-		double startTime = mediaSeg.getStartValue() / 1000.0;
-		double endTime = mediaSeg.getEndValue() / 1000.0;
-
-		final TextInterval lastInterval =
-				(tgTier.numberOfIntervals() > 0 ? tgTier.interval(tgTier.numberOfIntervals()) : null);
-		final double lastIntervalEnd =
-				(lastInterval != null ? lastInterval.getXmax() : 0.0);
-		if(lastIntervalEnd < startTime) {
-			// add a new empty interval
-			tgTier.addInterval(lastIntervalEnd, startTime, "");
-		} else if(lastIntervalEnd > startTime) {
-			// adjust start time for this record
-			startTime = lastIntervalEnd;
-		}
-
-		// check if we a processing a built-in tier
-		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
-
-		// calculate some values for interval times
-		final double totalTime = endTime - startTime;
-		final double groupLength = totalTime / record.numberOfGroups();
-
-		// if the exportType is TIER, we create a 3-interval tier
-		// this takes care of all flat tiers
-		if(type == Segmentation.TIER) {
-			final Tier<String> t = record.getTier(tier, String.class);
-			final String tierData = (t == null ? "" : t.toString());
-			setupSingleIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
-		} else {
-			double currentStart = startTime;
-			double dataEnd = endTime;
-
-			for(int i = 0; i < record.numberOfGroups(); i++) {
-				final Group group = record.getGroup(i);
-
-				final double groupStart = currentStart;
-				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
-
-				if(type == Segmentation.GROUP) {
-					String data = "";
-					if(systemTier != null) {
-						if(systemTier == SystemTierType.Orthography) {
-							data = (group.getOrthography() != null ? group.getOrthography().toString() : "");
-						} else if(systemTier == SystemTierType.IPATarget) {
-							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
-						} else if(systemTier == SystemTierType.IPAActual) {
-							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
-						}
-					} else {
-						if(group.getTier(tier) != null)
-							data = group.getTier(tier, String.class);
-					}
-
-					addGroup(tgTier, data, currentStart, groupEnd);
-					currentStart = groupEnd;
-				} else if(type == Segmentation.WORD) {
-					String data = "";
-					
-					if(systemTier != null) {
-						if(systemTier == SystemTierType.Orthography) {
-							for(int wIdx = 0; wIdx < group.getAlignedWordCount(); wIdx++) {
-								final Word alignedWord = group.getAlignedWord(wIdx);
-								final String orthoWord = (alignedWord != null && alignedWord.getOrthography() != null ? 
-										alignedWord.getOrthography().toString() : "");
-								data += (orthoWord.length() > 0 ? (data.length() > 0 ? " " : "") + orthoWord : "");
-							}
-						} else if(systemTier == SystemTierType.IPATarget) {
-							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
-						} else if(systemTier == SystemTierType.IPAActual) {
-							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
-						}
-					} else {
-						if(group.getTier(tier) != null)
-							data = (group.getTier(tier) != null ? group.getTier(tier, String.class) : "");
-					}
-
-					addWords(tgTier, data, currentStart, groupEnd);
-					currentStart = groupEnd;
-				} else if(type == Segmentation.SYLLABLE) {
-					if(systemTier == SystemTierType.IPATarget ||
-							systemTier == SystemTierType.IPAActual) {
-						final IPATranscript ipa =
-								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
-						if(ipa.length() == 0) {
-							tgTier.addInterval(groupStart, groupEnd, "");
-						} else {
-							addSyllables(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
-						}
-						currentStart = groupEnd;
-					}
-				} else if(type == Segmentation.PHONE) {
-					if(systemTier == SystemTierType.IPATarget ||
-							systemTier == SystemTierType.IPAActual) {
-						final IPATranscript ipa =
-								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
-						if(ipa.length() == 0) {
-							tgTier.addInterval(groupStart, groupEnd, "");
-						} else {
-							addPhones(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
-						}
-						currentStart = groupEnd;
-					}
-				}
-			}
-		}
+//		// create the new textgrid tier
+//		IntervalTier tgTier = findIntervalTier(textgrid, tgName);
+//		if(tgTier == null) return;
+//
+//		final MediaSegment mediaSeg = record.getSegment().getGroup(0);
+//		if(mediaSeg == null || (mediaSeg.getEndValue() - mediaSeg.getStartValue()) <= 0) return;
+//		double startTime = mediaSeg.getStartValue() / 1000.0;
+//		double endTime = mediaSeg.getEndValue() / 1000.0;
+//
+//		final TextInterval lastInterval =
+//				(tgTier.numberOfIntervals() > 0 ? tgTier.interval(tgTier.numberOfIntervals()) : null);
+//		final double lastIntervalEnd =
+//				(lastInterval != null ? lastInterval.getXmax() : 0.0);
+//		if(lastIntervalEnd < startTime) {
+//			// add a new empty interval
+//			tgTier.addInterval(lastIntervalEnd, startTime, "");
+//		} else if(lastIntervalEnd > startTime) {
+//			// adjust start time for this record
+//			startTime = lastIntervalEnd;
+//		}
+//
+//		// check if we a processing a built-in tier
+//		final SystemTierType systemTier = SystemTierType.tierFromString(tier);
+//
+//		// calculate some values for interval times
+//		final double totalTime = endTime - startTime;
+//		final double groupLength = totalTime / record.numberOfGroups();
+//
+//		// if the exportType is TIER, we create a 3-interval tier
+//		// this takes care of all flat tiers
+//		if(type == Segmentation.TIER) {
+//			final Tier<String> t = record.getTier(tier, String.class);
+//			final String tierData = (t == null ? "" : t.toString());
+//			setupSingleIntervalTier(textgrid, tgTier, tierData, startTime, endTime);
+//		} else {
+//			double currentStart = startTime;
+//			double dataEnd = endTime;
+//
+//			for(int i = 0; i < record.numberOfGroups(); i++) {
+//				final Group group = record.getGroup(i);
+//
+//				final double groupStart = currentStart;
+//				final double groupEnd = (i == record.numberOfGroups() - 1 ? dataEnd : groupStart + groupLength);
+//
+//				if(type == Segmentation.GROUP) {
+//					String data = "";
+//					if(systemTier != null) {
+//						if(systemTier == SystemTierType.Orthography) {
+//							data = (group.getOrthography() != null ? group.getOrthography().toString() : "");
+//						} else if(systemTier == SystemTierType.IPATarget) {
+//							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
+//						} else if(systemTier == SystemTierType.IPAActual) {
+//							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
+//						}
+//					} else {
+//						if(group.getTier(tier) != null)
+//							data = group.getTier(tier, String.class);
+//					}
+//
+//					addGroup(tgTier, data, currentStart, groupEnd);
+//					currentStart = groupEnd;
+//				} else if(type == Segmentation.WORD) {
+//					String data = "";
+//
+//					if(systemTier != null) {
+//						if(systemTier == SystemTierType.Orthography) {
+//							for(int wIdx = 0; wIdx < group.getAlignedWordCount(); wIdx++) {
+//								final Word alignedWord = group.getAlignedWord(wIdx);
+//								final String orthoWord = (alignedWord != null && alignedWord.getOrthography() != null ?
+//										alignedWord.getOrthography().toString() : "");
+//								data += (orthoWord.length() > 0 ? (data.length() > 0 ? " " : "") + orthoWord : "");
+//							}
+//						} else if(systemTier == SystemTierType.IPATarget) {
+//							data = (group.getIPATarget() != null ? group.getIPATarget().toString() : "");
+//						} else if(systemTier == SystemTierType.IPAActual) {
+//							data = (group.getIPAActual() != null ? group.getIPAActual().toString() : "");
+//						}
+//					} else {
+//						if(group.getTier(tier) != null)
+//							data = (group.getTier(tier) != null ? group.getTier(tier, String.class) : "");
+//					}
+//
+//					addWords(tgTier, data, currentStart, groupEnd);
+//					currentStart = groupEnd;
+//				} else if(type == Segmentation.SYLLABLE) {
+//					if(systemTier == SystemTierType.IPATarget ||
+//							systemTier == SystemTierType.IPAActual) {
+//						final IPATranscript ipa =
+//								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
+//						if(ipa.length() == 0) {
+//							tgTier.addInterval(groupStart, groupEnd, "");
+//						} else {
+//							addSyllables(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+//						}
+//						currentStart = groupEnd;
+//					}
+//				} else if(type == Segmentation.PHONE) {
+//					if(systemTier == SystemTierType.IPATarget ||
+//							systemTier == SystemTierType.IPAActual) {
+//						final IPATranscript ipa =
+//								(systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual());
+//						if(ipa.length() == 0) {
+//							tgTier.addInterval(groupStart, groupEnd, "");
+//						} else {
+//							addPhones(tgTier, systemTier == SystemTierType.IPATarget ? group.getIPATarget() : group.getIPAActual(), currentStart, groupEnd);
+//						}
+//						currentStart = groupEnd;
+//					}
+//				}
+//			}
+//		}
 	}
 
 	private void addGroup(IntervalTier tier, String groupData, double start, double end) {
@@ -371,9 +372,8 @@ public class TextGridExporter {
 	public TextGrid createEmptyTextGrid(Record utt) {
 		double startTime = Integer.MAX_VALUE, endTime = Integer.MIN_VALUE;
 
-		final Tier<MediaSegment> segmentTier = utt.getSegment();
-		if(segmentTier.numberOfGroups() == 0) return null;
-		final MediaSegment media = segmentTier.getGroup(0);
+		final Tier<MediaSegment> segmentTier = utt.getSegmentTier();
+		final MediaSegment media = segmentTier.getValue();
 
 		if(media != null) {
 			double st = media.getStartValue();
@@ -406,7 +406,7 @@ public class TextGridExporter {
 	 * @throws IOException
 	 */
 	public void addRecordToTextGrid(Record record, TextGrid textGrid, List<TextGridExportEntry> exports, boolean overwrite) {
-		final MediaSegment seg = record.getSegment().getGroup(0);
+		final MediaSegment seg = record.getMediaSegment();
 		if(seg == null) return;
 
 		double startTime = (double)(seg.getStartValue() / 1000.0);
@@ -424,7 +424,6 @@ public class TextGridExporter {
 	 * @param session
 	 * @param recordFilter
 	 * @param exports
-	 * @param name
 	 * @param appendTiers if a TextGrid already exists at <code>file</code> add
 	 *  tiers to the existing TextGrid
 	 *
@@ -504,7 +503,7 @@ public class TextGridExporter {
 		throws PraatException {
 		boolean retVal = false;
 
-		final MediaSegment mediaSeg = record.getSegment().getGroup(0);
+		final MediaSegment mediaSeg = record.getMediaSegment();
 		if(mediaSeg == null ||
 				(mediaSeg.getEndValue() - mediaSeg.getStartValue()) <= 0) {
 			return retVal;
@@ -681,9 +680,8 @@ public class TextGridExporter {
 						getAudioFile(project, session);
 				if(mediaFile == null) continue;
 
-				final Tier<MediaSegment> mediaTier = utt.getSegment();
-				if(mediaTier.numberOfGroups()  == 0) continue;
-				final MediaSegment media = mediaTier.getGroup(0);
+				final Tier<MediaSegment> mediaTier = utt.getSegmentTier();
+				final MediaSegment media = mediaTier.getValue();
 
 				map.put("soundFile", mediaFile.getAbsolutePath());
 				map.put("tgFile", tgFilename);

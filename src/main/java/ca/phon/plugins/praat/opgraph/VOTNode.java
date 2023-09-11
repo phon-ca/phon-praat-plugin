@@ -98,7 +98,6 @@ public class VOTNode extends PraatNode implements NodeSettings {
 			rowData[col++] = textInterval.getText();
 		} else {
 			rowData[col++] = rv.getTierName();
-			rowData[col++] = rv.getGroupIndex()+1;
 			rowData[col++] = value;
 		}
 
@@ -126,7 +125,6 @@ public class VOTNode extends PraatNode implements NodeSettings {
 			colNames.add("Text");
 		} else {
 			colNames.add("Tier");
-			colNames.add("Group #");
 			colNames.add(getColumn());
 		}
 		
