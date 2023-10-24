@@ -203,7 +203,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		getParentView().getEditor().getEventManager().registerActionForEvent(SessionMediaModel.SessionAudioAvailable, this::onSessionAudioAvailable);
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.SessionMediaChanged, this::onMediaChanged);
 
-		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChanged, this::onSegmentChanged);
+		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChange, this::onSegmentChanged);
 		
 		getParentView().getEditor().getEventManager().registerActionForEvent(EditorEventType.EditorClosing, this::onEditorClosing, EditorEventManager.RunOn.AWTEventDispatchThread);
 	}
@@ -1278,6 +1278,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	private void onSegmentChanged(EditorEvent<EditorEventType.TierChangeData> ee) {
+		if(ee.data().valueAdjusting()) return;
 		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
 		if(ee.data().tier().getName().equals(SystemTierType.Segment.getName())) {
 			update();

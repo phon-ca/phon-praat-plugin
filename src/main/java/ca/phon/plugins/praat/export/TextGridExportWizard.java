@@ -241,7 +241,7 @@ public class TextGridExportWizard extends WizardFrame {
 			if(selectedSessions.size() > 0) {
 				final SessionPath loc = selectedSessions.get(0);
 				try {
-					retVal = getProject().openSession(loc.getCorpus(), loc.getSession());
+					retVal = getProject().openSession(loc.getFolder(), loc.getSessionFile());
 				} catch (IOException e) {
 					LogUtil.warning(e);
 				}

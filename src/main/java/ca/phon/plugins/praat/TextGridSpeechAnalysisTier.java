@@ -271,7 +271,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 
 		parent.getEditor().getEventManager().registerActionForEvent(TextGridChanged, this::onTextGridChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
-		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChanged, this::onTierChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
+		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TierChange, this::onTierChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
 		parent.getEditor().getEventManager().registerActionForEvent(EditorEventType.TierViewChanged, this::onTierViewChanged, EditorEventManager.RunOn.AWTEventDispatchThread);
 
@@ -657,6 +657,7 @@ public class TextGridSpeechAnalysisTier extends SpeechAnalysisTier {
 	}
 
 	private void onTierChanged(EditorEvent<EditorEventType.TierChangeData> ee) {
+		if(ee.data().valueAdjusting()) return;
 		if(ee.data().tier().getName().equals(SystemTierType.Segment.getName())) {
 			update();
 		}

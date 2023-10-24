@@ -218,7 +218,7 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 					}
 				}
 				try {
-					session = project.openSession(sessionName.getCorpus(), sessionName.getSession());
+					session = project.openSession(sessionName.getFolder(), sessionName.getSessionFile());
 					final Optional<File> textGridFile = tgManager.defaultTextGridFile(session);
 					if(!textGridFile.isPresent())
 						throw new PraatException("TextGrid not found for " + sessionName);
