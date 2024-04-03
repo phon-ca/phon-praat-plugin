@@ -20,7 +20,7 @@ import ca.hedlund.jpraat.binding.sys.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.LogUtil;
 import ca.phon.app.session.editor.*;
-import ca.phon.app.session.editor.view.speech_analysis.*;
+import ca.phon.app.session.editor.view.speechAnalysis.*;
 import ca.phon.media.MediaLocator;
 import ca.phon.plugins.praat.export.TextGridExportWizard;
 import ca.phon.plugins.praat.importer.TextGridImportWizard;

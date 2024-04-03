@@ -18,7 +18,7 @@ package ca.phon.plugins.praat.importer;
 import ca.hedlund.jpraat.binding.fon.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.session.editor.EditorEventName;
-import ca.phon.app.session.editor.view.tier_management.TierEditorDialog;
+import ca.phon.app.session.editor.view.tierManagement.TierEditorDialog;
 import ca.phon.formatter.Formatter;
 import ca.phon.formatter.*;
 import ca.phon.plugins.praat.TextGridManager;
@@ -205,7 +205,7 @@ public class TextGridImportSettingsStep extends WizardStep {
 
 		final String tgTier = (String)table.getValueAt(row, Col.TG_TIER.ordinal());
 
-		final TierEditorDialog ted = new TierEditorDialog(false);
+		final TierEditorDialog ted = new TierEditorDialog(session, false);
 		ted.getTierEditor().setTierName(tgTier);
 		ted.setModal(true);
 		ted.pack();

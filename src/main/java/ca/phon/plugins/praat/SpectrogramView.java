@@ -23,7 +23,7 @@ import ca.hedlund.jpraat.binding.sys.*;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.app.log.*;
 import ca.phon.app.session.editor.*;
-import ca.phon.app.session.editor.view.speech_analysis.*;
+import ca.phon.app.session.editor.view.speechAnalysis.*;
 import ca.phon.media.*;
 import ca.phon.media.TimeUIModel.*;
 import ca.phon.plugins.praat.painters.*;
@@ -1263,23 +1263,23 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	private void onSessionAudioAvailable(EditorEvent<SessionMediaModel> ee) {
-		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_NAME)) return;
 		update(true);
 	}
 
 	private void onMediaChanged(EditorEvent<EditorEventType.SessionMediaChangedData> ee) {
-		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_NAME)) return;
 		update(true);
 	}
 	
 	private void onTimeModelChanged(EditorEvent<TimeUIModel> ee) {
-		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_NAME)) return;
 		update();
 	}
 
 	private void onSegmentChanged(EditorEvent<EditorEventType.TierChangeData> ee) {
 		if(ee.data().valueAdjusting()) return;
-		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_TITLE)) return;
+		if(!shouldShow() || !getParentView().getEditor().getViewModel().isShowingInStack(SpeechAnalysisEditorView.VIEW_NAME)) return;
 		if(ee.data().tier().getName().equals(SystemTierType.Segment.getName())) {
 			update();
 		}

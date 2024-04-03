@@ -15,7 +15,7 @@
  */
 package ca.phon.plugins.praat;
 
-import ca.phon.app.session.editor.view.speech_analysis.*;
+import ca.phon.app.session.editor.view.speechAnalysis.*;
 import ca.phon.plugin.*;
 
 @PhonPlugin(name="Spectrogram",version="0.1",minPhonVersion="1.7.0")
