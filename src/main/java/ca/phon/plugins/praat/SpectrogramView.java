@@ -1095,8 +1095,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 
-		final double xmin = (double)segment.getStartValue()/1000.0;
-		final double xmax = (double)segment.getEndValue()/1000.0;
+		final double xmin = (double)segment.getStartTime();
+		final double xmax = (double)segment.getEndTime();
 
 		Spectrogram spectrogram = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1120,8 +1120,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
-		final double xmin = (double)segment.getStartValue()/1000.0;
-		final double xmax = (double)segment.getEndValue()/1000.0;
+		final double xmin = (double)segment.getStartTime();
+		final double xmax = (double)segment.getEndTime();
 
 		Pitch pitch = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1152,8 +1152,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
-		final double xmin = (double)segment.getStartValue()/1000.0;
-		final double xmax = (double)segment.getEndValue()/1000.0;
+		final double xmin = (double)segment.getStartTime();
+		final double xmax = (double)segment.getEndTime();
 
 		Formant formants = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1176,8 +1176,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 
-		final double xmin = (double)segment.getStartValue()/1000.0;
-		final double xmax = (double)segment.getEndValue()/1000.0;
+		final double xmin = (double)segment.getStartTime();
+		final double xmax = (double)segment.getEndTime();
 		
 		Intensity intensity = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1234,8 +1234,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
 		
-		final double xmin = (double)segment.getStartValue()/1000.0;
-		final double xmax = (double)segment.getEndValue()/1000.0;
+		final double xmin = (double)segment.getStartTime();
+		final double xmax = (double)segment.getEndTime();
 
 		PointProcess pulses = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1430,8 +1430,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		}
 
 		// check analysis length
-		final double startTime = segment.getStartValue()/1000.0;
-		final double endTime = segment.getEndValue()/1000.0;
+		final double startTime = segment.getStartTime();
+		final double endTime = segment.getEndTime();
 		final double len = endTime - startTime;
 		final boolean sameSegment =
 				(lastStartTime == startTime && lastEndTime == endTime);
