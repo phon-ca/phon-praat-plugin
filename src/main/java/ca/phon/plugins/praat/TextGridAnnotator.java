@@ -16,6 +16,7 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.*;
+import ca.hedlund.jpraat.binding.fon.IntervalTier;
 import ca.hedlund.jpraat.exceptions.PraatException;
 import ca.phon.ipa.*;
 import ca.phon.orthography.*;

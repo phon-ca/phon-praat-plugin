@@ -171,339 +171,339 @@ public abstract class PraatNode extends TableOpNode implements NodeSettings {
 
 	@Override
 	public void operate(OpContext context) throws ProcessingException {
-		final Project project = (Project)context.get(projectInput);
-
-		final DefaultTableDataSource table = (DefaultTableDataSource)context.get(tableInput);
-		final DefaultTableDataSource outputTable = new DefaultTableDataSource();
-
-		warningsTable = new DefaultTableDataSource();
-		int col = 0;
-		warningsTable.setColumnTitle(col++, "Session");
-		warningsTable.setColumnTitle(col++, "Record #");
-		warningsTable.setColumnTitle(col++, "Group #");
-		warningsTable.setColumnTitle(col++, "Result");
-		warningsTable.setColumnTitle(col++, "Warning");
-		
-		final TextGridManager tgManager = new TextGridManager(project);
-		final TextGridAnnotator annotator = new TextGridAnnotator();
-
-		final int resultCol = table.getColumnIndex("Result");
-		final int sessionNameCol = table.getColumnIndex("Session");
-
-		SessionPath lastSessionName = null;
-		Session session = null;
-		TextGrid textGrid = null;
-		LongSound longSound = null;
-
-		List<Integer> recordList = new ArrayList<>();
-
-		for(int row = 0; row < table.getRowCount(); row++) {
-			if(super.isCanceled()) throw new BreakpointEncountered(null, this);
-
-			final SessionPath sessionName = (SessionPath)table.getValueAt(row, sessionNameCol);
-			if(session == null || !sessionName.equals(lastSessionName)) {
-				// clean up old data
-				if(textGrid != null) {
-					try {
-						textGrid.close();
-					} catch (Exception e) {
-						LogUtil.severe(e);
-					}
-				}
-				if(longSound != null) {
-					try {
-						longSound.close();
-					} catch (Exception e) {
-						LogUtil.severe(e);
-					}
-				}
-				try {
-					session = project.openSession(sessionName.getFolder(), sessionName.getSessionFile());
-					final Optional<File> textGridFile = tgManager.defaultTextGridFile(session);
-					if(!textGridFile.isPresent())
-						throw new PraatException("TextGrid not found for " + sessionName);
-					
-					textGrid = TextGridManager.loadTextGrid(textGridFile.get());
-					File mediaFile = getMediaFile(project, session);
-					longSound = LongSound.open(MelderFile.fromPath(mediaFile.getAbsolutePath()));
-				} catch (IOException | PraatException e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-					throw new ProcessingException(null, e);
-				}
-			}
-			lastSessionName = sessionName;
-
-			final Result result = (Result)table.getValueAt(row, resultCol);
-			if(textGrid == null) {
-				addToWarningsTable(sessionName, result, "TextGrid not found");
-				continue;
-			}
-			if(longSound == null) {
-				addToWarningsTable(sessionName, result, "LongSound not found");
-				continue;
-			}
-			final Record record = session.getRecord(result.getRecordIndex());
-			final Tier<MediaSegment> segTier = record.getSegmentTier();
-			final MediaSegment segment = segTier.getValue();
-			double startTime = segment.getStartValue() / 1000.0;
-			double endTime = segment.getEndValue() / 1000.0;
-
-			TextInterval textInterval = null;
-			if(isUseRecordInterval()) {
-				if(recordList.contains(result.getRecordIndex())) continue;
-				try {
-					textInterval = TextInterval.create(startTime, endTime, ReportHelper.createResultString(result));
-					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, null, null, outputTable);
-					recordList.add(result.getRecordIndex());
-				} catch (PraatException pe) {
-					LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
-				}
-			} else if(isUseTextGridInterval()) {
-				try(final TextGrid recordTextGrid = textGrid.extractPart(startTime, endTime, true)) {
-					annotator.annotateRecord(recordTextGrid, record);
-					
-					if(recordList.contains(result.getRecordIndex())) continue;
-					String textGridTier = getTextGridTier();
-					final long tierNum = TextGridUtils.tierNumberFromName(recordTextGrid, textGridTier);
-					if(tierNum <= 0) continue;
-					
-					try {
-						final IntervalTier intervalTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierNum);
-						recordList.add(result.getRecordIndex());
-						
-						for(long i = 1; i <= intervalTier.numberOfIntervals(); i++) {
-							final TextInterval interval = intervalTier.interval(i);
-							
-							// check interval filter
-							if(checkFilter(interval)) {
-								addRowToTable(longSound, textGrid, interval, session, sessionName, segment, result, null, null, outputTable);
-							}
-						}
-					} catch (PraatException pe) {
-						LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
-					}
-				} catch (Exception e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-					throw new ProcessingException(null, e);
-				}
-			} else {
-				try(final TextGrid recordTextGrid = textGrid.extractPart(startTime, endTime, true)) {
-					annotator.annotateRecord(recordTextGrid, record);
-					// find correct result value in result
-					ResultValue rv = null;
-					for(int i = 0; i < result.getNumberOfResultValues(); i++) {
-						ResultValue v = result.getResultValue(i);
-						if(v.getTierName().equalsIgnoreCase(getColumn())) {
-							rv = v;
-							break;
-						}
-					}
-					if(rv == null) {
-						addToWarningsTable(sessionName, result, "Result value for " + getColumn() + " tier not found");
-						continue;
-					}
-					
-					Object tierVal = null;
-					SystemTierType systemTier = SystemTierType.tierFromString(rv.getTierName());
-					if(systemTier != null) {
-						switch(systemTier)
-						{
-						case Orthography:
-							tierVal = record.getOrthography();
-							break;
-						case IPATarget:
-							tierVal = record.getIPATarget();
-							break;
-						case IPAActual:
-							tierVal = record.getIPAActual();
-							break;
-						case Notes:
-							tierVal = record.getNotes();
-							break;
-							
-						default:
-							break;
-						}
-					} else {
-						final Tier<?> tier = record.getTier(rv.getTierName());
-						tierVal = tier.getValue();
-					}
-					if(tierVal == null) {
-						addToWarningsTable(sessionName, result, "Tier value for " + rv.getTierName() + " not found");
-						continue;
-					}
-					
-					Object resultValue = null;
-					if(tierVal instanceof Orthography ortho) {
-						if(rv.getRange().getFirst() == 0
-								&& rv.getRange().getRange() == ortho.toString().length()) {
-							resultValue = ortho;
-						} else {
-							// try to copy whole elements if possible to retain annotations
-							int startEleIdx = -1;
-							int endEleIdx = -1;
-							// rv.getRange().getFirst() must start at the beginning of an element
-							int startIdx = 0;
-							for(int i = 0; i < ortho.length(); i++) {
-								final OrthographyElement ele = ortho.elementAt(i);
-								if(startIdx == rv.getRange().getFirst()) {
-									startEleIdx = i;
-									break;
-								} else if (rv.getRange().getFirst() > startIdx + ele.text().length()) {
-									// continue
-									startIdx += ele.text().length()+1;
-								} else {
-									// inside element, break
-									break;
-								}
-							}
-							if(startEleIdx >= 0) {
-								// rv.getRange.getLast() must be at the end of an element
-								for(int i = startEleIdx; i < ortho.length(); i++) {
-									final OrthographyElement ele = ortho.elementAt(i);
-									if(rv.getRange().getLast() == startIdx + ele.text().length()) {
-										endEleIdx = i;
-										break;
-									} else if(rv.getRange().getLast() > startIdx + ele.text().length()) {
-										startIdx += ele.text().length()+1;
-									} else {
-										break;
-									}
-								}
-							}
-							if(startEleIdx >= 0 && endEleIdx >= 0) {
-								resultValue = ortho.subsection(startEleIdx, endEleIdx+1);
-							} else {
-								final String tierTxt = ortho.toString();
-								
-								final String resultTxt =
-										(rv.getRange().getFirst() >= 0 && rv.getRange().getLast() >= rv.getRange().getFirst() ?
-												tierTxt.substring(
-														Math.max(0, rv.getRange().getFirst()),
-														Math.max(0, Math.min(rv.getRange().getLast(), tierTxt.length()))) : "");
-								try {
-									resultValue = Orthography.parseOrthography(resultTxt);
-								} catch (ParseException e) {
-									// ignore
-								}
-							}
-						}
-					} else if(tierVal instanceof IPATranscript) {
-						IPATranscript ipa = (IPATranscript)tierVal;
-						
-						if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == ipa.toString().length()) {
-							resultValue = ipa;
-						} else {
-							if(rv.getRange().getRange() > 0) {
-								int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
-								int endPhone = ipa.ipaIndexOf(rv.getRange().getLast());
-								resultValue = ipa.subsection(startPhone, endPhone + (rv.getRange().isExcludesEnd() ? 1 : 0) );
-							}
-						}
-					} else if (tierVal instanceof TierString) {
-						TierString tierString = (TierString)tierVal;
-						
-						if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == tierString.length()) {
-							resultValue = tierString;
-						} else {
-							int startWordIdx = -1;
-							int endWordIdx = -1;
-							for(int i = 0; i < tierString.numberOfWords(); i++) {
-								TierString word = tierString.getWord(i);
-								if(rv.getRange().getFirst() == tierString.getWordOffset(i)) {
-									startWordIdx = i;
-									break;
-								} else if(rv.getRange().getFirst() > tierString.getWordOffset(i) + word.length()) {
-									continue;
-								} else {
-									break;
-								}
-							}
-							if(startWordIdx >= 0) {
-								for(int i = startWordIdx; i < tierString.numberOfWords(); i++) {
-									TierString word = tierString.getWord(i);
-									if(rv.getRange().getLast() == tierString.getWordOffset(i) + word.length()) {
-										endWordIdx = i;
-										break;
-									} else if(rv.getRange().getLast() > tierString.getWordOffset(i) + word.length()) {
-										continue;
-									} else {
-										break;
-									}
-								}
-							}
-							TierString resultTierString = new TierString(tierString.substring(rv.getRange().getFirst(), rv.getRange().getLast()));
-							if(startWordIdx >= 0 && endWordIdx >= 0) {
-								// copy TextInverval extensions
-								int wIdx = 0;
-								for(int i = startWordIdx; i <= endWordIdx && wIdx < resultTierString.numberOfWords(); i++) {
-									TierString word = tierString.getWord(i);
-									TierString resultWord = resultTierString.getWord(wIdx++);
-									resultWord.putExtension(TextInterval.class, word.getExtension(TextInterval.class));
-								}
-							}
-							resultValue = resultTierString;
-						}
-					} else {
-						String txt = tierVal.toString();
-						resultValue = txt.substring(rv.getRange().getFirst(), rv.getRange().getLast());
-					}
-					if(resultValue == null || !(resultValue instanceof IExtendable)) {
-						addToWarningsTable(sessionName, result, "Unable to locate subsection for result");
-						continue;
-					}
-					
-					IExtendable extendable = (IExtendable)resultValue;
-					textInterval = getTextInterval(extendable);
-					if(textInterval == null) {
-						addToWarningsTable(sessionName, result, "TextInterval not found");
-						continue;
-					}
-					try {
-						textInterval.setText(resultValue.toString());
-					} catch (PraatException e) {
-						LogUtil.warning(e);
-					}
-					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, rv, resultValue, outputTable);
-					
-					// delete textInterval if a new instance was created in getTextInterval(IExtendable)
-					if(textInterval != extendable.getExtension(TextInterval.class)) {
-						try {
-							textInterval.close();
-						} catch (Exception e) {
-							LogUtil.severe(e);
-						}
-					}
-				} catch (Exception e) {
-					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-					throw new ProcessingException(null, e);
-				}
-			}
-		}
-		
-		// cleanup
-		if(textGrid != null) {
-			try {
-				textGrid.close();
-			} catch (Exception e) {
-				LogUtil.severe(e);
-			}
-		}
-		if(longSound != null) {
-			try {
-				longSound.close();
-			} catch (Exception e) {
-				LogUtil.severe(e);
-			}
-		}
-
-		List<String> colNames = getColumnNames();
-		for(int i = 0; i < colNames.size(); i++) {
-			outputTable.setColumnTitle(i, colNames.get(i));
-		}
-
-		context.put(tableOutput, outputTable);
-		context.put(warningsOutput, warningsTable);
+//		final Project project = (Project)context.get(projectInput);
+//
+//		final DefaultTableDataSource table = (DefaultTableDataSource)context.get(tableInput);
+//		final DefaultTableDataSource outputTable = new DefaultTableDataSource();
+//
+//		warningsTable = new DefaultTableDataSource();
+//		int col = 0;
+//		warningsTable.setColumnTitle(col++, "Session");
+//		warningsTable.setColumnTitle(col++, "Record #");
+//		warningsTable.setColumnTitle(col++, "Group #");
+//		warningsTable.setColumnTitle(col++, "Result");
+//		warningsTable.setColumnTitle(col++, "Warning");
+//
+//		final TextGridManager tgManager = new TextGridManager(project);
+//		final TextGridAnnotator annotator = new TextGridAnnotator();
+//
+//		final int resultCol = table.getColumnIndex("Result");
+//		final int sessionNameCol = table.getColumnIndex("Session");
+//
+//		SessionPath lastSessionName = null;
+//		Session session = null;
+//		TextGrid textGrid = null;
+//		LongSound longSound = null;
+//
+//		List<Integer> recordList = new ArrayList<>();
+//
+//		for(int row = 0; row < table.getRowCount(); row++) {
+//			if(super.isCanceled()) throw new BreakpointEncountered(null, this);
+//
+//			final SessionPath sessionName = (SessionPath)table.getValueAt(row, sessionNameCol);
+//			if(session == null || !sessionName.equals(lastSessionName)) {
+//				// clean up old data
+//				if(textGrid != null) {
+//					try {
+//						textGrid.close();
+//					} catch (Exception e) {
+//						LogUtil.severe(e);
+//					}
+//				}
+//				if(longSound != null) {
+//					try {
+//						longSound.close();
+//					} catch (Exception e) {
+//						LogUtil.severe(e);
+//					}
+//				}
+//				try {
+//					session = project.openSession(sessionName.getFolder(), sessionName.getSessionFile());
+//					final Optional<File> textGridFile = tgManager.defaultTextGridFile(session);
+//					if(!textGridFile.isPresent())
+//						throw new PraatException("TextGrid not found for " + sessionName);
+//
+//					textGrid = TextGridManager.loadTextGrid(textGridFile.get());
+//					File mediaFile = getMediaFile(project, session);
+//					longSound = LongSound.open(MelderFile.fromPath(mediaFile.getAbsolutePath()));
+//				} catch (IOException | PraatException e) {
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//					throw new ProcessingException(null, e);
+//				}
+//			}
+//			lastSessionName = sessionName;
+//
+//			final Result result = (Result)table.getValueAt(row, resultCol);
+//			if(textGrid == null) {
+//				addToWarningsTable(sessionName, result, "TextGrid not found");
+//				continue;
+//			}
+//			if(longSound == null) {
+//				addToWarningsTable(sessionName, result, "LongSound not found");
+//				continue;
+//			}
+//			final Record record = session.getRecord(result.getRecordIndex());
+//			final Tier<MediaSegment> segTier = record.getSegmentTier();
+//			final MediaSegment segment = segTier.getValue();
+//			double startTime = segment.getStartValue() / 1000.0;
+//			double endTime = segment.getEndValue() / 1000.0;
+//
+//			TextInterval textInterval = null;
+//			if(isUseRecordInterval()) {
+//				if(recordList.contains(result.getRecordIndex())) continue;
+//				try {
+//					textInterval = TextInterval.create(startTime, endTime, ReportHelper.createResultString(result));
+//					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, null, null, outputTable);
+//					recordList.add(result.getRecordIndex());
+//				} catch (PraatException pe) {
+//					LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+//				}
+//			} else if(isUseTextGridInterval()) {
+//				try(final TextGrid recordTextGrid = textGrid.extractPart(startTime, endTime, true)) {
+//					annotator.annotateRecord(recordTextGrid, record);
+//
+//					if(recordList.contains(result.getRecordIndex())) continue;
+//					String textGridTier = getTextGridTier();
+//					final long tierNum = TextGridUtils.tierNumberFromName(recordTextGrid, textGridTier);
+//					if(tierNum <= 0) continue;
+//
+//					try {
+//						final IntervalTier intervalTier = recordTextGrid.checkSpecifiedTierIsIntervalTier(tierNum);
+//						recordList.add(result.getRecordIndex());
+//
+//						for(long i = 1; i <= intervalTier.numberOfIntervals(); i++) {
+//							final TextInterval interval = intervalTier.interval(i);
+//
+//							// check interval filter
+//							if(checkFilter(interval)) {
+//								addRowToTable(longSound, textGrid, interval, session, sessionName, segment, result, null, null, outputTable);
+//							}
+//						}
+//					} catch (PraatException pe) {
+//						LOGGER.log(Level.SEVERE, pe.getLocalizedMessage(), pe);
+//					}
+//				} catch (Exception e) {
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//					throw new ProcessingException(null, e);
+//				}
+//			} else {
+//				try(final TextGrid recordTextGrid = textGrid.extractPart(startTime, endTime, true)) {
+//					annotator.annotateRecord(recordTextGrid, record);
+//					// find correct result value in result
+//					ResultValue rv = null;
+//					for(int i = 0; i < result.getNumberOfResultValues(); i++) {
+//						ResultValue v = result.getResultValue(i);
+//						if(v.getTierName().equalsIgnoreCase(getColumn())) {
+//							rv = v;
+//							break;
+//						}
+//					}
+//					if(rv == null) {
+//						addToWarningsTable(sessionName, result, "Result value for " + getColumn() + " tier not found");
+//						continue;
+//					}
+//
+//					Object tierVal = null;
+//					SystemTierType systemTier = SystemTierType.tierFromString(rv.getTierName());
+//					if(systemTier != null) {
+//						switch(systemTier)
+//						{
+//						case Orthography:
+//							tierVal = record.getOrthography();
+//							break;
+//						case IPATarget:
+//							tierVal = record.getIPATarget();
+//							break;
+//						case IPAActual:
+//							tierVal = record.getIPAActual();
+//							break;
+//						case Notes:
+//							tierVal = record.getNotes();
+//							break;
+//
+//						default:
+//							break;
+//						}
+//					} else {
+//						final Tier<?> tier = record.getTier(rv.getTierName());
+//						tierVal = tier.getValue();
+//					}
+//					if(tierVal == null) {
+//						addToWarningsTable(sessionName, result, "Tier value for " + rv.getTierName() + " not found");
+//						continue;
+//					}
+//
+//					Object resultValue = null;
+//					if(tierVal instanceof Orthography ortho) {
+//						if(rv.getRange().getFirst() == 0
+//								&& rv.getRange().getRange() == ortho.toString().length()) {
+//							resultValue = ortho;
+//						} else {
+//							// try to copy whole elements if possible to retain annotations
+//							int startEleIdx = -1;
+//							int endEleIdx = -1;
+//							// rv.getRange().getFirst() must start at the beginning of an element
+//							int startIdx = 0;
+//							for(int i = 0; i < ortho.length(); i++) {
+//								final OrthographyElement ele = ortho.elementAt(i);
+//								if(startIdx == rv.getRange().getFirst()) {
+//									startEleIdx = i;
+//									break;
+//								} else if (rv.getRange().getFirst() > startIdx + ele.text().length()) {
+//									// continue
+//									startIdx += ele.text().length()+1;
+//								} else {
+//									// inside element, break
+//									break;
+//								}
+//							}
+//							if(startEleIdx >= 0) {
+//								// rv.getRange.getLast() must be at the end of an element
+//								for(int i = startEleIdx; i < ortho.length(); i++) {
+//									final OrthographyElement ele = ortho.elementAt(i);
+//									if(rv.getRange().getLast() == startIdx + ele.text().length()) {
+//										endEleIdx = i;
+//										break;
+//									} else if(rv.getRange().getLast() > startIdx + ele.text().length()) {
+//										startIdx += ele.text().length()+1;
+//									} else {
+//										break;
+//									}
+//								}
+//							}
+//							if(startEleIdx >= 0 && endEleIdx >= 0) {
+//								resultValue = ortho.subsection(startEleIdx, endEleIdx+1);
+//							} else {
+//								final String tierTxt = ortho.toString();
+//
+//								final String resultTxt =
+//										(rv.getRange().getFirst() >= 0 && rv.getRange().getLast() >= rv.getRange().getFirst() ?
+//												tierTxt.substring(
+//														Math.max(0, rv.getRange().getFirst()),
+//														Math.max(0, Math.min(rv.getRange().getLast(), tierTxt.length()))) : "");
+//								try {
+//									resultValue = Orthography.parseOrthography(resultTxt);
+//								} catch (ParseException e) {
+//									// ignore
+//								}
+//							}
+//						}
+//					} else if(tierVal instanceof IPATranscript) {
+//						IPATranscript ipa = (IPATranscript)tierVal;
+//
+//						if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == ipa.toString().length()) {
+//							resultValue = ipa;
+//						} else {
+//							if(rv.getRange().getRange() > 0) {
+//								int startPhone = ipa.ipaIndexOf(rv.getRange().getFirst());
+//								int endPhone = ipa.ipaIndexOf(rv.getRange().getLast());
+//								resultValue = ipa.subsection(startPhone, endPhone + (rv.getRange().isExcludesEnd() ? 1 : 0) );
+//							}
+//						}
+//					} else if (tierVal instanceof TierString) {
+//						TierString tierString = (TierString)tierVal;
+//
+//						if(rv.getRange().getFirst() == 0 && rv.getRange().getRange() == tierString.length()) {
+//							resultValue = tierString;
+//						} else {
+//							int startWordIdx = -1;
+//							int endWordIdx = -1;
+//							for(int i = 0; i < tierString.numberOfWords(); i++) {
+//								TierString word = tierString.getWord(i);
+//								if(rv.getRange().getFirst() == tierString.getWordOffset(i)) {
+//									startWordIdx = i;
+//									break;
+//								} else if(rv.getRange().getFirst() > tierString.getWordOffset(i) + word.length()) {
+//									continue;
+//								} else {
+//									break;
+//								}
+//							}
+//							if(startWordIdx >= 0) {
+//								for(int i = startWordIdx; i < tierString.numberOfWords(); i++) {
+//									TierString word = tierString.getWord(i);
+//									if(rv.getRange().getLast() == tierString.getWordOffset(i) + word.length()) {
+//										endWordIdx = i;
+//										break;
+//									} else if(rv.getRange().getLast() > tierString.getWordOffset(i) + word.length()) {
+//										continue;
+//									} else {
+//										break;
+//									}
+//								}
+//							}
+//							TierString resultTierString = new TierString(tierString.substring(rv.getRange().getFirst(), rv.getRange().getLast()));
+//							if(startWordIdx >= 0 && endWordIdx >= 0) {
+//								// copy TextInverval extensions
+//								int wIdx = 0;
+//								for(int i = startWordIdx; i <= endWordIdx && wIdx < resultTierString.numberOfWords(); i++) {
+//									TierString word = tierString.getWord(i);
+//									TierString resultWord = resultTierString.getWord(wIdx++);
+//									resultWord.putExtension(TextInterval.class, word.getExtension(TextInterval.class));
+//								}
+//							}
+//							resultValue = resultTierString;
+//						}
+//					} else {
+//						String txt = tierVal.toString();
+//						resultValue = txt.substring(rv.getRange().getFirst(), rv.getRange().getLast());
+//					}
+//					if(resultValue == null || !(resultValue instanceof IExtendable)) {
+//						addToWarningsTable(sessionName, result, "Unable to locate subsection for result");
+//						continue;
+//					}
+//
+//					IExtendable extendable = (IExtendable)resultValue;
+//					textInterval = getTextInterval(extendable);
+//					if(textInterval == null) {
+//						addToWarningsTable(sessionName, result, "TextInterval not found");
+//						continue;
+//					}
+//					try {
+//						textInterval.setText(resultValue.toString());
+//					} catch (PraatException e) {
+//						LogUtil.warning(e);
+//					}
+//					addRowToTable(longSound, textGrid, textInterval, session, sessionName, segment, result, rv, resultValue, outputTable);
+//
+//					// delete textInterval if a new instance was created in getTextInterval(IExtendable)
+//					if(textInterval != extendable.getExtension(TextInterval.class)) {
+//						try {
+//							textInterval.close();
+//						} catch (Exception e) {
+//							LogUtil.severe(e);
+//						}
+//					}
+//				} catch (Exception e) {
+//					LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
+//					throw new ProcessingException(null, e);
+//				}
+//			}
+//		}
+//
+//		// cleanup
+//		if(textGrid != null) {
+//			try {
+//				textGrid.close();
+//			} catch (Exception e) {
+//				LogUtil.severe(e);
+//			}
+//		}
+//		if(longSound != null) {
+//			try {
+//				longSound.close();
+//			} catch (Exception e) {
+//				LogUtil.severe(e);
+//			}
+//		}
+//
+//		List<String> colNames = getColumnNames();
+//		for(int i = 0; i < colNames.size(); i++) {
+//			outputTable.setColumnTitle(i, colNames.get(i));
+//		}
+//
+//		context.put(tableOutput, outputTable);
+//		context.put(warningsOutput, warningsTable);
 	}
 	
 	protected void addToWarningsTable(SessionPath sp, Result r, String warning) {

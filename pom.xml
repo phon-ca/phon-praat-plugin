@@ -17,8 +17,8 @@
 	<properties>
 		<!-- Project settings -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.build.sourceVersion>17</project.build.sourceVersion>
-		<project.build.targetVersion>17</project.build.targetVersion>
+		<project.build.sourceVersion>21</project.build.sourceVersion>
+		<project.build.targetVersion>21</project.build.targetVersion>
 
 		<!-- Dependency versions -->
 		<ca.phon.phon-app.version>4.0.0-SNAPSHOT</ca.phon.phon-app.version>
