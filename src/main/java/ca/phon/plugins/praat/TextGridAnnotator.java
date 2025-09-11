@@ -25,7 +25,6 @@ import ca.phon.session.*;
 import ca.phon.session.tierdata.TierData;
 import ca.phon.session.tierdata.TierElement;
 import ca.phon.session.tierdata.TierString;
-import ca.phon.syllable.SyllableConstituentType;
 
 import java.util.logging.*;
 
@@ -105,13 +104,13 @@ public class TextGridAnnotator {
 			long pidx = 0;
 			final IPATranscript ipaGrp = ipaTier.getValue();
 			for(IPAElement ele:ipaGrp) {
-				if(ele.getScType() == SyllableConstituentType.WORDBOUNDARYMARKER
-						|| ele.getScType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER
-						|| ele.getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) continue;
+				if(ele.constituentType() == SyllableConstituentType.WORDBOUNDARYMARKER
+						|| ele.constituentType() == SyllableConstituentType.SYLLABLEBOUNDARYMARKER
+						|| ele.constituentType() == SyllableConstituentType.SYLLABLESTRESSMARKER) continue;
 				final int eleIdx = ipaGrp.indexOf(ele);
 				String txt = ele.getText();
 				long pTgi = -1L;
-				if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
+				if(eleIdx > 0 && ipaGrp.elementAt(eleIdx-1).constituentType() == SyllableConstituentType.SYLLABLESTRESSMARKER) {
 					var t = ipaGrp.elementAt(eleIdx-1).getText() + txt;
 					pTgi = findIntervalForText(ipaPhoneTier, t, pidx+1);
 				}
@@ -207,7 +206,7 @@ public class TextGridAnnotator {
 	private void inferInterval(IPATranscript ipa) {
 		if(ipa.length() == 0) return;
 		
-		int firstIdx = (ipa.elementAt(0).getScType() == SyllableConstituentType.SYLLABLESTRESSMARKER ? 1 : 0);
+		int firstIdx = (ipa.elementAt(0).constituentType() == SyllableConstituentType.SYLLABLESTRESSMARKER ? 1 : 0);
 		if(firstIdx >= ipa.length()) return;
 		
 		final TextInterval i1 = ipa.elementAt(firstIdx).getExtension(TextInterval.class);
