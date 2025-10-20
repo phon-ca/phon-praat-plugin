@@ -15,6 +15,9 @@
  */
 package ca.phon.plugins.praat;
 
+import ca.phon.project.Project;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
 import ca.phon.ui.action.PhonUIAction;
 import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.*;
@@ -53,16 +56,33 @@ public class FormantSettingsPanel extends JPanel {
 	private JButton loadDefaultsButton;
 	
 	private JButton loadStandardsButton;
+
+    private Project project;
+
+    private Session session;
+
+    private Participant participant;
 	
 	public FormantSettingsPanel() {
-		this(new FormantSettings());
+		this(null, null, null, new FormantSettings());
 	}
+
+    public FormantSettingsPanel(Project project, Session session, Participant participant) {
+        this(project, session, participant, FormantSettings.getSettingsForSessionParticipant(project, session, participant));
+    }
 	
 	public FormantSettingsPanel(FormantSettings settings) {
-		super();
-		init();
-		loadSettings(settings);
+		this(null, null, null, settings);
 	}
+
+    public FormantSettingsPanel(Project project, Session session, Participant participant, FormantSettings settings) {
+        super();
+        this.project = project;
+        this.session = session;
+        this.participant = participant;
+        init();
+        loadSettings(settings);
+    }
 	
 	private void init() {
 		setLayout(new BorderLayout());
@@ -166,6 +186,13 @@ public class FormantSettingsPanel extends JPanel {
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);
+
+        if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+            final PhonUIAction<Void> saveParticipantDefaultsAct = PhonUIAction.runnable(this::saveSettingsForParticipant);
+            saveParticipantDefaultsAct.putValue(PhonUIAction.NAME, "Save settings for " + participant);
+            final JButton saveParticipantDefaultsButton = new JButton(saveParticipantDefaultsAct);
+            btnPanel.add(saveParticipantDefaultsButton);
+        }
 		
 		add(btnPanel, BorderLayout.EAST);
 	}
@@ -232,5 +259,12 @@ public class FormantSettingsPanel extends JPanel {
 	public void loadDefaults() {
 		loadSettings(new FormantSettings());
 	}
+
+    public void saveSettingsForParticipant() {
+        if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+            final FormantSettings settings = getSettings();
+            FormantSettings.saveForSessionParticipant(project, session, participant, settings);
+        }
+    }
 	
 }

@@ -15,8 +15,17 @@
  */
 package ca.phon.plugins.praat;
 
+import ca.phon.app.log.LogUtil;
+import ca.phon.project.Project;
+import ca.phon.project.ProjectProperties;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
+import ca.phon.session.SessionPath;
 import ca.phon.util.PrefHelper;
+import guru.nidi.graphviz.attribute.For;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.prefs.Preferences;
 
 public class FormantSettings {
@@ -224,5 +233,92 @@ public class FormantSettings {
 		final Preferences prefs = PrefHelper.getUserPreferences();
 		saveToPreferences(prefs);
 	}
-	
+
+    public JSONObject toJSON() {
+        final JSONObject retVal = new JSONObject();
+        retVal.put("numFormants", getNumFormants());
+        retVal.put("maxFrequency", getMaxFrequency());
+        retVal.put("timeStep", getTimeStep());
+        retVal.put("preEmphasis", getPreEmphasis());
+        retVal.put("windowLength", getWindowLength());
+        retVal.put("dynamicRange", getDynamicRange());
+        retVal.put("dotSize", getDotSize());
+        retVal.put("includeNumFormants", isIncludeNumFormants());
+        retVal.put("includeIntensity", isIncludeIntensity());
+        retVal.put("includeBandwidths", isIncludeBandwidths());
+        return retVal;
+    }
+
+    public static void saveForSessionParticipant(Project project, Session session, Participant participant, FormantSettings settings) {
+        final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+        if(projProps != null) {
+            try {
+                projProps.modifyProjectJson(json -> {
+                    final JSONObject retVal = new JSONObject(json.toString());
+                    final SessionPath sessionPath = session.getSessionPath();
+                    JSONObject corpusJSON = null;
+                    if (retVal.has(sessionPath.getFolder())) {
+                        corpusJSON = retVal.getJSONObject(sessionPath.getFolder());
+                    } else {
+                        corpusJSON = new JSONObject();
+                        retVal.put(sessionPath.getFolder(), corpusJSON);
+                    }
+
+                    JSONObject sessionJSON = null;
+                    if (corpusJSON.has(sessionPath.getSessionName())) {
+                        sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+                    } else {
+                        sessionJSON = new JSONObject();
+                        corpusJSON.put(sessionPath.getSessionName(), sessionJSON);
+                    }
+
+                    JSONObject participantJSON = null;
+                    if (sessionJSON.has(participant.getId())) {
+                        participantJSON = sessionJSON.getJSONObject(participant.getId());
+                    } else {
+                        participantJSON = new JSONObject();
+                        sessionJSON.put(participant.getId(), participantJSON);
+                    }
+                    participantJSON.put("formantSettings", settings.toJSON());
+                    return retVal;
+                });
+            } catch (IOException e) {
+                LogUtil.severe(e);
+            }
+        }
+    }
+
+    public static FormantSettings getSettingsForSessionParticipant(Project project, Session session, Participant participant) {
+        final FormantSettings retVal = new FormantSettings();
+        retVal.loadDefaults();
+        final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+        if(projProps != null) {
+            final JSONObject projectJson = projProps.getProjectJson();
+            final SessionPath sessionPath = session.getSessionPath();
+            if (projectJson.has(sessionPath.getFolder())) {
+                final JSONObject corpusJSON = projectJson.getJSONObject(sessionPath.getFolder());
+                if (corpusJSON.has(sessionPath.getSessionName())) {
+                    final JSONObject sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+                    if (sessionJSON.has(participant.getId())) {
+                        final JSONObject participantJSON = sessionJSON.getJSONObject(participant.getId());
+                        if (participantJSON.has("formantSettings")) {
+                            final JSONObject formantSettingsJSON = participantJSON.getJSONObject("formantSettings");
+                            retVal.setNumFormants(formantSettingsJSON.optInt("numFormants", getDefaultNumFormants()));
+                            retVal.setMaxFrequency(formantSettingsJSON.optDouble("maxFrequency", getDefaultMaxFrequency()));
+                            retVal.setTimeStep(formantSettingsJSON.optDouble("timeStep", getDefaultTimeStep()));
+                            retVal.setPreEmphasis(formantSettingsJSON.optDouble("preEmphasis", getDefaultPreEmphasis()));
+                            retVal.setWindowLength(formantSettingsJSON.optDouble("windowLength", getDefaultWindowLength()));
+                            retVal.setDynamicRange(formantSettingsJSON.optDouble("dynamicRange", getDefaultDynamicRange()));
+                            retVal.setDotSize(formantSettingsJSON.optDouble("dotSize", getDefaultDotSize()));
+                            retVal.setIncludeNumFormants(formantSettingsJSON.optBoolean("includeNumFormants", getDefaultIncludeNumFormants()));
+                            retVal.setIncludeIntensity(formantSettingsJSON.optBoolean("includeIntensity", getDefaultIncludeIntensity()));
+                            retVal.setIncludeBandwidths(formantSettingsJSON.optBoolean("includeBandwidths", getDefaultIncludeBandwidths()));
+                        }
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
 }

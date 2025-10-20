@@ -27,6 +27,7 @@ import ca.phon.app.session.editor.view.speechAnalysis.*;
 import ca.phon.media.*;
 import ca.phon.media.TimeUIModel.*;
 import ca.phon.plugins.praat.painters.*;
+import ca.phon.project.Project;
 import ca.phon.session.Record;
 import ca.phon.session.*;
 import ca.phon.ui.*;
@@ -83,12 +84,9 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	 */
 	private SpectralMomentsSettings spectralMomentsSettings = new SpectralMomentsSettings();
 
-	/*
-	 * Formants
-	 */
-	private FormantSettings formantSettings = new FormantSettings();
-
 	private final AtomicReference<Spectrogram> spectrogramRef = new AtomicReference<>();
+
+    private FormantSettings formantSettings = new FormantSettings();
 
 	public final static String SHOW_FORMANTS_PROP = SpectrogramView.class.getName() + ".showFormants";
 	private boolean showFormants =
@@ -420,7 +418,20 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final DialogHeader header = new DialogHeader("Formant settings", "Edit formant settings");
 		dialog.add(header, BorderLayout.NORTH);
 
-		final FormantSettingsPanel settingsPanel = new FormantSettingsPanel();
+        final Project project = getParentView().getEditor().getProject();
+        final Session session = getParentView().getEditor().getSession();
+
+        FormantSettings formantSettings = this.formantSettings;
+        final Record currentRecord = getParentView().getEditor().currentRecord();
+        if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+            formantSettings = FormantSettings.getSettingsForSessionParticipant(
+                    getParentView().getEditor().getProject(),
+                    getParentView().getEditor().getSession(),
+                    currentRecord.getSpeaker()
+            );
+        }
+
+		final FormantSettingsPanel settingsPanel = new FormantSettingsPanel(project, session, currentRecord != null ? currentRecord.getSpeaker() : Participant.UNKNOWN);
 		settingsPanel.loadSettings(formantSettings);
 		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		dialog.add(settingsPanel, BorderLayout.CENTER);
@@ -459,8 +470,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		// ... wait, it's modal
 
 		if(!wasCanceled.get()) {
-			formantSettings = settingsPanel.getSettings();
-			formantPainter.setSettings(formantSettings);
+			this.formantSettings = settingsPanel.getSettings();
+			formantPainter.setSettings(this.formantSettings);
 			formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
 			formantPainter.setRepaintBuffer(true);
 
@@ -1154,6 +1165,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		
 		final double xmin = (double)segment.getStartTime();
 		final double xmax = (double)segment.getEndTime();
+
+        FormantSettings formantSettings = this.formantSettings;
+        final Record currentRecord = getParentView().getEditor().currentRecord();
+        if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+            formantSettings = FormantSettings.getSettingsForSessionParticipant(
+                    getParentView().getEditor().getProject(),
+                    getParentView().getEditor().getSession(),
+                    currentRecord.getSpeaker()
+            );
+        }
 
 		Formant formants = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
