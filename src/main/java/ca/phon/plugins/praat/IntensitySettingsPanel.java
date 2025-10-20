@@ -16,6 +16,9 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.Intensity;
+import ca.phon.project.Project;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
 import ca.phon.ui.action.PhonUIAction;
 import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.*;
@@ -48,13 +51,30 @@ public class IntensitySettingsPanel extends JPanel {
 	private JButton loadDefaultsButton;
 	
 	private JButton loadStandardsButton;
-	
+
+	private Project project;
+
+	private Session session;
+
+	private Participant participant;
+
 	public IntensitySettingsPanel() {
-		this(new IntensitySettings());
+		this(null, null, null, new IntensitySettings());
+	}
+
+	public IntensitySettingsPanel(Project project, Session session, Participant participant) {
+		this(project, session, participant, IntensitySettings.getSettingsForSessionParticipant(project, session, participant));
 	}
 	
 	public IntensitySettingsPanel(IntensitySettings settings) {
+		this(null, null, null, settings);
+	}
+
+	public IntensitySettingsPanel(Project project, Session session, Participant participant, IntensitySettings settings) {
 		super();
+		this.project = project;
+		this.session = session;
+		this.participant = participant;
 		init();
 		loadSettings(settings);
 	}
@@ -131,7 +151,14 @@ public class IntensitySettingsPanel extends JPanel {
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);
-		
+
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final PhonUIAction<Void> saveParticipantDefaultsAct = PhonUIAction.runnable(this::saveSettingsForParticipant);
+			saveParticipantDefaultsAct.putValue(PhonUIAction.NAME, "Save settings for " + participant);
+			final JButton saveParticipantDefaultsButton = new JButton(saveParticipantDefaultsAct);
+			btnPanel.add(saveParticipantDefaultsButton);
+		}
+
 		add(btnPanel, BorderLayout.EAST);
 	}
 	
@@ -187,5 +214,12 @@ public class IntensitySettingsPanel extends JPanel {
 	public void loadDefaults() {
 		loadSettings(new IntensitySettings());
 	}
-	
+
+	public void saveSettingsForParticipant() {
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final IntensitySettings settings = getSettings();
+			IntensitySettings.saveForSessionParticipant(project, session, participant, settings);
+		}
+	}
+
 }

@@ -631,7 +631,20 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final DialogHeader header = new DialogHeader("Intensity settings", "Edit intensity settings");
 		dialog.add(header, BorderLayout.NORTH);
 
-		final IntensitySettingsPanel settingsPanel = new IntensitySettingsPanel();
+		final Project project = getParentView().getEditor().getProject();
+		final Session session = getParentView().getEditor().getSession();
+
+		IntensitySettings intensitySettings = this.intensitySettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			intensitySettings = IntensitySettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
+		final IntensitySettingsPanel settingsPanel = new IntensitySettingsPanel(project, session, currentRecord != null ? currentRecord.getSpeaker() : Participant.UNKNOWN);
 		settingsPanel.loadSettings(intensitySettings);
 		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		dialog.add(settingsPanel, BorderLayout.CENTER);
@@ -670,7 +683,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		// ... wait, it's modal
 
 		if(!wasCanceled.get()) {
-			intensitySettings = settingsPanel.getSettings();
+			this.intensitySettings = settingsPanel.getSettings();
 			intensityPainter.setRepaintBuffer(true);
 
 			final PhonWorker worker = PhonWorker.createWorker();
@@ -1200,6 +1213,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final double xmin = (double)segment.getStartTime();
 		final double xmax = (double)segment.getEndTime();
 		
+		IntensitySettings intensitySettings = this.intensitySettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			intensitySettings = IntensitySettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
 		Intensity intensity = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
@@ -1497,6 +1520,15 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		}
 
 		if(showIntensity) {
+			IntensitySettings intensitySettings = this.intensitySettings;
+			final Record currentRecord = getParentView().getEditor().currentRecord();
+			if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+				intensitySettings = IntensitySettings.getSettingsForSessionParticipant(
+						getParentView().getEditor().getProject(),
+						getParentView().getEditor().getSession(),
+						currentRecord.getSpeaker()
+				);
+			}
 			intensityPainter.setRepaintBuffer(true);
 			intensityPainter.setSettings(intensitySettings);
 			worker.invokeLater(intensityLoader);

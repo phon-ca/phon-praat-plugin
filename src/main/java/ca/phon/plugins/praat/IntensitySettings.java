@@ -16,8 +16,16 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.Intensity;
+import ca.phon.app.log.LogUtil;
+import ca.phon.project.Project;
+import ca.phon.project.ProjectProperties;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
+import ca.phon.session.SessionPath;
 import ca.phon.util.PrefHelper;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.prefs.Preferences;
 
 public class IntensitySettings {
@@ -86,14 +94,18 @@ public class IntensitySettings {
 		return this.subtractMean;
 	}
 	
-	public void saveAsDefaults() {
-		final Preferences prefs = PrefHelper.getUserPreferences();
+	public void saveToPreferences(Preferences prefs) {
 		prefs.putDouble(VIEW_RANGE_MIN_PROP, getViewRangeMin());
 		prefs.putDouble(VIEW_RANGE_MAX_PROP, getViewRangeMax());
 		prefs.putInt(AVERAGING_PROP, getAveraging());
 		prefs.putBoolean(SUBTRACT_MEAN_PROP, getSubtractMean());
 	}
 	
+	public void saveAsDefaults() {
+		final Preferences prefs = PrefHelper.getUserPreferences();
+		saveToPreferences(prefs);
+	}
+
 	public void loadDefaults() {
 		setViewRangeMin(getDefaultViewRangeMin());
 		setViewRangeMax(getDefaultViewRangeMax());
@@ -107,5 +119,80 @@ public class IntensitySettings {
 		setAveraging(DEFAULT_AVERAGING);
 		setSubtractMean(DEFAULT_SUBTRACT_MEAN);
 	}
-	
+
+	public JSONObject toJSON() {
+		final JSONObject retVal = new JSONObject();
+		retVal.put("viewRangeMin", getViewRangeMin());
+		retVal.put("viewRangeMax", getViewRangeMax());
+		retVal.put("averaging", getAveraging());
+		retVal.put("subtractMean", getSubtractMean());
+		return retVal;
+	}
+
+	public static void saveForSessionParticipant(Project project, Session session, Participant participant, IntensitySettings settings) {
+		final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+		if(projProps != null) {
+			try {
+				projProps.modifyProjectJson(json -> {
+					final JSONObject retVal = new JSONObject(json.toString());
+					final SessionPath sessionPath = session.getSessionPath();
+					JSONObject corpusJSON = null;
+					if (retVal.has(sessionPath.getFolder())) {
+						corpusJSON = retVal.getJSONObject(sessionPath.getFolder());
+					} else {
+						corpusJSON = new JSONObject();
+						retVal.put(sessionPath.getFolder(), corpusJSON);
+					}
+
+					JSONObject sessionJSON = null;
+					if (corpusJSON.has(sessionPath.getSessionName())) {
+						sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+					} else {
+						sessionJSON = new JSONObject();
+						corpusJSON.put(sessionPath.getSessionName(), sessionJSON);
+					}
+
+					JSONObject participantJSON = null;
+					if (sessionJSON.has(participant.getId())) {
+						participantJSON = sessionJSON.getJSONObject(participant.getId());
+					} else {
+						participantJSON = new JSONObject();
+						sessionJSON.put(participant.getId(), participantJSON);
+					}
+					participantJSON.put("intensitySettings", settings.toJSON());
+					return retVal;
+				});
+			} catch (IOException e) {
+				LogUtil.severe(e);
+			}
+		}
+	}
+
+	public static IntensitySettings getSettingsForSessionParticipant(Project project, Session session, Participant participant) {
+		final IntensitySettings retVal = new IntensitySettings();
+		retVal.loadDefaults();
+		final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+		if(projProps != null) {
+			final JSONObject projectJson = projProps.getProjectJson();
+			final SessionPath sessionPath = session.getSessionPath();
+			if (projectJson.has(sessionPath.getFolder())) {
+				final JSONObject corpusJSON = projectJson.getJSONObject(sessionPath.getFolder());
+				if (corpusJSON.has(sessionPath.getSessionName())) {
+					final JSONObject sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+					if (sessionJSON.has(participant.getId())) {
+						final JSONObject participantJSON = sessionJSON.getJSONObject(participant.getId());
+						if (participantJSON.has("intensitySettings")) {
+							final JSONObject intensitySettingsJSON = participantJSON.getJSONObject("intensitySettings");
+							retVal.setViewRangeMin(intensitySettingsJSON.optDouble("viewRangeMin", getDefaultViewRangeMin()));
+							retVal.setViewRangeMax(intensitySettingsJSON.optDouble("viewRangeMax", getDefaultViewRangeMax()));
+							retVal.setAveraging(intensitySettingsJSON.optInt("averaging", getDefaultAveraging()));
+							retVal.setSubtractMean(intensitySettingsJSON.optBoolean("subtractMean", getDefaultSubtractMean()));
+						}
+					}
+				}
+			}
+		}
+		return retVal;
+	}
+
 }
