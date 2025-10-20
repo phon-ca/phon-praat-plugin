@@ -506,7 +506,20 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final DialogHeader header = new DialogHeader("Pitch settings", "Edit pitch settings");
 		dialog.add(header, BorderLayout.NORTH);
 
-		final PitchSettingsPanel settingsPanel = new PitchSettingsPanel();
+		final Project project = getParentView().getEditor().getProject();
+		final Session session = getParentView().getEditor().getSession();
+
+		PitchSettings pitchSettings = this.pitchSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			pitchSettings = PitchSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
+		final PitchSettingsPanel settingsPanel = new PitchSettingsPanel(project, session, currentRecord != null ? currentRecord.getSpeaker() : Participant.UNKNOWN);
 		settingsPanel.loadSettings(pitchSettings);
 		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		dialog.add(settingsPanel, BorderLayout.CENTER);
@@ -545,8 +558,8 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		// ... wait, it's modal
 
 		if(!wasCanceled.get()) {
-			pitchSettings = settingsPanel.getSettings();
-			pitchPainter.setSettings(pitchSettings);
+			this.pitchSettings = settingsPanel.getSettings();
+			pitchPainter.setSettings(this.pitchSettings);
 			pitchPainter.setRepaintBuffer(true);
 
 			final PhonWorker worker = PhonWorker.createWorker();
@@ -1147,6 +1160,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final double xmin = (double)segment.getStartTime();
 		final double xmax = (double)segment.getEndTime();
 
+		PitchSettings pitchSettings = this.pitchSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			pitchSettings = PitchSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
 		Pitch pitch = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
@@ -1280,6 +1303,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		
 		final double xmin = (double)segment.getStartTime();
 		final double xmax = (double)segment.getEndTime();
+
+		PitchSettings pitchSettings = this.pitchSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			pitchSettings = PitchSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
 
 		PointProcess pulses = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
@@ -1514,6 +1547,15 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		}
 
 		if(showPitch) {
+			PitchSettings pitchSettings = this.pitchSettings;
+			final Record currentRecord = getParentView().getEditor().currentRecord();
+			if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+				pitchSettings = PitchSettings.getSettingsForSessionParticipant(
+						getParentView().getEditor().getProject(),
+						getParentView().getEditor().getSession(),
+						currentRecord.getSpeaker()
+				);
+			}
 			pitchPainter.setRepaintBuffer(true);
 			pitchPainter.setSettings(pitchSettings);
 			worker.invokeLater(pitchLoader);

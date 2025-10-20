@@ -16,6 +16,9 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.kPitch_unit;
+import ca.phon.project.Project;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
 import ca.phon.ui.action.PhonUIAction;
 import com.jgoodies.forms.builder.PanelBuilder;
 import com.jgoodies.forms.layout.*;
@@ -62,13 +65,30 @@ public class PitchSettingsPanel extends JPanel {
 	private JButton loadDefaultsButton;
 	
 	private JButton loadStandardsButton;
-	
+
+	private Project project;
+
+	private Session session;
+
+	private Participant participant;
+
 	public PitchSettingsPanel() {
-		this(new PitchSettings());
+		this(null, null, null, new PitchSettings());
+	}
+
+	public PitchSettingsPanel(Project project, Session session, Participant participant) {
+		this(project, session, participant, PitchSettings.getSettingsForSessionParticipant(project, session, participant));
 	}
 	
 	public PitchSettingsPanel(PitchSettings settings) {
+		this(null, null, null, settings);
+	}
+
+	public PitchSettingsPanel(Project project, Session session, Participant participant, PitchSettings settings) {
 		super();
+		this.project = project;
+		this.session = session;
+		this.participant = participant;
 		init();
 		loadSettings(settings);
 	}
@@ -201,7 +221,14 @@ public class PitchSettingsPanel extends JPanel {
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);
-		
+
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final PhonUIAction<Void> saveParticipantDefaultsAct = PhonUIAction.runnable(this::saveSettingsForParticipant);
+			saveParticipantDefaultsAct.putValue(PhonUIAction.NAME, "Save settings for " + participant);
+			final JButton saveParticipantDefaultsButton = new JButton(saveParticipantDefaultsAct);
+			btnPanel.add(saveParticipantDefaultsButton);
+		}
+
 		add(btnPanel, BorderLayout.EAST);
 	}
 	
@@ -278,5 +305,12 @@ public class PitchSettingsPanel extends JPanel {
 	public void loadDefaults() {
 		loadSettings(new PitchSettings());
 	}
-	
+
+	public void saveSettingsForParticipant() {
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final PitchSettings settings = getSettings();
+			PitchSettings.saveForSessionParticipant(project, session, participant, settings);
+		}
+	}
+
 }
