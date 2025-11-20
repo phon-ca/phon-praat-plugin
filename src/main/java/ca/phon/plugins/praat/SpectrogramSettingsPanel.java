@@ -16,6 +16,9 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
+import ca.phon.project.Project;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
 import ca.phon.ui.action.PhonUIAction;
 import com.jgoodies.forms.layout.*;
 import org.jdesktop.swingx.VerticalLayout;
@@ -54,10 +57,31 @@ public class SpectrogramSettingsPanel extends JPanel {
 	
 	private JButton loadStandardsButton;
 
+	private Project project;
+
+	private Session session;
+
+	private Participant participant;
+
 	public SpectrogramSettingsPanel() {
+		this(null, null, null, new SpectrogramSettings());
+	}
+
+	public SpectrogramSettingsPanel(Project project, Session session, Participant participant) {
+		this(project, session, participant, SpectrogramSettings.getSettingsForSessionParticipant(project, session, participant));
+	}
+
+	public SpectrogramSettingsPanel(SpectrogramSettings settings) {
+		this(null, null, null, settings);
+	}
+
+	public SpectrogramSettingsPanel(Project project, Session session, Participant participant, SpectrogramSettings settings) {
 		super();
-		
+		this.project = project;
+		this.session = session;
+		this.participant = participant;
 		init();
+		loadSettings(settings);
 	}
 	
 	private void init() {
@@ -124,12 +148,17 @@ public class SpectrogramSettingsPanel extends JPanel {
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);
-		
+
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final PhonUIAction<Void> saveParticipantDefaultsAct = PhonUIAction.runnable(this::saveSettingsForParticipant);
+			saveParticipantDefaultsAct.putValue(PhonUIAction.NAME, "Save settings for " + participant);
+			final JButton saveParticipantDefaultsButton = new JButton(saveParticipantDefaultsAct);
+			btnPanel.add(saveParticipantDefaultsButton);
+		}
+
 		setLayout(new BorderLayout());
 		add(formPanel, BorderLayout.CENTER);
 		add(btnPanel, BorderLayout.EAST);
-		
-		loadSettings(new SpectrogramSettings());
 	}
 	
 	public void loadSettings(SpectrogramSettings settings) {
@@ -187,5 +216,12 @@ public class SpectrogramSettingsPanel extends JPanel {
 	public void loadDefaults() {
 		loadSettings(new SpectrogramSettings());
 	}
-	
+
+	public void saveSettingsForParticipant() {
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final SpectrogramSettings settings = getSettings();
+			SpectrogramSettings.saveForSessionParticipant(project, session, participant, settings);
+		}
+	}
+
 }

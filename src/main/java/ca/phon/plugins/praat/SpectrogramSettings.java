@@ -16,8 +16,16 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.kSound_to_Spectrogram_windowShape;
+import ca.phon.app.log.LogUtil;
+import ca.phon.project.Project;
+import ca.phon.project.ProjectProperties;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
+import ca.phon.session.SessionPath;
 import ca.phon.util.PrefHelper;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.prefs.Preferences;
 
 /**
@@ -143,13 +151,7 @@ public class SpectrogramSettings {
 		this.dynamicRange = dynamicRange;
 	}
 	
-	/**
-	 * Save these settings as custom defaults.
-	 * 
-	 * 
-	 */
-	public void saveAsDefaults() {
-		final Preferences prefs = PrefHelper.getUserPreferences();
+	public void saveToPreferences(Preferences prefs) {
 		prefs.putDouble(DYNAMIC_COMPRESSION_PROP, getDynamicCompression());
 		prefs.putDouble(DYNAMIC_RANGE_PROP, getDynamicRange());
 		prefs.putDouble(FREQUENCY_STEP_PROP, getFrequencyStep());
@@ -160,6 +162,16 @@ public class SpectrogramSettings {
 		prefs.putInt(WINDOW_SHAPE_PROP, getWindowShape().ordinal());
 	}
 	
+	/**
+	 * Save these settings as custom defaults.
+	 *
+	 *
+	 */
+	public void saveAsDefaults() {
+		final Preferences prefs = PrefHelper.getUserPreferences();
+		saveToPreferences(prefs);
+	}
+
 	public void loadStandards() {
 		setDynamicCompression(DEFAULT_DYNAMIC_COMPRESSION);
 		setDynamicRange(DEFAULT_DYNAMIC_RANGE);
@@ -181,5 +193,89 @@ public class SpectrogramSettings {
 		setWindowLength(getDefaultWindowLength());
 		setWindowShape(getDefaultWindowShape());
 	}
-	
+
+	public JSONObject toJSON() {
+		final JSONObject retVal = new JSONObject();
+		retVal.put("windowLength", getWindowLength());
+		retVal.put("maxFrequency", getMaxFrequency());
+		retVal.put("timeStep", getTimeStep());
+		retVal.put("frequencyStep", getFrequencyStep());
+		retVal.put("windowShape", getWindowShape().ordinal());
+		retVal.put("preEmphasis", getPreEmphasis());
+		retVal.put("dynamicRange", getDynamicRange());
+		retVal.put("dynamicCompression", getDynamicCompression());
+		return retVal;
+	}
+
+	public static void saveForSessionParticipant(Project project, Session session, Participant participant, SpectrogramSettings settings) {
+		final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+		if(projProps != null) {
+			try {
+				projProps.modifyProjectJson(json -> {
+					final JSONObject retVal = new JSONObject(json.toString());
+					final SessionPath sessionPath = session.getSessionPath();
+					JSONObject corpusJSON = null;
+					if (retVal.has(sessionPath.getFolder())) {
+						corpusJSON = retVal.getJSONObject(sessionPath.getFolder());
+					} else {
+						corpusJSON = new JSONObject();
+						retVal.put(sessionPath.getFolder(), corpusJSON);
+					}
+
+					JSONObject sessionJSON = null;
+					if (corpusJSON.has(sessionPath.getSessionName())) {
+						sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+					} else {
+						sessionJSON = new JSONObject();
+						corpusJSON.put(sessionPath.getSessionName(), sessionJSON);
+					}
+
+					JSONObject participantJSON = null;
+					if (sessionJSON.has(participant.getId())) {
+						participantJSON = sessionJSON.getJSONObject(participant.getId());
+					} else {
+						participantJSON = new JSONObject();
+						sessionJSON.put(participant.getId(), participantJSON);
+					}
+					participantJSON.put("spectrogramSettings", settings.toJSON());
+					return retVal;
+				});
+			} catch (IOException e) {
+				LogUtil.severe(e);
+			}
+		}
+	}
+
+	public static SpectrogramSettings getSettingsForSessionParticipant(Project project, Session session, Participant participant) {
+		final SpectrogramSettings retVal = new SpectrogramSettings();
+		retVal.loadDefaults();
+		final ProjectProperties projProps = project.getExtension(ProjectProperties.class);
+		if(projProps != null) {
+			final JSONObject projectJson = projProps.getProjectJson();
+			final SessionPath sessionPath = session.getSessionPath();
+			if (projectJson.has(sessionPath.getFolder())) {
+				final JSONObject corpusJSON = projectJson.getJSONObject(sessionPath.getFolder());
+				if (corpusJSON.has(sessionPath.getSessionName())) {
+					final JSONObject sessionJSON = corpusJSON.getJSONObject(sessionPath.getSessionName());
+					if (sessionJSON.has(participant.getId())) {
+						final JSONObject participantJSON = sessionJSON.getJSONObject(participant.getId());
+						if (participantJSON.has("spectrogramSettings")) {
+							final JSONObject spectrogramSettingsJSON = participantJSON.getJSONObject("spectrogramSettings");
+							retVal.setWindowLength(spectrogramSettingsJSON.optDouble("windowLength", getDefaultWindowLength()));
+							retVal.setMaxFrequency(spectrogramSettingsJSON.optDouble("maxFrequency", getDefaultMaxFrequency()));
+							retVal.setTimeStep(spectrogramSettingsJSON.optDouble("timeStep", getDefaultTimeStep()));
+							retVal.setFrequencyStep(spectrogramSettingsJSON.optDouble("frequencyStep", getDefaultFrequencyStep()));
+							final int windowShapeOrdinal = spectrogramSettingsJSON.optInt("windowShape", getDefaultWindowShape().ordinal());
+							retVal.setWindowShape(kSound_to_Spectrogram_windowShape.values()[windowShapeOrdinal]);
+							retVal.setPreEmphasis(spectrogramSettingsJSON.optDouble("preEmphasis", getDefaultPreEmphasis()));
+							retVal.setDynamicRange(spectrogramSettingsJSON.optDouble("dynamicRange", getDefaultDynamicRange()));
+							retVal.setDynamicCompression(spectrogramSettingsJSON.optDouble("dynamicCompression", getDefaultDynamicCompression()));
+						}
+					}
+				}
+			}
+		}
+		return retVal;
+	}
+
 }

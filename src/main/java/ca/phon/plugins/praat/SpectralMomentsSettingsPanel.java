@@ -16,6 +16,9 @@
 package ca.phon.plugins.praat;
 
 import ca.hedlund.jpraat.binding.fon.kSound_windowShape;
+import ca.phon.project.Project;
+import ca.phon.session.Participant;
+import ca.phon.session.Session;
 import ca.phon.ui.action.PhonUIAction;
 import com.jgoodies.forms.layout.*;
 import org.jdesktop.swingx.VerticalLayout;
@@ -46,14 +49,29 @@ public class SpectralMomentsSettingsPanel extends JPanel {
 	
 	private JButton loadStandardsButton;
 
+	private Project project;
+
+	private Session session;
+
+	private Participant participant;
+
 	public SpectralMomentsSettingsPanel() {
-		super();
-		
-		init();
+		this(null, null, null, new SpectralMomentsSettings());
+	}
+
+	public SpectralMomentsSettingsPanel(Project project, Session session, Participant participant) {
+		this(project, session, participant, SpectralMomentsSettings.getSettingsForSessionParticipant(project, session, participant));
 	}
 	
 	public SpectralMomentsSettingsPanel(SpectralMomentsSettings settings) {
+		this(null, null, null, settings);
+	}
+
+	public SpectralMomentsSettingsPanel(Project project, Session session, Participant participant, SpectralMomentsSettings settings) {
 		super();
+		this.project = project;
+		this.session = session;
+		this.participant = participant;
 		init();
 		loadSettings(settings);
 	}
@@ -110,7 +128,14 @@ public class SpectralMomentsSettingsPanel extends JPanel {
 		saveDefaultsAct.putValue(PhonUIAction.NAME, "Save as defaults");
 		saveDefaultsButton = new JButton(saveDefaultsAct);
 		btnPanel.add(saveDefaultsButton);
-		
+
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final PhonUIAction<Void> saveParticipantDefaultsAct = PhonUIAction.runnable(this::saveSettingsForParticipant);
+			saveParticipantDefaultsAct.putValue(PhonUIAction.NAME, "Save settings for " + participant);
+			final JButton saveParticipantDefaultsButton = new JButton(saveParticipantDefaultsAct);
+			btnPanel.add(saveParticipantDefaultsButton);
+		}
+
 		setLayout(new BorderLayout());
 		add(formPanel, BorderLayout.CENTER);
 		add(btnPanel, BorderLayout.EAST);
@@ -153,5 +178,12 @@ public class SpectralMomentsSettingsPanel extends JPanel {
 	public void loadDefaults() {
 		loadSettings(new SpectralMomentsSettings());
 	}
-	
+
+	public void saveSettingsForParticipant() {
+		if(project != null && session != null && participant != null && participant != Participant.UNKNOWN) {
+			final SpectralMomentsSettings settings = getSettings();
+			SpectralMomentsSettings.saveForSessionParticipant(project, session, participant, settings);
+		}
+	}
+
 }

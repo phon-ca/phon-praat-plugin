@@ -321,7 +321,20 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				final DialogHeader header = new DialogHeader("Spectrogram settings", "Edit spectrogram settings");
 				dialog.add(header, BorderLayout.NORTH);
 
-				final SpectrogramSettingsPanel settingsPanel = new SpectrogramSettingsPanel();
+				final Project project = getParentView().getEditor().getProject();
+				final Session session = getParentView().getEditor().getSession();
+
+				SpectrogramSettings spectrogramSettings = SpectrogramView.this.spectrogramSettings;
+				final Record currentRecord = getParentView().getEditor().currentRecord();
+				if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+					spectrogramSettings = SpectrogramSettings.getSettingsForSessionParticipant(
+							getParentView().getEditor().getProject(),
+							getParentView().getEditor().getSession(),
+							currentRecord.getSpeaker()
+					);
+				}
+
+				final SpectrogramSettingsPanel settingsPanel = new SpectrogramSettingsPanel(project, session, currentRecord != null ? currentRecord.getSpeaker() : Participant.UNKNOWN);
 				settingsPanel.loadSettings(spectrogramSettings);
 				settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 				dialog.add(settingsPanel, BorderLayout.CENTER);
@@ -358,11 +371,11 @@ public class SpectrogramView extends SpeechAnalysisTier {
 				dialog.setVisible(true);
 
 				if(!wasCanceled.get()) {
-					spectrogramSettings = settingsPanel.getSettings();
+					SpectrogramView.this.spectrogramSettings = settingsPanel.getSettings();
 					spectrogramPainter.setRepaintBuffer(true);
-					formantPainter.setMaxFrequency(spectrogramSettings.getMaxFrequency());
+					formantPainter.setMaxFrequency(SpectrogramView.this.spectrogramSettings.getMaxFrequency());
 					formantPainter.setRepaintBuffer(true);
-					spectrogramPainter.setSettings(spectrogramSettings);
+					spectrogramPainter.setSettings(SpectrogramView.this.spectrogramSettings);
 				}
 
 				setStatus(TaskStatus.FINISHED);
@@ -579,7 +592,20 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final DialogHeader header = new DialogHeader("Spectral Moments settings", "Edit spectral moments settings");
 		dialog.add(header, BorderLayout.NORTH);
 
-		final SpectralMomentsSettingsPanel settingsPanel = new SpectralMomentsSettingsPanel();
+		final Project project = getParentView().getEditor().getProject();
+		final Session session = getParentView().getEditor().getSession();
+
+		SpectralMomentsSettings spectralMomentsSettings = this.spectralMomentsSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			spectralMomentsSettings = SpectralMomentsSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
+		final SpectralMomentsSettingsPanel settingsPanel = new SpectralMomentsSettingsPanel(project, session, currentRecord != null ? currentRecord.getSpeaker() : Participant.UNKNOWN);
 		settingsPanel.loadSettings(spectralMomentsSettings);
 		settingsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		dialog.add(settingsPanel, BorderLayout.CENTER);
@@ -1135,6 +1161,16 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final double xmin = (double)segment.getStartTime();
 		final double xmax = (double)segment.getEndTime();
 
+		SpectrogramSettings spectrogramSettings = this.spectrogramSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			spectrogramSettings = SpectrogramSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
 		Spectrogram spectrogram = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			try(final Sound part = longSound.extractPart(xmin, xmax, true)) {
@@ -1266,7 +1302,17 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		
 		final File audioFile = getAudioFile();
 		if(audioFile == null) return null;
-		
+
+		SpectralMomentsSettings spectralMomentsSettings = this.spectralMomentsSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			spectralMomentsSettings = SpectralMomentsSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
+
 		Spectrum spectrum = null;
 		try (final LongSound longSound = LongSound.open(MelderFile.fromPath(getAudioFile().getAbsolutePath()))) {
 			
@@ -1535,6 +1581,15 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		final PhonWorker worker = PhonWorker.createWorker();
 		worker.setName(SpectrogramView.class.getName()+".worker");
 
+		SpectrogramSettings spectrogramSettings = this.spectrogramSettings;
+		final Record currentRecord = getParentView().getEditor().currentRecord();
+		if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
+			spectrogramSettings = SpectrogramSettings.getSettingsForSessionParticipant(
+					getParentView().getEditor().getProject(),
+					getParentView().getEditor().getSession(),
+					currentRecord.getSpeaker()
+			);
+		}
 		spectrogramPainter.setRepaintBuffer(true);
 		spectrogramPainter.setSettings(spectrogramSettings);
 		worker.invokeLater(spectrogramLoader);
@@ -1548,7 +1603,6 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		if(showPitch) {
 			PitchSettings pitchSettings = this.pitchSettings;
-			final Record currentRecord = getParentView().getEditor().currentRecord();
 			if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
 				pitchSettings = PitchSettings.getSettingsForSessionParticipant(
 						getParentView().getEditor().getProject(),
@@ -1563,7 +1617,6 @@ public class SpectrogramView extends SpeechAnalysisTier {
 
 		if(showIntensity) {
 			IntensitySettings intensitySettings = this.intensitySettings;
-			final Record currentRecord = getParentView().getEditor().currentRecord();
 			if(currentRecord != null && currentRecord.getSpeaker() != Participant.UNKNOWN) {
 				intensitySettings = IntensitySettings.getSettingsForSessionParticipant(
 						getParentView().getEditor().getProject(),
@@ -1690,7 +1743,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 							final String formantStr = String.format("B%d: %.2f", i, bVal);
 							final Rectangle2D bounds = g2.getFontMetrics().getStringBounds(formantStr, g2);
 
-							y += (int)Math.ceil(bounds.getHeight());
+						 y += (int)Math.ceil(bounds.getHeight());
 							g2.setColor(Color.red);
 							g2.drawString(formantStr, x, y);
 						}
