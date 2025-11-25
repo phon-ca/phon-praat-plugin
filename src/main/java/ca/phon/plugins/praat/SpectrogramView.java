@@ -42,6 +42,8 @@ import ca.phon.worker.PhonTask.TaskStatus;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -207,29 +209,54 @@ public class SpectrogramView extends SpeechAnalysisTier {
 	}
 
 	private void setupToolbar() {
-		JPopupMenu spectrumMenu = new JPopupMenu();
-		Action menuAct = new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-			}
-		};
-		menuAct.putValue(Action.NAME, "Spectrum");
-		menuAct.putValue(Action.SHORT_DESCRIPTION, "Show spectrum menu");
-		menuAct.putValue(Action.SMALL_ICON, IconManager.getInstance().getIcon("praat/spectrogram", IconSize.SMALL));
-		menuAct.putValue(DropDownButton.ARROW_ICON_GAP, 2);
-		menuAct.putValue(DropDownButton.ARROW_ICON_POSITION, SwingConstants.BOTTOM);
-		menuAct.putValue(DropDownButton.BUTTON_POPUP, spectrumMenu);
-		
-		DropDownButton menuBtn = new DropDownButton(menuAct);
-		menuBtn.setOnlyPopup(true);
-		menuBtn.getButtonPopup().addPropertyChangeListener(ButtonPopup.POPUP_VISIBLE, (e) -> {
-			if((boolean)e.getNewValue()) {
-				spectrumMenu.removeAll();
-				addMenuItems(new MenuBuilder(spectrumMenu), true);
-			}
-		});
-		getParentView().getToolbar().addSeparator();
-		getParentView().getToolbar().add(menuBtn);
+        JPopupMenu spectrumMenu = new JPopupMenu();
+        spectrumMenu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                spectrumMenu.removeAll();
+                addMenuItems(new MenuBuilder(spectrumMenu), true);
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+
+            }
+        });
+
+        final PhonUIAction<Void> phonUIAction = PhonUIAction.eventConsumer((phonActionEvent) -> {
+            final JButton source = (JButton) phonActionEvent.getActionEvent().getSource();
+            spectrumMenu.show(source, 0, source.getHeight());
+        });
+        phonUIAction.putValue(PhonUIAction.NAME, "Spectrum");
+        phonUIAction.putValue(PhonUIAction.SHORT_DESCRIPTION, "Show spectrum menu");
+        phonUIAction.putValue(FlatButton.ICON_FONT_NAME_PROP, IconManager.GoogleMaterialDesignIconsFontName);
+        phonUIAction.putValue(FlatButton.ICON_NAME_PROP, "arrow_drop_down");
+        phonUIAction.putValue(FlatButton.ICON_SIZE_PROP, IconSize.MEDIUM);
+        final JButton spectrumMenuButton = new FlatButton(phonUIAction);
+        getParentView().getToolbar().add(spectrumMenuButton, IconStrip.IconStripPosition.LEFT);
+
+//
+//		menuAct.putValue(Action.NAME, "Spectrum");
+//		menuAct.putValue(Action.SHORT_DESCRIPTION, "Show spectrum menu");
+//		menuAct.putValue(Action.SMALL_ICON, IconManager.getInstance().getIcon("praat/spectrogram", IconSize.SMALL));
+//		menuAct.putValue(DropDownButton.ARROW_ICON_GAP, 2);
+//		menuAct.putValue(DropDownButton.ARROW_ICON_POSITION, SwingConstants.BOTTOM);
+//		menuAct.putValue(DropDownButton.BUTTON_POPUP, spectrumMenu);
+//
+//		DropDownButton menuBtn = new DropDownButton(menuAct);
+//		menuBtn.setOnlyPopup(true);
+//		menuBtn.getButtonPopup().addPropertyChangeListener(ButtonPopup.POPUP_VISIBLE, (e) -> {
+//			if((boolean)e.getNewValue()) {
+//				spectrumMenu.removeAll();
+//				addMenuItems(new MenuBuilder(spectrumMenu), true);
+//			}
+//		});
+//		getParentView().getToolbar().add(menuBtn, IconStrip.IconStripPosition.LEFT);
 	}
 
 	private void installKeyStrokes(SpeechAnalysisEditorView p) {
