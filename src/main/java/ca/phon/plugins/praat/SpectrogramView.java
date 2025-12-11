@@ -1974,7 +1974,7 @@ public class SpectrogramView extends SpeechAnalysisTier {
 			maxAnalysisMessage.setVisible(false);
 	}
 	
-	private void addMenuItems(MenuBuilder builder, boolean isContextMenu) {
+	public void addMenuItems(MenuBuilder builder, boolean isContextMenu) {
 		final PhonUIAction<Void> toggleAct = PhonUIAction.runnable(this::onToggleSpectrogram);
 		toggleAct.setRunInBackground(true);
 		toggleAct.putValue(PhonUIAction.NAME, "Show Spectrogram");
@@ -2078,25 +2078,6 @@ public class SpectrogramView extends SpeechAnalysisTier {
 		listSpectralMomentsAct.putValue(PhonUIAction.NAME, "Spectral Moments listing...");
 		listSpectralMomentsAct.putValue(PhonUIAction.SHORT_DESCRIPTION, "List spectral moments for segment/selection");
 		builder.addItem(".", listSpectralMomentsAct);
-	}
-
-	@Override
-	public void addMenuItems(JMenu menu, boolean isContextMenu) {
-		JMenu praatMenu = null;
-		for(int i = 0; i < menu.getItemCount(); i++) {
-			if(menu.getItem(i) != null && menu.getItem(i).getText() != null
-					&& menu.getItem(i).getText().equals("Spectrum")) {
-				praatMenu = (JMenu)menu.getItem(i);
-			}
-		}
-		if(praatMenu == null) {
-			praatMenu = new JMenu("Spectrum");
-			praatMenu.setIcon(IconManager.getInstance().getIcon("praat/spectrogram", IconSize.SMALL));
-			menu.addSeparator();
-			menu.add(praatMenu);
-		}
-		
-		addMenuItems(new MenuBuilder(praatMenu), isContextMenu);
 	}
 
 	private final MouseInputAdapter pointListener = new MouseInputAdapter() {
