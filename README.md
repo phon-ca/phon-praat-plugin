@@ -11,3 +11,5 @@ mvn package
 ```
 
 This plug-in is provided with the release version of [Phon](https://www.phon.ca).
+
+This plug-in is deprecated as of Phon 4.0.
